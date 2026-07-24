@@ -1,0 +1,36 @@
+# Build artifacts — the two release binaries (SPEC §Distribution) and build dirs.
+# Root-anchored so a `prickle/` package dir would never be ignored by accident.
+/prickle
+/prickle-nvml
+/bin/
+/dist/
+
+# Go test / coverage output.
+# Deliberately NOT ignoring *.out — exposition golden files may use that suffix.
+*.test
+*.coverprofile
+coverage.out
+cover.out
+covdata/
+
+# Raw fixture captures from scripts/capture-fixtures.sh.
+# Host-specific dumps (hostnames, image/process names, PIDs) — never committed
+# as-is; curate the needed files into testdata/ instead. testdata/ stays tracked.
+prickle-fixtures-*/
+prickle-fixtures-*.tar.gz
+
+# Go workspace overlay (keep go.mod / go.sum tracked).
+go.work
+go.work.sum
+
+# Local env / secrets.
+.env
+.env.local
+*.local.env
+
+# Editor / OS cruft.
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
