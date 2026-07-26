@@ -81,7 +81,12 @@ mandatory from Phase 4.
   2. **`nvidia-smi` CSV subprocess — fallback only.** Used when the NVML build
      is unavailable or the library cannot be loaded at runtime (common in slim
      containers that lack the driver libraries). Kept working and tested; it is
-     not deprecated.
+     not deprecated. Verified limitations (H200, driver 580):
+     `--query-compute-apps` reports the parent GPU UUID for MIG-resident
+     processes, so per-process MIG attribution is unavailable in this source
+     (processes are attributed to the physical GPU); and `utilization.gpu`
+     returns `[N/A]` when MIG is enabled — the CSV parser must treat bracketed
+     `[N/A]` tokens as absent values, never as errors.
 
   Selection is automatic: attempt the NVML load once at startup, fall back
   silently, and record the active source on an `_info` gauge.

@@ -74,6 +74,146 @@ nvidia_compute_apps() {
   nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c .
 }
 amd_present() { compgen -G '/sys/class/drm/card*/device/gpu_busy_percent' >/dev/null; }
+
+# ---------------------------------------------------------------------------
+# GPU workload: needed so query-compute-apps and per-process fdinfo have rows.
+# Fallback chain: dcgmproftester -> torch -> self-built spinner (gcc + libcuda
+# driver API via dlopen + embedded PTX — needs NO CUDA toolkit, no downloads).
+# ---------------------------------------------------------------------------
+emit_spinner_c() {
+  cat > "$1" <<'CEOF'
+/* prickle-gpu-spin: minimal CUDA driver-API load generator.
+ * Builds with plain gcc on any host with the NVIDIA driver (dlopen libcuda,
+ * JIT-compiled PTX) — no CUDA toolkit required. If kernel execution fails
+ * for any reason, it degrades to holding a context + memory allocation so
+ * the process still appears in query-compute-apps (utilization reads 0). */
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
+#include <time.h>
+#include <unistd.h>
+
+typedef int CUresult; typedef int CUdevice;
+typedef void *CUcontext, *CUmodule, *CUfunction;
+typedef unsigned long long CUdeviceptr;
+
+static const char *ptx =
+".version 7.0\n.target sm_70\n.address_size 64\n"
+".visible .entry spin(.param .u64 out_ptr, .param .u64 iters)\n{\n"
+"  .reg .pred %p1;\n  .reg .u64 %rd<5>;\n  .reg .f32 %f<2>;\n"
+"  ld.param.u64 %rd1, [out_ptr];\n  ld.param.u64 %rd2, [iters];\n"
+"  cvta.to.global.u64 %rd4, %rd1;\n"
+"  mov.u64 %rd3, 0;\n  mov.f32 %f1, 0f3F800001;\n"
+"$L:\n  fma.rn.f32 %f1, %f1, %f1, %f1;\n  add.u64 %rd3, %rd3, 1;\n"
+"  setp.lt.u64 %p1, %rd3, %rd2;\n  @%p1 bra $L;\n"
+"  st.global.f32 [%rd4], %f1;\n  ret;\n}\n";
+
+static CUresult (*cuInit)(unsigned);
+static CUresult (*cuDeviceGet)(CUdevice*, int);
+static CUresult (*cuDeviceGetName)(char*, int, CUdevice);
+static CUresult (*cuDevicePrimaryCtxRetain)(CUcontext*, CUdevice);
+static CUresult (*cuCtxSetCurrent)(CUcontext);
+static CUresult (*cuModuleLoadData)(CUmodule*, const void*);
+static CUresult (*cuModuleGetFunction)(CUfunction*, CUmodule, const char*);
+static CUresult (*cuMemAlloc)(CUdeviceptr*, unsigned long);
+static CUresult (*cuLaunchKernel)(CUfunction, unsigned,unsigned,unsigned,
+    unsigned,unsigned,unsigned, unsigned, void*, void**, void**);
+static CUresult (*cuCtxSynchronize)(void);
+static CUresult (*cuGetErrorName)(CUresult, const char**);
+
+#define GET(sym) do { \
+  *(void**)(&sym) = dlsym(h, #sym "_v2"); \
+  if (!sym) *(void**)(&sym) = dlsym(h, #sym); \
+  if (!sym) { fprintf(stderr, "missing symbol %s\n", #sym); return 1; } \
+} while (0)
+
+static const char *errname(CUresult r) {
+  const char *s = "?";
+  if (cuGetErrorName) cuGetErrorName(r, &s);
+  return s;
+}
+static CUresult rc;
+#define TRY(call) \
+  ((rc = (call)) ? (fprintf(stderr, "%s -> %d (%s)\n", #call, rc, errname(rc)), 1) : 0)
+
+int main(int argc, char **argv) {
+  setvbuf(stderr, NULL, _IONBF, 0);
+  long duration = argc > 1 ? atol(argv[1]) : 600;
+  void *h = dlopen("libcuda.so.1", RTLD_NOW);
+  if (!h) { fprintf(stderr, "dlopen libcuda.so.1: %s\n", dlerror()); return 1; }
+  GET(cuInit); GET(cuDeviceGet); GET(cuDevicePrimaryCtxRetain);
+  GET(cuCtxSetCurrent); GET(cuModuleLoadData); GET(cuModuleGetFunction);
+  GET(cuMemAlloc); GET(cuLaunchKernel); GET(cuCtxSynchronize);
+  *(void**)(&cuGetErrorName)  = dlsym(h, "cuGetErrorName");
+  *(void**)(&cuDeviceGetName) = dlsym(h, "cuDeviceGetName");
+
+  CUdevice dev; CUcontext ctx;
+  if (TRY(cuInit(0)) || TRY(cuDeviceGet(&dev, 0)) ||
+      TRY(cuDevicePrimaryCtxRetain(&ctx, dev)) || TRY(cuCtxSetCurrent(ctx)))
+    return 1;
+  char name[128] = "unknown";
+  if (cuDeviceGetName) cuDeviceGetName(name, sizeof name, dev);
+  fprintf(stderr, "prickle-gpu-spin: context up on device 0 (%s), %lds\n",
+          name, duration);
+
+  CUdeviceptr out = 0, ballast = 0;
+  cuMemAlloc(&ballast, 512ULL << 20);           /* best effort */
+  CUmodule mod; CUfunction fn; int kernel_ok = 1;
+  if (TRY(cuMemAlloc(&out, 8)) || TRY(cuModuleLoadData(&mod, ptx)) ||
+      TRY(cuModuleGetFunction(&fn, mod, "spin"))) kernel_ok = 0;
+
+  unsigned long long iters = 5000000ULL;
+  void *params[2] = { &out, &iters };
+  long n = 0;
+  time_t end = time(NULL) + duration;
+  while (time(NULL) < end) {
+    if (kernel_ok) {
+      if (TRY(cuLaunchKernel(fn, 256,1,1, 256,1,1, 0, NULL, params, NULL)) ||
+          TRY(cuCtxSynchronize())) {
+        kernel_ok = 0;
+        fprintf(stderr, "kernel path failed after %ld iterations; holding "
+                "context only (process stays visible, utilization reads 0)\n", n);
+      } else if (++n == 1) {
+        fprintf(stderr, "first kernel iteration OK\n");
+      }
+    } else {
+      sleep(2);
+    }
+  }
+  fprintf(stderr, "done: %ld kernel iterations\n", n);
+  return 0;
+}
+CEOF
+}
+
+start_nvidia_workload() {
+  # $1 = MIG UUID to pin to, or empty for the whole GPU
+  local uuid=$1 runner=() dur=600
+  [[ -n $uuid ]] && runner=(env "CUDA_VISIBLE_DEVICES=$uuid")
+  if have dcgmproftester12 || have dcgmproftester; then
+    local dp; dp=$(have dcgmproftester12 && echo dcgmproftester12 || echo dcgmproftester)
+    nohup "${runner[@]}" "$dp" --no-dcgm-validation -t 1004 -d $dur \
+      >/tmp/gpu-workload.log 2>&1 &
+    note "$dp running (${dur}s)${uuid:+ on $uuid}"
+  elif have python3 && python3 -c 'import torch' 2>/dev/null; then
+    nohup "${runner[@]}" python3 -c '
+import torch
+a = torch.rand(8192, 8192, device="cuda")
+while True: a = a @ a' >/tmp/gpu-workload.log 2>&1 &
+    note "torch matmul loop running${uuid:+ on $uuid}"
+  elif have gcc; then
+    note "no dcgmproftester/torch — building prickle-gpu-spin (gcc + libcuda, no toolkit needed)"
+    emit_spinner_c /tmp/prickle-gpu-spin.c
+    if gcc -O2 -o /tmp/prickle-gpu-spin /tmp/prickle-gpu-spin.c -ldl 2>/tmp/gpu-workload.log; then
+      nohup "${runner[@]}" /tmp/prickle-gpu-spin $dur >>/tmp/gpu-workload.log 2>&1 &
+      note "prickle-gpu-spin running (${dur}s)${uuid:+ on $uuid}"
+    else
+      warn "spinner build failed — see /tmp/gpu-workload.log"
+    fi
+  else
+    warn "no dcgmproftester, torch, or gcc — start a GPU workload manually"
+  fi
+}
 fdinfo_has_drm_keys() {
   local p f
   for p in /proc/[0-9]*; do
@@ -185,7 +325,7 @@ cmd_prep() {
     nvidia-smi -mig 1 >/dev/null 2>&1 || warn "MIG enable failed (may need reboot)"
     # smallest GPU-instance profile, twice; 19 is the 1g profile on A100/H100/H200
     local prof
-    prof=$(nvidia-smi mig -lgip 2>/dev/null | awk '/MIG [0-9]+g/{print $NF; exit}')
+    prof=$(nvidia-smi mig -lgip 2>/dev/null | grep -oP 'MIG\s+\S+\s+\K[0-9]+' | head -1)
     nvidia-smi mig -cgi "${prof:-19},${prof:-19}" -C >/dev/null 2>&1 \
       || warn "MIG instance creation failed — check 'nvidia-smi mig -lgip'"
     systemctl start nvidia-persistenced >/dev/null 2>&1
@@ -195,21 +335,13 @@ cmd_prep() {
     say "Starting a GPU workload"
     local mig_uuid
     mig_uuid=$(nvidia-smi -L | grep -oP 'MIG-[0-9a-f-]+' | head -1)
-    if have dcgmproftester12 || have dcgmproftester; then
-      local dp; dp=$(have dcgmproftester12 && echo dcgmproftester12 || echo dcgmproftester)
-      CUDA_VISIBLE_DEVICES=${mig_uuid:-0} nohup "$dp" --no-dcgm-validation -t 1004 -d 600 \
-        >/tmp/gpu-workload.log 2>&1 &
-      note "$dp running (10 min)${mig_uuid:+ on $mig_uuid}"
-    elif have python3 && python3 -c 'import torch' 2>/dev/null; then
-      CUDA_VISIBLE_DEVICES=${mig_uuid:-0} nohup python3 -c '
-import torch
-a = torch.rand(8192, 8192, device="cuda")
-while True: a = a @ a' >/tmp/gpu-workload.log 2>&1 &
-      note "torch matmul loop running${mig_uuid:+ on $mig_uuid}"
+    start_nvidia_workload "${mig_uuid:-}"
+    sleep 12
+    if [[ $(nvidia_compute_apps) -gt 0 ]]; then
+      note "workload visible in query-compute-apps"
     else
-      warn "no dcgmproftester or torch — start a GPU workload manually (e.g. gpu-burn)"
+      warn "workload started but not yet visible — check /tmp/gpu-workload.log"
     fi
-    sleep 10
   fi
 
   echo; say "Re-running preflight"; GAPS=(); cmd_check
@@ -274,6 +406,7 @@ cmd_capture() {
       --format=csv,noheader,nounits > "$OUT_DIR/nvidia/query-gpu.csv" 2>&1
     nvidia-smi --query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory \
       --format=csv,noheader,nounits > "$OUT_DIR/nvidia/query-compute-apps.csv" 2>&1
+    nvidia-smi > "$OUT_DIR/nvidia/smi.txt" 2>&1
     nvidia-smi mig -lgip > "$OUT_DIR/nvidia/mig-profiles.txt" 2>&1
     nvidia-smi mig -lgi  > "$OUT_DIR/nvidia/mig-gi.txt" 2>&1
     nvidia-smi mig -lci  > "$OUT_DIR/nvidia/mig-ci.txt" 2>&1
