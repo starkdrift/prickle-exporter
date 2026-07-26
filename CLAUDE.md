@@ -56,9 +56,10 @@ mandatory from Phase 4.
 
 Every parser is developed against captured fixture trees under `testdata/`,
 mirroring real paths so `fsroot` points straight at them. **If no fixture exists
-for a case, stop and request a capture** ([scripts/capture-fixtures.sh](scripts/capture-fixtures.sh))
-rather than guessing a format or path shape. Synthetic fixtures are allowed only where
-hardware access is pending and must be marked synthetic in a README beside them.
+for a case, stop and request a capture** ([scripts/capture-fixtures.sh](scripts/capture-fixtures.sh),
+usage in [scripts/README.md](scripts/README.md)) rather than guessing a format
+or path shape. Synthetic fixtures are allowed only where hardware access is
+pending and must be marked synthetic in a README beside them.
 Exposition output is checked against golden files. NVML is the one path that
 can't be fixture-tested (C call, not a file read) — both NVIDIA sources sit
 behind the `nvidiaSource` interface and unit tests use a fake source.
