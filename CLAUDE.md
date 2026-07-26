@@ -82,7 +82,14 @@ docs, fixtures, charts, dashboard JSON. Never abbreviate the metric prefix
 
 ## Before you commit (SPEC.md §Session checklist)
 
-- `go vet`
-- tests green
-- `promtool check metrics` on sample output
-- the forbidden-string / denied-names grep
+Run [ci/check.sh](ci/check.sh) — it is the whole checklist in one command, and
+CI runs the same script:
+
+- `gofmt -l`, `go vet`, `go test ./...`
+- zero third-party deps (empty `go.sum`, no `require` block)
+- an SPDX header in every `.go` file
+- `promtool check metrics` on every `testdata/golden/*.prom`
+- the denied-names and metric-prefix greps
+
+`ci/denied-names.txt` is currently **empty**, so that gate reports VACUOUS and
+protects nothing until the discarded candidate names are filled in.

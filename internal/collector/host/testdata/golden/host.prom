@@ -1,0 +1,687 @@
+# HELP prickle_host_boot_time_seconds Unix timestamp at which the host booted.
+# TYPE prickle_host_boot_time_seconds gauge
+prickle_host_boot_time_seconds{node="fixture"} 1785042511
+# HELP prickle_host_context_switches_total Context switches since boot.
+# TYPE prickle_host_context_switches_total counter
+prickle_host_context_switches_total{node="fixture"} 8766266
+# HELP prickle_host_cpu_seconds_total Seconds the CPUs spent in each mode, summed across all cores.
+# TYPE prickle_host_cpu_seconds_total counter
+prickle_host_cpu_seconds_total{node="fixture",mode="user"} 76.99
+prickle_host_cpu_seconds_total{node="fixture",mode="nice"} 3.78
+prickle_host_cpu_seconds_total{node="fixture",mode="system"} 49.44
+prickle_host_cpu_seconds_total{node="fixture",mode="idle"} 48405.71
+prickle_host_cpu_seconds_total{node="fixture",mode="iowait"} 6.56
+prickle_host_cpu_seconds_total{node="fixture",mode="irq"} 0
+prickle_host_cpu_seconds_total{node="fixture",mode="softirq"} 1.33
+prickle_host_cpu_seconds_total{node="fixture",mode="steal"} 0.05
+prickle_host_cpu_seconds_total{node="fixture",mode="guest"} 0
+prickle_host_cpu_seconds_total{node="fixture",mode="guest_nice"} 0
+# HELP prickle_host_disk_discard_seconds_total Seconds spent discarding.
+# TYPE prickle_host_disk_discard_seconds_total counter
+prickle_host_disk_discard_seconds_total{node="fixture",device="vda"} 0.063
+prickle_host_disk_discard_seconds_total{node="fixture",device="vda1"} 0.063
+prickle_host_disk_discard_seconds_total{node="fixture",device="vda14"} 0
+prickle_host_disk_discard_seconds_total{node="fixture",device="vda15"} 0
+prickle_host_disk_discard_seconds_total{node="fixture",device="vdb"} 0
+prickle_host_disk_discard_seconds_total{node="fixture",device="vdc"} 0
+prickle_host_disk_discard_seconds_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_discarded_bytes_total Bytes discarded.
+# TYPE prickle_host_disk_discarded_bytes_total counter
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vda"} 3718393856
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vda1"} 3718393856
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vda14"} 0
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vda15"} 0
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vdb"} 0
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vdc"} 0
+prickle_host_disk_discarded_bytes_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_discards_completed_total Discards completed successfully.
+# TYPE prickle_host_disk_discards_completed_total counter
+prickle_host_disk_discards_completed_total{node="fixture",device="vda"} 732
+prickle_host_disk_discards_completed_total{node="fixture",device="vda1"} 732
+prickle_host_disk_discards_completed_total{node="fixture",device="vda14"} 0
+prickle_host_disk_discards_completed_total{node="fixture",device="vda15"} 0
+prickle_host_disk_discards_completed_total{node="fixture",device="vdb"} 0
+prickle_host_disk_discards_completed_total{node="fixture",device="vdc"} 0
+prickle_host_disk_discards_completed_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_discards_merged_total Discards merged with an adjacent request before being issued.
+# TYPE prickle_host_disk_discards_merged_total counter
+prickle_host_disk_discards_merged_total{node="fixture",device="vda"} 0
+prickle_host_disk_discards_merged_total{node="fixture",device="vda1"} 0
+prickle_host_disk_discards_merged_total{node="fixture",device="vda14"} 0
+prickle_host_disk_discards_merged_total{node="fixture",device="vda15"} 0
+prickle_host_disk_discards_merged_total{node="fixture",device="vdb"} 0
+prickle_host_disk_discards_merged_total{node="fixture",device="vdc"} 0
+prickle_host_disk_discards_merged_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_flush_requests_total Flush requests completed successfully.
+# TYPE prickle_host_disk_flush_requests_total counter
+prickle_host_disk_flush_requests_total{node="fixture",device="vda"} 5216
+prickle_host_disk_flush_requests_total{node="fixture",device="vda1"} 0
+prickle_host_disk_flush_requests_total{node="fixture",device="vda14"} 0
+prickle_host_disk_flush_requests_total{node="fixture",device="vda15"} 0
+prickle_host_disk_flush_requests_total{node="fixture",device="vdb"} 0
+prickle_host_disk_flush_requests_total{node="fixture",device="vdc"} 0
+prickle_host_disk_flush_requests_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_flush_seconds_total Seconds spent flushing.
+# TYPE prickle_host_disk_flush_seconds_total counter
+prickle_host_disk_flush_seconds_total{node="fixture",device="vda"} 0.431
+prickle_host_disk_flush_seconds_total{node="fixture",device="vda1"} 0
+prickle_host_disk_flush_seconds_total{node="fixture",device="vda14"} 0
+prickle_host_disk_flush_seconds_total{node="fixture",device="vda15"} 0
+prickle_host_disk_flush_seconds_total{node="fixture",device="vdb"} 0
+prickle_host_disk_flush_seconds_total{node="fixture",device="vdc"} 0
+prickle_host_disk_flush_seconds_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_info Block device identity: constant 1, carrying the device's major and minor numbers.
+# TYPE prickle_host_disk_info gauge
+prickle_host_disk_info{node="fixture",device="vda",major="252",minor="0"} 1
+prickle_host_disk_info{node="fixture",device="vda1",major="252",minor="1"} 1
+prickle_host_disk_info{node="fixture",device="vda14",major="252",minor="14"} 1
+prickle_host_disk_info{node="fixture",device="vda15",major="252",minor="15"} 1
+prickle_host_disk_info{node="fixture",device="vdb",major="252",minor="16"} 1
+prickle_host_disk_info{node="fixture",device="vdc",major="252",minor="32"} 1
+prickle_host_disk_info{node="fixture",device="vdc1",major="252",minor="33"} 1
+# HELP prickle_host_disk_io_now Requests currently in flight.
+# TYPE prickle_host_disk_io_now gauge
+prickle_host_disk_io_now{node="fixture",device="vda"} 0
+prickle_host_disk_io_now{node="fixture",device="vda1"} 0
+prickle_host_disk_io_now{node="fixture",device="vda14"} 0
+prickle_host_disk_io_now{node="fixture",device="vda15"} 0
+prickle_host_disk_io_now{node="fixture",device="vdb"} 0
+prickle_host_disk_io_now{node="fixture",device="vdc"} 0
+prickle_host_disk_io_now{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_io_time_seconds_total Seconds during which the device had I/O in flight.
+# TYPE prickle_host_disk_io_time_seconds_total counter
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vda"} 32.716
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vda1"} 32.62
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vda14"} 0.088
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vda15"} 0.088
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vdb"} 0.048
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vdc"} 0.116
+prickle_host_disk_io_time_seconds_total{node="fixture",device="vdc1"} 0.08
+# HELP prickle_host_disk_io_time_weighted_seconds_total Seconds spent on I/O, weighted by the queue depth at the time.
+# TYPE prickle_host_disk_io_time_weighted_seconds_total counter
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vda"} 42.915
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vda1"} 42.396
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vda14"} 0.025
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vda15"} 0.042
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vdb"} 0.006
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vdc"} 0.051000000000000004
+prickle_host_disk_io_time_weighted_seconds_total{node="fixture",device="vdc1"} 0.035
+# HELP prickle_host_disk_read_bytes_total Bytes read.
+# TYPE prickle_host_disk_read_bytes_total counter
+prickle_host_disk_read_bytes_total{node="fixture",device="vda"} 964666368
+prickle_host_disk_read_bytes_total{node="fixture",device="vda1"} 950212608
+prickle_host_disk_read_bytes_total{node="fixture",device="vda14"} 1605632
+prickle_host_disk_read_bytes_total{node="fixture",device="vda15"} 9776128
+prickle_host_disk_read_bytes_total{node="fixture",device="vdb"} 475136
+prickle_host_disk_read_bytes_total{node="fixture",device="vdc"} 10145280
+prickle_host_disk_read_bytes_total{node="fixture",device="vdc1"} 7851520
+# HELP prickle_host_disk_read_seconds_total Seconds spent reading.
+# TYPE prickle_host_disk_read_seconds_total counter
+prickle_host_disk_read_seconds_total{node="fixture",device="vda"} 4.515
+prickle_host_disk_read_seconds_total{node="fixture",device="vda1"} 4.43
+prickle_host_disk_read_seconds_total{node="fixture",device="vda14"} 0.025
+prickle_host_disk_read_seconds_total{node="fixture",device="vda15"} 0.041
+prickle_host_disk_read_seconds_total{node="fixture",device="vdb"} 0.006
+prickle_host_disk_read_seconds_total{node="fixture",device="vdc"} 0.051000000000000004
+prickle_host_disk_read_seconds_total{node="fixture",device="vdc1"} 0.035
+# HELP prickle_host_disk_reads_completed_total Reads completed successfully.
+# TYPE prickle_host_disk_reads_completed_total counter
+prickle_host_disk_reads_completed_total{node="fixture",device="vda"} 25188
+prickle_host_disk_reads_completed_total{node="fixture",device="vda1"} 24412
+prickle_host_disk_reads_completed_total{node="fixture",device="vda14"} 327
+prickle_host_disk_reads_completed_total{node="fixture",device="vda15"} 235
+prickle_host_disk_reads_completed_total{node="fixture",device="vdb"} 121
+prickle_host_disk_reads_completed_total{node="fixture",device="vdc"} 344
+prickle_host_disk_reads_completed_total{node="fixture",device="vdc1"} 192
+# HELP prickle_host_disk_reads_merged_total Reads merged with an adjacent request before being issued.
+# TYPE prickle_host_disk_reads_merged_total counter
+prickle_host_disk_reads_merged_total{node="fixture",device="vda"} 3354
+prickle_host_disk_reads_merged_total{node="fixture",device="vda1"} 2693
+prickle_host_disk_reads_merged_total{node="fixture",device="vda14"} 0
+prickle_host_disk_reads_merged_total{node="fixture",device="vda15"} 661
+prickle_host_disk_reads_merged_total{node="fixture",device="vdb"} 0
+prickle_host_disk_reads_merged_total{node="fixture",device="vdc"} 0
+prickle_host_disk_reads_merged_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_write_seconds_total Seconds spent writing.
+# TYPE prickle_host_disk_write_seconds_total counter
+prickle_host_disk_write_seconds_total{node="fixture",device="vda"} 37.904
+prickle_host_disk_write_seconds_total{node="fixture",device="vda1"} 37.902
+prickle_host_disk_write_seconds_total{node="fixture",device="vda14"} 0
+prickle_host_disk_write_seconds_total{node="fixture",device="vda15"} 0.001
+prickle_host_disk_write_seconds_total{node="fixture",device="vdb"} 0
+prickle_host_disk_write_seconds_total{node="fixture",device="vdc"} 0
+prickle_host_disk_write_seconds_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_writes_completed_total Writes completed successfully.
+# TYPE prickle_host_disk_writes_completed_total counter
+prickle_host_disk_writes_completed_total{node="fixture",device="vda"} 29661
+prickle_host_disk_writes_completed_total{node="fixture",device="vda1"} 29647
+prickle_host_disk_writes_completed_total{node="fixture",device="vda14"} 0
+prickle_host_disk_writes_completed_total{node="fixture",device="vda15"} 2
+prickle_host_disk_writes_completed_total{node="fixture",device="vdb"} 0
+prickle_host_disk_writes_completed_total{node="fixture",device="vdc"} 0
+prickle_host_disk_writes_completed_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_writes_merged_total Writes merged with an adjacent request before being issued.
+# TYPE prickle_host_disk_writes_merged_total counter
+prickle_host_disk_writes_merged_total{node="fixture",device="vda"} 56042
+prickle_host_disk_writes_merged_total{node="fixture",device="vda1"} 56034
+prickle_host_disk_writes_merged_total{node="fixture",device="vda14"} 0
+prickle_host_disk_writes_merged_total{node="fixture",device="vda15"} 0
+prickle_host_disk_writes_merged_total{node="fixture",device="vdb"} 0
+prickle_host_disk_writes_merged_total{node="fixture",device="vdc"} 0
+prickle_host_disk_writes_merged_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_disk_written_bytes_total Bytes written.
+# TYPE prickle_host_disk_written_bytes_total counter
+prickle_host_disk_written_bytes_total{node="fixture",device="vda"} 25901357056
+prickle_host_disk_written_bytes_total{node="fixture",device="vda1"} 25901302784
+prickle_host_disk_written_bytes_total{node="fixture",device="vda14"} 0
+prickle_host_disk_written_bytes_total{node="fixture",device="vda15"} 1024
+prickle_host_disk_written_bytes_total{node="fixture",device="vdb"} 0
+prickle_host_disk_written_bytes_total{node="fixture",device="vdc"} 0
+prickle_host_disk_written_bytes_total{node="fixture",device="vdc1"} 0
+# HELP prickle_host_filesystem_avail_bytes Filesystem space available to unprivileged users.
+# TYPE prickle_host_filesystem_avail_bytes gauge
+prickle_host_filesystem_avail_bytes{node="fixture",mountpoint="/run"} 25331617792
+prickle_host_filesystem_avail_bytes{node="fixture",mountpoint="/"} 730443165696
+prickle_host_filesystem_avail_bytes{node="fixture",mountpoint="/run/lock"} 5242880
+prickle_host_filesystem_avail_bytes{node="fixture",mountpoint="/boot/efi"} 103053312
+prickle_host_filesystem_avail_bytes{node="fixture",mountpoint="/run/user/0"} 25334337536
+# HELP prickle_host_filesystem_error Whether the last statfs of this filesystem failed.
+# TYPE prickle_host_filesystem_error gauge
+prickle_host_filesystem_error{node="fixture",mountpoint="/run"} 0
+prickle_host_filesystem_error{node="fixture",mountpoint="/"} 0
+prickle_host_filesystem_error{node="fixture",mountpoint="/run/lock"} 0
+prickle_host_filesystem_error{node="fixture",mountpoint="/boot/efi"} 0
+prickle_host_filesystem_error{node="fixture",mountpoint="/run/user/0"} 0
+# HELP prickle_host_filesystem_files Filesystem total inodes.
+# TYPE prickle_host_filesystem_files gauge
+prickle_host_filesystem_files{node="fixture",mountpoint="/run"} 30909181
+prickle_host_filesystem_files{node="fixture",mountpoint="/"} 46874624
+prickle_host_filesystem_files{node="fixture",mountpoint="/run/lock"} 30909181
+prickle_host_filesystem_files{node="fixture",mountpoint="/boot/efi"} 0
+prickle_host_filesystem_files{node="fixture",mountpoint="/run/user/0"} 6185143
+# HELP prickle_host_filesystem_files_free Filesystem free inodes.
+# TYPE prickle_host_filesystem_files_free gauge
+prickle_host_filesystem_files_free{node="fixture",mountpoint="/run"} 30908277
+prickle_host_filesystem_files_free{node="fixture",mountpoint="/"} 46242113
+prickle_host_filesystem_files_free{node="fixture",mountpoint="/run/lock"} 30909178
+prickle_host_filesystem_files_free{node="fixture",mountpoint="/boot/efi"} 0
+prickle_host_filesystem_files_free{node="fixture",mountpoint="/run/user/0"} 6185139
+# HELP prickle_host_filesystem_free_bytes Filesystem space free, including the root reserve.
+# TYPE prickle_host_filesystem_free_bytes gauge
+prickle_host_filesystem_free_bytes{node="fixture",mountpoint="/run"} 25331617792
+prickle_host_filesystem_free_bytes{node="fixture",mountpoint="/"} 730459942912
+prickle_host_filesystem_free_bytes{node="fixture",mountpoint="/run/lock"} 5242880
+prickle_host_filesystem_free_bytes{node="fixture",mountpoint="/boot/efi"} 103053312
+prickle_host_filesystem_free_bytes{node="fixture",mountpoint="/run/user/0"} 25334337536
+# HELP prickle_host_filesystem_info Filesystem identity: constant 1, carrying the backing device and filesystem type.
+# TYPE prickle_host_filesystem_info gauge
+prickle_host_filesystem_info{node="fixture",mountpoint="/run",device="tmpfs",fstype="tmpfs"} 1
+prickle_host_filesystem_info{node="fixture",mountpoint="/",device="/dev/vda1",fstype="ext4"} 1
+prickle_host_filesystem_info{node="fixture",mountpoint="/run/lock",device="tmpfs",fstype="tmpfs"} 1
+prickle_host_filesystem_info{node="fixture",mountpoint="/boot/efi",device="/dev/vda15",fstype="vfat"} 1
+prickle_host_filesystem_info{node="fixture",mountpoint="/run/user/0",device="tmpfs",fstype="tmpfs"} 1
+# HELP prickle_host_filesystem_readonly Whether the filesystem is mounted read-only.
+# TYPE prickle_host_filesystem_readonly gauge
+prickle_host_filesystem_readonly{node="fixture",mountpoint="/run"} 0
+prickle_host_filesystem_readonly{node="fixture",mountpoint="/"} 0
+prickle_host_filesystem_readonly{node="fixture",mountpoint="/run/lock"} 0
+prickle_host_filesystem_readonly{node="fixture",mountpoint="/boot/efi"} 0
+prickle_host_filesystem_readonly{node="fixture",mountpoint="/run/user/0"} 0
+# HELP prickle_host_filesystem_size_bytes Filesystem capacity.
+# TYPE prickle_host_filesystem_size_bytes gauge
+prickle_host_filesystem_size_bytes{node="fixture",mountpoint="/run"} 25334349824
+prickle_host_filesystem_size_bytes{node="fixture",mountpoint="/"} 749062754304
+prickle_host_filesystem_size_bytes{node="fixture",mountpoint="/run/lock"} 5242880
+prickle_host_filesystem_size_bytes{node="fixture",mountpoint="/boot/efi"} 109395456
+prickle_host_filesystem_size_bytes{node="fixture",mountpoint="/run/user/0"} 25334345728
+# HELP prickle_host_forks_total Processes and threads forked since boot.
+# TYPE prickle_host_forks_total counter
+prickle_host_forks_total{node="fixture"} 12744
+# HELP prickle_host_interrupts_total Interrupts serviced since boot, all vectors.
+# TYPE prickle_host_interrupts_total counter
+prickle_host_interrupts_total{node="fixture"} 5048544
+# HELP prickle_host_load1 1-minute load average.
+# TYPE prickle_host_load1 gauge
+prickle_host_load1{node="fixture"} 0.07
+# HELP prickle_host_load15 15-minute load average.
+# TYPE prickle_host_load15 gauge
+prickle_host_load15{node="fixture"} 0
+# HELP prickle_host_load5 5-minute load average.
+# TYPE prickle_host_load5 gauge
+prickle_host_load5{node="fixture"} 0.05
+# HELP prickle_host_memory_active_anon_bytes Kernel meminfo field Active(anon), in bytes.
+# TYPE prickle_host_memory_active_anon_bytes gauge
+prickle_host_memory_active_anon_bytes{node="fixture"} 2215936
+# HELP prickle_host_memory_active_bytes Kernel meminfo field Active, in bytes.
+# TYPE prickle_host_memory_active_bytes gauge
+prickle_host_memory_active_bytes{node="fixture"} 1083625472
+# HELP prickle_host_memory_active_file_bytes Kernel meminfo field Active(file), in bytes.
+# TYPE prickle_host_memory_active_file_bytes gauge
+prickle_host_memory_active_file_bytes{node="fixture"} 1081409536
+# HELP prickle_host_memory_anon_huge_pages_bytes Kernel meminfo field AnonHugePages, in bytes.
+# TYPE prickle_host_memory_anon_huge_pages_bytes gauge
+prickle_host_memory_anon_huge_pages_bytes{node="fixture"} 0
+# HELP prickle_host_memory_anon_pages_bytes Kernel meminfo field AnonPages, in bytes.
+# TYPE prickle_host_memory_anon_pages_bytes gauge
+prickle_host_memory_anon_pages_bytes{node="fixture"} 925609984
+# HELP prickle_host_memory_bounce_bytes Kernel meminfo field Bounce, in bytes.
+# TYPE prickle_host_memory_bounce_bytes gauge
+prickle_host_memory_bounce_bytes{node="fixture"} 0
+# HELP prickle_host_memory_buffers_bytes Kernel meminfo field Buffers, in bytes.
+# TYPE prickle_host_memory_buffers_bytes gauge
+prickle_host_memory_buffers_bytes{node="fixture"} 111345664
+# HELP prickle_host_memory_cached_bytes Kernel meminfo field Cached, in bytes.
+# TYPE prickle_host_memory_cached_bytes gauge
+prickle_host_memory_cached_bytes{node="fixture"} 2941005824
+# HELP prickle_host_memory_commit_limit_bytes Kernel meminfo field CommitLimit, in bytes.
+# TYPE prickle_host_memory_commit_limit_bytes gauge
+prickle_host_memory_commit_limit_bytes{node="fixture"} 126671745024
+# HELP prickle_host_memory_committed_as_bytes Kernel meminfo field Committed_AS, in bytes.
+# TYPE prickle_host_memory_committed_as_bytes gauge
+prickle_host_memory_committed_as_bytes{node="fixture"} 3386413056
+# HELP prickle_host_memory_direct_map1g_bytes Kernel meminfo field DirectMap1G, in bytes.
+# TYPE prickle_host_memory_direct_map1g_bytes gauge
+prickle_host_memory_direct_map1g_bytes{node="fixture"} 254476812288
+# HELP prickle_host_memory_direct_map2m_bytes Kernel meminfo field DirectMap2M, in bytes.
+# TYPE prickle_host_memory_direct_map2m_bytes gauge
+prickle_host_memory_direct_map2m_bytes{node="fixture"} 4857004032
+# HELP prickle_host_memory_direct_map4k_bytes Kernel meminfo field DirectMap4k, in bytes.
+# TYPE prickle_host_memory_direct_map4k_bytes gauge
+prickle_host_memory_direct_map4k_bytes{node="fixture"} 511557632
+# HELP prickle_host_memory_dirty_bytes Kernel meminfo field Dirty, in bytes.
+# TYPE prickle_host_memory_dirty_bytes gauge
+prickle_host_memory_dirty_bytes{node="fixture"} 118784
+# HELP prickle_host_memory_file_huge_pages_bytes Kernel meminfo field FileHugePages, in bytes.
+# TYPE prickle_host_memory_file_huge_pages_bytes gauge
+prickle_host_memory_file_huge_pages_bytes{node="fixture"} 0
+# HELP prickle_host_memory_file_pmd_mapped_bytes Kernel meminfo field FilePmdMapped, in bytes.
+# TYPE prickle_host_memory_file_pmd_mapped_bytes gauge
+prickle_host_memory_file_pmd_mapped_bytes{node="fixture"} 0
+# HELP prickle_host_memory_hardware_corrupted_bytes Kernel meminfo field HardwareCorrupted, in bytes.
+# TYPE prickle_host_memory_hardware_corrupted_bytes gauge
+prickle_host_memory_hardware_corrupted_bytes{node="fixture"} 0
+# HELP prickle_host_memory_huge_pages Huge pages by state, as counts of pages (see prickle_host_memory_hugepagesize_bytes).
+# TYPE prickle_host_memory_huge_pages gauge
+prickle_host_memory_huge_pages{node="fixture",state="total"} 0
+prickle_host_memory_huge_pages{node="fixture",state="free"} 0
+prickle_host_memory_huge_pages{node="fixture",state="rsvd"} 0
+prickle_host_memory_huge_pages{node="fixture",state="surp"} 0
+# HELP prickle_host_memory_hugepagesize_bytes Kernel meminfo field Hugepagesize, in bytes.
+# TYPE prickle_host_memory_hugepagesize_bytes gauge
+prickle_host_memory_hugepagesize_bytes{node="fixture"} 2097152
+# HELP prickle_host_memory_hugetlb_bytes Kernel meminfo field Hugetlb, in bytes.
+# TYPE prickle_host_memory_hugetlb_bytes gauge
+prickle_host_memory_hugetlb_bytes{node="fixture"} 0
+# HELP prickle_host_memory_inactive_anon_bytes Kernel meminfo field Inactive(anon), in bytes.
+# TYPE prickle_host_memory_inactive_anon_bytes gauge
+prickle_host_memory_inactive_anon_bytes{node="fixture"} 915857408
+# HELP prickle_host_memory_inactive_bytes Kernel meminfo field Inactive, in bytes.
+# TYPE prickle_host_memory_inactive_bytes gauge
+prickle_host_memory_inactive_bytes{node="fixture"} 2863173632
+# HELP prickle_host_memory_inactive_file_bytes Kernel meminfo field Inactive(file), in bytes.
+# TYPE prickle_host_memory_inactive_file_bytes gauge
+prickle_host_memory_inactive_file_bytes{node="fixture"} 1947316224
+# HELP prickle_host_memory_kernel_reclaimable_bytes Kernel meminfo field KReclaimable, in bytes.
+# TYPE prickle_host_memory_kernel_reclaimable_bytes gauge
+prickle_host_memory_kernel_reclaimable_bytes{node="fixture"} 173404160
+# HELP prickle_host_memory_kernel_stack_bytes Kernel meminfo field KernelStack, in bytes.
+# TYPE prickle_host_memory_kernel_stack_bytes gauge
+prickle_host_memory_kernel_stack_bytes{node="fixture"} 13381632
+# HELP prickle_host_memory_mapped_bytes Kernel meminfo field Mapped, in bytes.
+# TYPE prickle_host_memory_mapped_bytes gauge
+prickle_host_memory_mapped_bytes{node="fixture"} 716627968
+# HELP prickle_host_memory_mem_available_bytes Kernel meminfo field MemAvailable, in bytes.
+# TYPE prickle_host_memory_mem_available_bytes gauge
+prickle_host_memory_mem_available_bytes{node="fixture"} 249700446208
+# HELP prickle_host_memory_mem_free_bytes Kernel meminfo field MemFree, in bytes.
+# TYPE prickle_host_memory_mem_free_bytes gauge
+prickle_host_memory_mem_free_bytes{node="fixture"} 248480178176
+# HELP prickle_host_memory_mem_total_bytes Kernel meminfo field MemTotal, in bytes.
+# TYPE prickle_host_memory_mem_total_bytes gauge
+prickle_host_memory_mem_total_bytes{node="fixture"} 253343494144
+# HELP prickle_host_memory_mlocked_bytes Kernel meminfo field Mlocked, in bytes.
+# TYPE prickle_host_memory_mlocked_bytes gauge
+prickle_host_memory_mlocked_bytes{node="fixture"} 28282880
+# HELP prickle_host_memory_nfs_unstable_bytes Kernel meminfo field NFS_Unstable, in bytes.
+# TYPE prickle_host_memory_nfs_unstable_bytes gauge
+prickle_host_memory_nfs_unstable_bytes{node="fixture"} 0
+# HELP prickle_host_memory_page_tables_bytes Kernel meminfo field PageTables, in bytes.
+# TYPE prickle_host_memory_page_tables_bytes gauge
+prickle_host_memory_page_tables_bytes{node="fixture"} 11948032
+# HELP prickle_host_memory_percpu_bytes Kernel meminfo field Percpu, in bytes.
+# TYPE prickle_host_memory_percpu_bytes gauge
+prickle_host_memory_percpu_bytes{node="fixture"} 20348928
+# HELP prickle_host_memory_shmem_bytes Kernel meminfo field Shmem, in bytes.
+# TYPE prickle_host_memory_shmem_bytes gauge
+prickle_host_memory_shmem_bytes{node="fixture"} 14344192
+# HELP prickle_host_memory_shmem_huge_pages_bytes Kernel meminfo field ShmemHugePages, in bytes.
+# TYPE prickle_host_memory_shmem_huge_pages_bytes gauge
+prickle_host_memory_shmem_huge_pages_bytes{node="fixture"} 0
+# HELP prickle_host_memory_shmem_pmd_mapped_bytes Kernel meminfo field ShmemPmdMapped, in bytes.
+# TYPE prickle_host_memory_shmem_pmd_mapped_bytes gauge
+prickle_host_memory_shmem_pmd_mapped_bytes{node="fixture"} 0
+# HELP prickle_host_memory_slab_bytes Kernel meminfo field Slab, in bytes.
+# TYPE prickle_host_memory_slab_bytes gauge
+prickle_host_memory_slab_bytes{node="fixture"} 312455168
+# HELP prickle_host_memory_slab_reclaimable_bytes Kernel meminfo field SReclaimable, in bytes.
+# TYPE prickle_host_memory_slab_reclaimable_bytes gauge
+prickle_host_memory_slab_reclaimable_bytes{node="fixture"} 173404160
+# HELP prickle_host_memory_slab_unreclaim_bytes Kernel meminfo field SUnreclaim, in bytes.
+# TYPE prickle_host_memory_slab_unreclaim_bytes gauge
+prickle_host_memory_slab_unreclaim_bytes{node="fixture"} 139051008
+# HELP prickle_host_memory_swap_cached_bytes Kernel meminfo field SwapCached, in bytes.
+# TYPE prickle_host_memory_swap_cached_bytes gauge
+prickle_host_memory_swap_cached_bytes{node="fixture"} 0
+# HELP prickle_host_memory_swap_free_bytes Kernel meminfo field SwapFree, in bytes.
+# TYPE prickle_host_memory_swap_free_bytes gauge
+prickle_host_memory_swap_free_bytes{node="fixture"} 0
+# HELP prickle_host_memory_swap_total_bytes Kernel meminfo field SwapTotal, in bytes.
+# TYPE prickle_host_memory_swap_total_bytes gauge
+prickle_host_memory_swap_total_bytes{node="fixture"} 0
+# HELP prickle_host_memory_unevictable_bytes Kernel meminfo field Unevictable, in bytes.
+# TYPE prickle_host_memory_unevictable_bytes gauge
+prickle_host_memory_unevictable_bytes{node="fixture"} 31428608
+# HELP prickle_host_memory_vmalloc_chunk_bytes Kernel meminfo field VmallocChunk, in bytes.
+# TYPE prickle_host_memory_vmalloc_chunk_bytes gauge
+prickle_host_memory_vmalloc_chunk_bytes{node="fixture"} 0
+# HELP prickle_host_memory_vmalloc_total_bytes Kernel meminfo field VmallocTotal, in bytes.
+# TYPE prickle_host_memory_vmalloc_total_bytes gauge
+prickle_host_memory_vmalloc_total_bytes{node="fixture"} 14073748835531776
+# HELP prickle_host_memory_vmalloc_used_bytes Kernel meminfo field VmallocUsed, in bytes.
+# TYPE prickle_host_memory_vmalloc_used_bytes gauge
+prickle_host_memory_vmalloc_used_bytes{node="fixture"} 110940160
+# HELP prickle_host_memory_writeback_bytes Kernel meminfo field Writeback, in bytes.
+# TYPE prickle_host_memory_writeback_bytes gauge
+prickle_host_memory_writeback_bytes{node="fixture"} 0
+# HELP prickle_host_memory_writeback_tmp_bytes Kernel meminfo field WritebackTmp, in bytes.
+# TYPE prickle_host_memory_writeback_tmp_bytes gauge
+prickle_host_memory_writeback_tmp_bytes{node="fixture"} 0
+# HELP prickle_host_network_receive_bytes_total Bytes received.
+# TYPE prickle_host_network_receive_bytes_total counter
+prickle_host_network_receive_bytes_total{node="fixture",interface="lo"} 33503626
+prickle_host_network_receive_bytes_total{node="fixture",interface="eth0"} 467416665
+prickle_host_network_receive_bytes_total{node="fixture",interface="eth1"} 830
+prickle_host_network_receive_bytes_total{node="fixture",interface="docker0"} 252
+prickle_host_network_receive_bytes_total{node="fixture",interface="vethec7b279"} 126
+prickle_host_network_receive_bytes_total{node="fixture",interface="veth85037bf"} 126
+prickle_host_network_receive_bytes_total{node="fixture",interface="veth4fb42de"} 126
+prickle_host_network_receive_bytes_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_bytes_total{node="fixture",interface="cni0"} 7341310
+prickle_host_network_receive_bytes_total{node="fixture",interface="veth3d5d7dc0"} 373609
+prickle_host_network_receive_bytes_total{node="fixture",interface="vethc7196daa"} 3645483
+prickle_host_network_receive_bytes_total{node="fixture",interface="veth12881be5"} 17880
+prickle_host_network_receive_bytes_total{node="fixture",interface="vethc4d97133"} 1032
+prickle_host_network_receive_bytes_total{node="fixture",interface="veth7eb41696"} 231119
+prickle_host_network_receive_bytes_total{node="fixture",interface="vethe93bb971"} 1032
+# HELP prickle_host_network_receive_compressed_total Compressed packets received.
+# TYPE prickle_host_network_receive_compressed_total counter
+prickle_host_network_receive_compressed_total{node="fixture",interface="lo"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="eth0"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="eth1"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="docker0"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="cni0"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_receive_compressed_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_receive_drop_total Packets dropped on receive.
+# TYPE prickle_host_network_receive_drop_total counter
+prickle_host_network_receive_drop_total{node="fixture",interface="lo"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="eth0"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="eth1"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="docker0"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="cni0"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_receive_drop_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_receive_errs_total Receive errors.
+# TYPE prickle_host_network_receive_errs_total counter
+prickle_host_network_receive_errs_total{node="fixture",interface="lo"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="eth0"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="eth1"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="docker0"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="cni0"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_receive_errs_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_receive_fifo_total Receive FIFO overruns.
+# TYPE prickle_host_network_receive_fifo_total counter
+prickle_host_network_receive_fifo_total{node="fixture",interface="lo"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="eth0"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="eth1"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="docker0"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="cni0"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_receive_fifo_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_receive_frame_total Receive framing errors.
+# TYPE prickle_host_network_receive_frame_total counter
+prickle_host_network_receive_frame_total{node="fixture",interface="lo"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="eth0"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="eth1"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="docker0"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="cni0"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_receive_frame_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_receive_multicast_total Multicast packets received.
+# TYPE prickle_host_network_receive_multicast_total counter
+prickle_host_network_receive_multicast_total{node="fixture",interface="lo"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="eth0"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="eth1"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="docker0"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="cni0"} 89
+prickle_host_network_receive_multicast_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_receive_multicast_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_receive_packets_total Packets received.
+# TYPE prickle_host_network_receive_packets_total counter
+prickle_host_network_receive_packets_total{node="fixture",interface="lo"} 40008
+prickle_host_network_receive_packets_total{node="fixture",interface="eth0"} 34157
+prickle_host_network_receive_packets_total{node="fixture",interface="eth1"} 11
+prickle_host_network_receive_packets_total{node="fixture",interface="docker0"} 9
+prickle_host_network_receive_packets_total{node="fixture",interface="vethec7b279"} 3
+prickle_host_network_receive_packets_total{node="fixture",interface="veth85037bf"} 3
+prickle_host_network_receive_packets_total{node="fixture",interface="veth4fb42de"} 3
+prickle_host_network_receive_packets_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_receive_packets_total{node="fixture",interface="cni0"} 17365
+prickle_host_network_receive_packets_total{node="fixture",interface="veth3d5d7dc0"} 3876
+prickle_host_network_receive_packets_total{node="fixture",interface="vethc7196daa"} 8672
+prickle_host_network_receive_packets_total{node="fixture",interface="veth12881be5"} 203
+prickle_host_network_receive_packets_total{node="fixture",interface="vethc4d97133"} 14
+prickle_host_network_receive_packets_total{node="fixture",interface="veth7eb41696"} 2216
+prickle_host_network_receive_packets_total{node="fixture",interface="vethe93bb971"} 14
+# HELP prickle_host_network_transmit_bytes_total Bytes transmitted.
+# TYPE prickle_host_network_transmit_bytes_total counter
+prickle_host_network_transmit_bytes_total{node="fixture",interface="lo"} 33503626
+prickle_host_network_transmit_bytes_total{node="fixture",interface="eth0"} 2212454
+prickle_host_network_transmit_bytes_total{node="fixture",interface="eth1"} 2910
+prickle_host_network_transmit_bytes_total{node="fixture",interface="docker0"} 526
+prickle_host_network_transmit_bytes_total{node="fixture",interface="vethec7b279"} 1854
+prickle_host_network_transmit_bytes_total{node="fixture",interface="veth85037bf"} 1464
+prickle_host_network_transmit_bytes_total{node="fixture",interface="veth4fb42de"} 1312
+prickle_host_network_transmit_bytes_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_bytes_total{node="fixture",interface="cni0"} 11253567
+prickle_host_network_transmit_bytes_total{node="fixture",interface="veth3d5d7dc0"} 392684
+prickle_host_network_transmit_bytes_total{node="fixture",interface="vethc7196daa"} 2341494
+prickle_host_network_transmit_bytes_total{node="fixture",interface="veth12881be5"} 33377
+prickle_host_network_transmit_bytes_total{node="fixture",interface="vethc4d97133"} 5012
+prickle_host_network_transmit_bytes_total{node="fixture",interface="veth7eb41696"} 547928
+prickle_host_network_transmit_bytes_total{node="fixture",interface="vethe93bb971"} 2668
+# HELP prickle_host_network_transmit_carrier_total Transmit carrier losses.
+# TYPE prickle_host_network_transmit_carrier_total counter
+prickle_host_network_transmit_carrier_total{node="fixture",interface="lo"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="eth0"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="eth1"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="docker0"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="cni0"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_transmit_carrier_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_transmit_colls_total Transmit collisions.
+# TYPE prickle_host_network_transmit_colls_total counter
+prickle_host_network_transmit_colls_total{node="fixture",interface="lo"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="eth0"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="eth1"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="docker0"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="cni0"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_transmit_colls_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_transmit_compressed_total Compressed packets transmitted.
+# TYPE prickle_host_network_transmit_compressed_total counter
+prickle_host_network_transmit_compressed_total{node="fixture",interface="lo"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="eth0"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="eth1"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="docker0"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="cni0"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_transmit_compressed_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_transmit_drop_total Packets dropped on transmit.
+# TYPE prickle_host_network_transmit_drop_total counter
+prickle_host_network_transmit_drop_total{node="fixture",interface="lo"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="eth0"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="eth1"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="docker0"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="flannel.1"} 5
+prickle_host_network_transmit_drop_total{node="fixture",interface="cni0"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_transmit_drop_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_transmit_errs_total Transmit errors.
+# TYPE prickle_host_network_transmit_errs_total counter
+prickle_host_network_transmit_errs_total{node="fixture",interface="lo"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="eth0"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="eth1"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="docker0"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="cni0"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_transmit_errs_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_transmit_fifo_total Transmit FIFO overruns.
+# TYPE prickle_host_network_transmit_fifo_total counter
+prickle_host_network_transmit_fifo_total{node="fixture",interface="lo"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="eth0"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="eth1"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="docker0"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="vethec7b279"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="veth85037bf"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="veth4fb42de"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="cni0"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="veth3d5d7dc0"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="vethc7196daa"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="veth12881be5"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="vethc4d97133"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="veth7eb41696"} 0
+prickle_host_network_transmit_fifo_total{node="fixture",interface="vethe93bb971"} 0
+# HELP prickle_host_network_transmit_packets_total Packets transmitted.
+# TYPE prickle_host_network_transmit_packets_total counter
+prickle_host_network_transmit_packets_total{node="fixture",interface="lo"} 40008
+prickle_host_network_transmit_packets_total{node="fixture",interface="eth0"} 18024
+prickle_host_network_transmit_packets_total{node="fixture",interface="eth1"} 57
+prickle_host_network_transmit_packets_total{node="fixture",interface="docker0"} 5
+prickle_host_network_transmit_packets_total{node="fixture",interface="vethec7b279"} 25
+prickle_host_network_transmit_packets_total{node="fixture",interface="veth85037bf"} 20
+prickle_host_network_transmit_packets_total{node="fixture",interface="veth4fb42de"} 18
+prickle_host_network_transmit_packets_total{node="fixture",interface="flannel.1"} 0
+prickle_host_network_transmit_packets_total{node="fixture",interface="cni0"} 18937
+prickle_host_network_transmit_packets_total{node="fixture",interface="veth3d5d7dc0"} 4077
+prickle_host_network_transmit_packets_total{node="fixture",interface="vethc7196daa"} 10565
+prickle_host_network_transmit_packets_total{node="fixture",interface="veth12881be5"} 258
+prickle_host_network_transmit_packets_total{node="fixture",interface="vethc4d97133"} 68
+prickle_host_network_transmit_packets_total{node="fixture",interface="veth7eb41696"} 2295
+prickle_host_network_transmit_packets_total{node="fixture",interface="vethe93bb971"} 36
+# HELP prickle_host_pressure_stalled_seconds_total Seconds of stall from resource pressure. kind=some: at least one task stalled; kind=full: every task stalled.
+# TYPE prickle_host_pressure_stalled_seconds_total counter
+prickle_host_pressure_stalled_seconds_total{node="fixture",resource="cpu",kind="some"} 4.788821
+prickle_host_pressure_stalled_seconds_total{node="fixture",resource="cpu",kind="full"} 0
+prickle_host_pressure_stalled_seconds_total{node="fixture",resource="memory",kind="some"} 0
+prickle_host_pressure_stalled_seconds_total{node="fixture",resource="memory",kind="full"} 0
+prickle_host_pressure_stalled_seconds_total{node="fixture",resource="io",kind="some"} 1.16739
+prickle_host_pressure_stalled_seconds_total{node="fixture",resource="io",kind="full"} 1.145566
+# HELP prickle_host_procs_blocked Processes blocked waiting for I/O.
+# TYPE prickle_host_procs_blocked gauge
+prickle_host_procs_blocked{node="fixture"} 0
+# HELP prickle_host_procs_running Processes in the runnable state.
+# TYPE prickle_host_procs_running gauge
+prickle_host_procs_running{node="fixture"} 1
+# HELP prickle_host_softirqs_total Softirqs serviced since boot, all vectors.
+# TYPE prickle_host_softirqs_total counter
+prickle_host_softirqs_total{node="fixture"} 740265

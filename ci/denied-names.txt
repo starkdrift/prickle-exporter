@@ -1,0 +1,15 @@
+# Discarded candidate names — one per line, blank lines and #-comments ignored.
+#
+# SPEC.md §Identity: the names in the identity table are the only ones used
+# anywhere in the tree. Every name considered and rejected during naming goes
+# here, and ci/check.sh greps the working tree for it. The grep excludes this
+# file and SPEC.md, which are the two places a discarded name may legitimately
+# be written down.
+#
+# Matching is case-insensitive and substring-based, so a short entry will catch
+# a lot: prefer the full discarded name.
+#
+# THIS LIST IS EMPTY AND NEEDS FILLING IN. The names discarded during the
+# naming pass are not recorded anywhere in the repository, so they could not be
+# recovered when this file was created. Until entries are added, ci/check.sh
+# reports the check as vacuous rather than as passing.
