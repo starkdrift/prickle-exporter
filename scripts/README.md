@@ -1,4 +1,56 @@
-# Fixture capture
+# scripts/
+
+| Script | Mutates anything? | What it is for |
+|---|---|---|
+| [dev-run.sh](dev-run.sh) | no | Start the exporter from source on your own machine. |
+| [capture-fixtures.sh](capture-fixtures.sh) | `prep` does, heavily | Dump a real host's `/proc`, `/sys`, cgroup and GPU output into a fixture tree. |
+
+The pre-commit gate is not here — it is [ci/check.sh](../ci/check.sh).
+
+## Running the exporter — dev-run.sh
+
+Starts `prickle` from source with dev-friendly defaults (debug logging, a 2s
+sample interval instead of 10s). No root: every `/proc` file the Phase 1 host
+collector reads is world readable.
+
+```sh
+./scripts/dev-run.sh              # live host, serve on :10047 until Ctrl-C
+./scripts/dev-run.sh fixture      # same, but reading a captured fixture tree
+./scripts/dev-run.sh diagnose     # what this host can and cannot be read from
+./scripts/dev-run.sh scrape       # start, scrape once, print, promtool, stop
+```
+
+Anything after the subcommand goes straight to the binary, after the script's
+own flags, so it wins — Go's `flag` keeps the last occurrence:
+
+```sh
+./scripts/dev-run.sh run -collector.cpu.per-core -log.level=info
+./scripts/dev-run.sh scrape -path.rootfs=internal/collector/host/testdata/h200-ubuntu2204-20260726
+```
+
+`ADDR`, `TELEMETRY_PATH`, `INTERVAL`, `LOG_LEVEL`, `NODE` and `GO` override the
+defaults from the environment. `ADDR` exists for when something else on your
+workstation already holds 10047 — SPEC §Identity fixes the port, so don't
+change it in anything that ships.
+
+Notes on the two less obvious modes:
+
+- **`fixture`** finds the tree itself by looking for a `proc/` directory under
+  `internal/collector/*/testdata/*/`, so a new capture doesn't leave the script
+  pointing at the old one; pass a path as the first argument when there is more
+  than one. It sets `-node=prickle-fixture` so output doesn't carry your
+  hostname. `Statfs` is a syscall rather than a file (SPEC §Collectors), so the
+  filesystem series still describe *your* machine, and fixture mount points that
+  don't exist locally come back as `prickle_filesystem_error 1`. That is the
+  expected result, not a broken fixture.
+- **`scrape`** builds to `bin/` rather than using `go run`, because `go run`
+  execs the binary as a child and killing it would leave the exporter holding
+  the port. Output lands in `bin/dev-scrape.prom` (gitignored) and is linted
+  with `promtool check metrics` — the same gate `ci/check.sh` runs on the golden
+  files, here against live output, where the host rather than the fixture
+  decides what gets named.
+
+## Fixture capture — capture-fixtures.sh
 
 [SPEC.md](../SPEC.md) §Testing rules: every parser is developed against a
 captured fixture tree under `testdata/`, and **file formats and path shapes are
@@ -13,7 +65,7 @@ files that looks complete and isn't. The script's `check` and `prep` commands
 exist to prevent exactly that, because it already happened once (see
 [Known-good and known-empty](#known-good-and-known-empty)).
 
-## The rental workflow
+### The rental workflow
 
 Capture hosts are usually rented by the hour and destroyed afterwards, so the
 order matters:
@@ -29,7 +81,7 @@ Then copy the tarball off the host, verify it locally, and **only then** destroy
 the machine. If the capture ends with the `CAPTURE IS INCOMPLETE` banner, the
 host still has something you can't get back once it's gone.
 
-## Commands
+### Commands
 
 | Command | Mutates host? | Root | Exit | What it does |
 |---|---|---|---|---|
@@ -49,7 +101,7 @@ The script runs `set -uo pipefail` **without** `-e`, on purpose: a partial
 capture from a host you're about to lose beats no capture at all. Individual
 failures are reported as `[skip]` and the run continues.
 
-## What comes back, by phase
+### What comes back, by phase
 
 | Phase | Fixtures | Source |
 |---|---|---|
@@ -65,7 +117,7 @@ Per-cgroup files captured: `cgroup.type`, `cgroup.procs`, `cpu.stat`, `cpu.max`,
 syscall behind an interface. The script writes `meta/statfs-reference.txt` from
 `df -B1` instead, as a cross-check for hand-built values.
 
-## Output layout
+### Output layout
 
 ```
 prickle-fixtures-<host>-<YYYYMMDD>/
@@ -87,9 +139,9 @@ Files are read with `cat`, not `cp`: `/proc` and `/sys` files report size 0 and
 `cp` mangles them. `exe` is stored as `exe.link` (the resolved target as text),
 since a symlink into a fixture tree would dangle.
 
-## Platform notes
+### Platform notes
 
-### NVIDIA
+#### NVIDIA
 
 - **MIG is off by default** on every cloud rental seen so far. Enabling it
   requires no process to hold the GPU, which on NVIDIA's own images means
@@ -107,7 +159,7 @@ since a symlink into a fixture tree would dangle.
   GPU attribution on NVIDIA must come from NVML or `nvidia-smi`, never from DRM
   fdinfo. Keep it, and mark it as such in the `testdata/` README.
 
-### AMD
+#### AMD
 
 - Prefer bare metal or a full VM. A container or a paravirtualised slice can
   give you a partial or synthetic `amdgpu` sysfs tree, which is worse than none.
@@ -119,13 +171,13 @@ since a symlink into a fixture tree would dangle.
 - No script changes are needed for AMD — the sysfs and `rocm-smi` sections
   engage automatically when `gpu_busy_percent` is present.
 
-### Intel
+#### Intel
 
 Intel GPUs are read through DRM fdinfo, same path as AMD, with no vendor-tool
 section. The `/dev/dri/*` fdinfo capture already covers them; a dedicated Intel
 run is worth doing once Phase 3 has an Intel code path.
 
-## After the capture
+### After the capture
 
 1. **Review before committing.** The tree contains hostnames, container and
    image names, process names and command paths. Scrub anything you don't want
@@ -141,7 +193,7 @@ run is worth doing once Phase 3 has an Intel code path.
    hardware access is pending, and SPEC requires them flagged as synthetic in a
    README beside them. Don't mix them into a captured tree unlabelled.
 
-## Known-good and known-empty
+### Known-good and known-empty
 
 The first H200 rental (Ubuntu 5.15, driver 580.173.02) produced complete and
 correct Phase 1 material, `cgroup2fs` confirming pure v2, and the NVIDIA
