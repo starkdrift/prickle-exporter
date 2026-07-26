@@ -44,8 +44,23 @@ this file. Never abbreviate the metric prefix.
 
 - Identity labels on hot series, and only these: `node`, `namespace`, `pod`,
   `container`, `gpu_uuid`, `mig_uuid`.
+- That closed set governs **identity** — which entity a sample belongs to. It
+  does not forbid *dimensional* labels that partition a single metric across
+  the parts of one entity: `mode` on CPU time, `cpu` on per-core series,
+  `device` on disks, `interface` on links, `mountpoint` on filesystems,
+  `resource`/`kind` on PSI. A dimensional label is one whose values are
+  enumerable from the metric's own source and which is meaningless without the
+  metric; it never names an entity that another metric could also be about. New
+  dimensional labels are added deliberately, not by reflex — each one multiplies
+  series count.
 - Descriptive attributes (names, models, versions, images) live on companion
   `_info` gauges, joined in queries via `group_left`. Never put them on hot series.
+  This applies to dimensional labels too: where a hot series has a natural key
+  (`mountpoint`), the human-readable extras (`device`, `fstype`) belong on the
+  `_info` gauge.
+- Metric names are `snake_case` throughout — `promtool check metrics` lints
+  camelCase as an error, so kernel field names (`MemTotal`, `Active(anon)`) are
+  converted, not passed through.
 - Per-process GPU attribution is **opt-in** via a `command` label sourced from
   the `exe` symlink basename — never `comm` (truncated, forgeable).
 - **PID never appears** as a label or metric value anywhere.
@@ -67,7 +82,11 @@ mandatory from Phase 4.
 
 - **Host (Phase 1):** `/proc/stat`, `meminfo`, `diskstats`, `net/dev`,
   `loadavg`, `pressure/{cpu,memory,io}`, `mounts` + `Statfs` (behind an
-  interface — not fixture-able as a file).
+  interface — not fixture-able as a file). Aggregate CPU time is always
+  exposed; per-core series are opt-in behind `--collector.cpu.per-core`, as a
+  separate family, so default cardinality does not scale with core count on
+  large GPU nodes. `/proc/loadavg`'s fourth and fifth fields are not exposed:
+  the fifth is a PID.
 - **Containers (Phase 2):** walk the cgroup v2 tree; identity extracted from
   directory names: `docker-<hex>.scope`, `cri-containerd-<hex>.scope`,
   `crio-<hex>.scope`, `kubepods.slice/.../pod<uid>`. Docker socket is an
