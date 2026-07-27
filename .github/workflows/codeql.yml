@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# CodeQL. Free for public repositories, and low-noise on a standard-library-only
+# Go codebase — there is no dependency graph for it to get lost in, so what it
+# reports is about this code.
+#
+# The interesting surface is small but real: hand-written text exposition, a
+# net/http handler, and parsers fed by files the exporter does not control.
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so a newly published query still finds old code.
+    - cron: "27 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-24.04
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
+        with:
+          languages: go
+          build-mode: autobuild
+          queries: security-and-quality
+
+      - uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
+        with:
+          category: "/language:go"

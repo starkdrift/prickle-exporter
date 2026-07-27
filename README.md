@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/starkdrift/prickle-exporter/actions/workflows/ci.yml"><img src="https://github.com/starkdrift/prickle-exporter/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
   <img src="https://img.shields.io/badge/license-Apache--2.0-2B3044" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/go-1.26-2B3044" alt="Go 1.26">
   <img src="https://img.shields.io/badge/dependencies-0-2B3044" alt="Zero dependencies">
@@ -280,8 +281,14 @@ One command is the whole pre-commit checklist, and CI runs the same script:
 It runs `gofmt -l`, `go vet`, `go test ./...`, then gates on: an empty `go.sum`
 and no `require` block, an SPDX header in every `.go` file, `promtool check
 metrics` on every golden file, and greps for denied names and abbreviated metric
-prefixes. `promtool` is required, not optional — install it from the Prometheus
-release tarball.
+prefixes.
+
+`promtool` is required, not optional. Get the same pinned version CI uses:
+
+```sh
+./ci/install-promtool.sh          # checksum-verified, into ./bin
+export PATH="$PWD/bin:$PATH"
+```
 
 > **Known gap:** `ci/denied-names.txt` is currently empty, so that gate reports
 > `VACUOUS` and protects nothing until the names discarded during naming are
@@ -338,6 +345,32 @@ internal/sampler/     poll loop, buffer swap, self-metrics, http.Handler
 ci/check.sh           the pre-commit gate
 scripts/              dev-run.sh, capture-fixtures.sh
 assets/               logo and mark, light and dark
+```
+
+## Releases and versioning
+
+Everything is under `internal/`, so there is no importable Go API. SemVer here
+applies to the two surfaces that actually exist: the **metrics contract** and
+the **command line**. [SPEC.md §Versioning](SPEC.md#versioning) is the full
+policy; the short version:
+
+- **major** — a metric renamed or removed, a label key added to or removed from
+  an existing series, a flag removed. (Adding a label key is a major, not a
+  minor: it breaks every rule that aggregates without `by`.)
+- **minor** — a new metric family, collector, flag, or label value.
+- **patch** — a wrong value corrected, a parser fix, docs.
+
+Pre-1.0 the minor tracks the roadmap phase, so the version says what is
+implemented: `0.1.0` host, `0.2.0` containers, `0.3.0` GPU. **`1.0.0` means the
+metrics contract is frozen.** Changes are recorded by hand in
+[CHANGELOG.md](CHANGELOG.md).
+
+Git tags are the only source of truth for the version — there is no VERSION
+file. Releases carry SLSA build provenance:
+
+```sh
+sha256sum -c SHA256SUMS
+gh attestation verify prickle_v0.1.0_linux_amd64.tar.gz --repo starkdrift/prickle-exporter
 ```
 
 ## Contributing

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Only github-actions. There is deliberately no gomod entry: SPEC.md §Hard
+# constraints #1 forbids third-party Go dependencies, and ci/check.sh fails the
+# build if go.sum stops being empty — a stricter guarantee than Dependabot
+# could offer, and one that does not need updating.
+#
+# Workflows pin actions by commit SHA. Dependabot understands that pin style
+# and rewrites both the SHA and the trailing version comment, which is what
+# makes SHA pinning maintainable rather than a slow rot.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies

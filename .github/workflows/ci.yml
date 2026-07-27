@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The pre-commit gate, on GitHub's machines. ci/check.sh is the whole
+# checklist; this file's only jobs are to provide a clean machine, put promtool
+# on PATH, and prove the release build still links.
+#
+# Actions are pinned by commit SHA, not by tag: a tag is mutable and an action
+# runs with access to this repository. Dependabot bumps the SHAs and rewrites
+# the trailing version comment.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A second push to a branch makes the first run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          # Free for public repositories, and worth the second job: it is the
+          # only thing that exercises the userHZ=100 and 512-byte-sector
+          # assumptions in internal/collector/host on a second architecture.
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          # There are no dependencies to cache, and setup-go's cache key is
+          # derived from go.sum, which is empty by design.
+          cache: false
+
+      - name: Install pinned promtool
+        run: |
+          ./ci/install-promtool.sh
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
+      - name: ci/check.sh
+        run: ./ci/check.sh
+
+  build:
+    name: build (${{ matrix.goarch }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # CGO_ENABLED=0 cross-compiles exactly, so one runner covers both
+      # architectures. Phase 3's prickle-nvml cannot: cgo plus dynamic linking
+      # needs a native runner per architecture (SPEC.md §Distribution).
+      - name: Build the static binary
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: go build -trimpath -o prickle ./cmd/prickle
+
+      # "One Go binary, static" is a claim the README makes. Assert it rather
+      # than trusting that nobody added a cgo import.
+      - name: Assert it is actually static
+        run: |
+          file ./prickle
+          file ./prickle | grep -q 'statically linked' \
+            || { echo "::error::prickle is not statically linked"; exit 1; }
+
+      # Only the native binary can be run on this runner.
+      - name: Smoke test
+        if: matrix.goarch == 'amd64'
+        run: |
+          ./prickle -version
+          ./prickle diagnose

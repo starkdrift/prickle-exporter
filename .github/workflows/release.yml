@@ -1,0 +1,167 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Cut a release from a vX.Y.Z tag (SPEC.md §Versioning).
+#
+# The tag is the only source of truth for the version: it is injected into the
+# binary with -ldflags and surfaces on prickle_build_info. Nothing here reads a
+# VERSION file, because there isn't one to fall out of sync.
+#
+# Deliberately hand-rolled rather than GoReleaser. Two artifacts and a checksum
+# file is less shell than a GoReleaser config is YAML, and it keeps a project
+# whose whole identity is "zero dependencies" from acquiring one in its release
+# path. Revisit if the artifact matrix outgrows roughly eight entries.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build (dry run — publishes nothing)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Never publish something that would not have passed the gate. This is the
+  # same script ci.yml runs; a tag can be pushed to a commit that never saw CI.
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Install pinned promtool
+        run: |
+          ./ci/install-promtool.sh
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+      - name: ci/check.sh
+        run: ./ci/check.sh
+
+  build:
+    name: build
+    needs: verify
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Resolve version from the tag
+        id: version
+        run: |
+          version="${{ inputs.tag || github.ref_name }}"
+          case "$version" in
+            v[0-9]*) ;;
+            *) echo "::error::'$version' is not a vX.Y.Z tag"; exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Building $version"
+
+      # Only the static binary ships today. SPEC.md §Distribution also calls
+      # for prickle-nvml (-tags nvml, cgo, dynamically linked), but no
+      # //go:build nvml source exists until Phase 3 — releasing it now would
+      # ship a byte-for-byte copy of prickle under a name that promises NVML
+      # support. Add it here, on native per-architecture runners, with Phase 3.
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+        run: |
+          set -eux
+          version="${{ steps.version.outputs.version }}"
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            GOARCH="$arch" go build -trimpath \
+              -ldflags "-s -w -X main.version=${version}" \
+              -o "build/prickle" ./cmd/prickle
+
+            file build/prickle | grep -q 'statically linked' \
+              || { echo "::error::prickle ($arch) is not statically linked"; exit 1; }
+
+            install -m 0644 LICENSE README.md CHANGELOG.md build/
+            # Reproducible tarball: fixed order, no uid/gid, tag date as mtime.
+            tar --sort=name --owner=0 --group=0 --numeric-owner \
+                --mtime="@$(git log -1 --format=%ct)" \
+                -czf "dist/prickle_${version}_linux_${arch}.tar.gz" \
+                -C build prickle LICENSE README.md CHANGELOG.md
+            rm -f build/prickle
+          done
+          cd dist && sha256sum ./*.tar.gz > SHA256SUMS && cat SHA256SUMS
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-artifacts
+          path: dist/
+          retention-days: 7
+
+  publish:
+    name: publish
+    needs: build
+    # A manual run is a dry run: it builds and attests nothing, so a mistake
+    # cannot create a public release.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write      # create the release
+      id-token: write      # OIDC, for keyless attestation
+      attestations: write  # record the provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-artifacts
+          path: dist
+
+      # SLSA build provenance, keyless via GitHub's OIDC. Verifiable with
+      #   gh attestation verify prickle_vX.Y.Z_linux_amd64.tar.gz \
+      #     --repo starkdrift/prickle-exporter
+      # No key to manage, rotate, or leak.
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        with:
+          subject-path: dist/*.tar.gz
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -eu
+          cat > notes.md <<EOF
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${VERSION}/CHANGELOG.md) for what changed.
+
+          ### Verify
+
+          \`\`\`sh
+          sha256sum -c SHA256SUMS
+          gh attestation verify prickle_${VERSION}_linux_amd64.tar.gz --repo ${{ github.repository }}
+          \`\`\`
+
+          Linux only, cgroup v2 only. \`prickle-nvml\` (SPEC.md §Distribution) ships with Phase 3.
+          EOF
+
+          # 0.x is a real release, not a prerelease. Only a hyphenated
+          # suffix (v1.0.0-rc.1) marks one.
+          prerelease=""
+          case "$VERSION" in *-*) prerelease="--prerelease" ;; esac
+
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes-file notes.md \
+            --generate-notes \
+            $prerelease \
+            dist/*.tar.gz dist/SHA256SUMS

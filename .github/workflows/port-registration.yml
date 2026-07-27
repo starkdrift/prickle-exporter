@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Monthly watchdog on the Prometheus default-port registration.
+#
+# SPEC.md §Identity fixes the listen port and requires it registered upstream.
+# That registration is a row on a world-writable wiki page in someone else's
+# repository, and nothing notifies us if it is edited, reassigned or dropped.
+#
+# ci/check-port-registration.sh reports three states, and this workflow keeps
+# them apart. Exit 1 means "could not tell" — a failed fetch must never open an
+# issue claiming the registration is gone, or the watchdog becomes noise and
+# gets ignored, which is worse than not having one.
+name: port-registration
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check the registration
+        id: watchdog
+        run: |
+          set +e
+          ./ci/check-port-registration.sh
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Inconclusive
+        if: steps.watchdog.outputs.code == '1'
+        run: |
+          echo "::warning::Could not verify the port registration (network, or the wiki moved). Not treating this as a regression."
+
+      - name: Open an issue on a real regression
+        if: steps.watchdog.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          title="Prometheus port registration for 10047 is missing or reassigned"
+
+          # A monthly cron that opens the same issue every month is noise.
+          open=$(gh issue list --state open --search "in:title $title" --json number --jq 'length')
+          if [ "$open" -gt 0 ]; then
+            echo "An open issue already tracks this; not filing a duplicate."
+            exit 0
+          fi
+
+          gh issue create --title "$title" --body \
+          "\`ci/check-port-registration.sh\` exited 2: port 10047 is either no longer listed on the
+          [Prometheus default-port wiki](https://github.com/prometheus/prometheus/wiki/Default-port-allocations)
+          or is now registered to another project.
+
+          SPEC.md §Identity fixes this port, and the README documents it. Re-register or resolve
+          the conflict upstream.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Fail only on a real regression
+        if: steps.watchdog.outputs.code == '2'
+        run: exit 1
