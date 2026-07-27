@@ -4,6 +4,13 @@
 /prickle-nvml
 /bin/
 /dist/
+# Release staging (.github/workflows/release.yml). This entry is load-bearing,
+# not tidiness: Go stamps vcs.modified into every binary it builds, so an
+# untracked build/ in the working tree makes the *second* architecture in the
+# release loop come out as vX.Y.Z+dirty while the first is clean. Ignored files
+# do not count as modifications, so listing it here is what keeps the release
+# honest. Removing this line silently corrupts release provenance.
+/build/
 
 # Go test / coverage output.
 # Deliberately NOT ignoring *.out — exposition golden files may use that suffix.

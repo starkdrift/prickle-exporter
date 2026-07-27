@@ -76,6 +76,18 @@ jobs:
       # //go:build nvml source exists until Phase 3 — releasing it now would
       # ship a byte-for-byte copy of prickle under a name that promises NVML
       # support. Add it here, on native per-architecture runners, with Phase 3.
+      # build/ and dist/ MUST stay in .gitignore. Go records vcs.modified in
+      # every binary; an untracked staging directory would make every
+      # architecture after the first build as vX.Y.Z+dirty, which is both false
+      # and a provenance defect. See the note in .gitignore.
+      - name: Assert the tree is clean before building
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::working tree is dirty; binaries would be stamped +dirty"
+            exit 1
+          fi
+
       - name: Build
         env:
           CGO_ENABLED: "0"
@@ -91,6 +103,14 @@ jobs:
 
             file build/prickle | grep -q 'statically linked' \
               || { echo "::error::prickle ($arch) is not statically linked"; exit 1; }
+
+            # The direct check, not a proxy for it. The pre-build cleanliness
+            # assertion cannot see a tree that goes dirty *during* the loop, so
+            # ask the binary what it recorded about the tree it came from.
+            go version -m build/prickle | grep -q 'vcs.modified=false' \
+              || { go version -m build/prickle
+                   echo "::error::prickle ($arch) was built from a dirty tree and is stamped +dirty"
+                   exit 1; }
 
             install -m 0644 LICENSE README.md CHANGELOG.md build/
             # Reproducible tarball: fixed order, no uid/gid, tag date as mtime.
