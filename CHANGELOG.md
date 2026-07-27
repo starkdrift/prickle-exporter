@@ -13,6 +13,22 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-07-27
+
+### Fixed
+
+- Release binaries after the first architecture were built from a working tree
+  that the build's own staging directory had made dirty, so Go stamped them
+  `vcs.modified=true` and `vX.Y.Z+dirty`. In 0.1.0 the amd64 and arm64
+  artifacts therefore disagreed about whether they came from the tag. **No
+  change to the exporter, its behavior, or its output** — the 0.1.0 binaries
+  run identically and their checksums and attestations are valid. Only the
+  recorded provenance was wrong. If you took the 0.1.0 arm64 artifact and care
+  about provenance, re-download.
+
+  The release workflow now asserts the property directly, per architecture,
+  and fails on a missing stamp as well as a dirty one.
+
 ## [0.1.0] — 2026-07-27
 
 Phase 1: the host collector, and the machinery underneath it.
@@ -56,5 +72,6 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/starkdrift/prickle-exporter/releases/tag/v0.1.0
