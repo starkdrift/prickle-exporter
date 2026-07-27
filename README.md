@@ -7,7 +7,7 @@
 
 <p align="center">
   <em>A Prometheus exporter for host, container and GPU metrics.<br>
-  One static Go binary. Standard library only. Strictly read-only.</em>
+  One Go binary. Standard library only. Strictly read-only.</em>
 </p>
 
 <p align="center">
