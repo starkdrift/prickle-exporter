@@ -287,6 +287,23 @@ release tarball.
 > `VACUOUS` and protects nothing until the names discarded during naming are
 > filled in.
 
+`ci/check.sh` is hermetic and stays that way. The one check that needs the
+network lives on its own:
+
+```sh
+./ci/check-port-registration.sh
+```
+
+It confirms port 10047 is still registered to this project on the [Prometheus
+default-port wiki](https://github.com/prometheus/prometheus/wiki/Default-port-allocations)
+— a page anyone can edit, in someone else's repository, that sends no
+notification if our row is reassigned or dropped. The port is read out of
+SPEC.md rather than hardcoded, so the check can't silently drift from the spec.
+It exits `0` registered, `2` missing or reassigned, and `1` for *couldn't tell*
+(no network, page moved, payload that isn't the allocation table) — so a flaky
+fetch never reads as a lost registration. Run it on a schedule, not before a
+commit.
+
 ### Fixtures
 
 Every parser is developed against a captured fixture tree under `testdata/`,
