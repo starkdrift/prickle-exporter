@@ -154,6 +154,42 @@ Fleet Health — using paired textbox + chained-dropdown template variables per
 identity label, wrapping input as `.*<input>.*` for contains-search, filtering
 on `command` (never PID). Dashboards carry Starkdrift branding.
 
+## Versioning
+
+Every package is under `internal/`, so there is no importable Go API and no Go
+API compatibility obligation. SemVer here governs the only two public surfaces
+the project has: the **metrics contract** (names, label sets, types, units) and
+the **command line** (flag names and their meanings).
+
+| Bump | Trigger |
+|---|---|
+| major | A metric is renamed or removed; a label key is added to, removed from, or changed in meaning on an existing series; a flag is removed; a default changes such that output changes |
+| minor | A new metric family, collector, flag, or label *value* |
+| patch | A wrong value corrected, a parser fix, performance, documentation |
+
+Adding a label *key* to an existing hot series is a major, not a minor: it
+breaks every recording rule and dashboard that aggregates without `by`.
+
+Releases are tagged `vX.Y.Z`. **Git tags are the sole source of truth for the
+version** — there is no VERSION file and no version constant to forget to bump.
+The build injects it with `-ldflags "-X main.version=..."`, and it is exposed to
+operators on `prickle_build_info`.
+
+Pre-1.0, the minor tracks the roadmap phase, so the version states what is
+implemented: `0.1.0` host, `0.2.0` containers, `0.3.0` GPU, `0.4.0` caps and
+timeouts. Until 1.0.0 a minor may break the contract — Phases 2 and 3 will
+teach the label set things Phase 1 cannot.
+
+**`1.0.0` means the metrics contract is frozen.** It is Phase 5, and a
+deliberate promise rather than something to drift into.
+
+From 1.0.0 on, a metric that must change is emitted under both the old and new
+names for one full minor, with the old name marked deprecated in its `# HELP`
+text, and removed at the next major.
+
+`CHANGELOG.md` is written by hand, not generated from commits: a metric change
+needs prose that says what to do about it, which no generator writes.
+
 ## Session checklist
 
 Before writing code: read this file, read the target package's existing code,
