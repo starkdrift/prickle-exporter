@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 10 620 92" role="img" aria-label="prickle-exporter logo">
+  <g stroke="#E4E7F1" stroke-width="5" stroke-linecap="round">
+    <line x1="95" y1="64" x2="100.5" y2="49.0"/>
+    <line x1="88" y1="58" x2="91.8" y2="36.3"/>
+    <line x1="81" y1="52" x2="81" y2="38"/>
+    <line x1="67" y1="45" x2="62.3" y2="27.6"/>
+    <line x1="59" y1="44" x2="50.0" y2="21.8"/>
+    <line x1="51" y1="45" x2="43.5" y2="32.0"/>
+    <line x1="43" y1="49" x2="29.5" y2="32.9"/>
+    <line x1="35" y1="54" x2="24.3" y2="45.0"/>
+    <line x1="28" y1="60" x2="11.2" y2="51.1"/>
+    <line x1="23" y1="68" x2="10.4" y2="64.6"/>
+  </g>
+  <line x1="74" y1="48" x2="70.3" y2="18.2" stroke="#F0A202" stroke-width="5" stroke-linecap="round"/>
+  <rect x="32" y="80" width="9" height="17" rx="4" fill="#E4E7F1"/>
+  <rect x="86" y="80" width="9" height="17" rx="4" fill="#E4E7F1"/>
+  <path d="M30 86 C22 85 15 77 18 67 C20 58 26 50 35 46 C44 42 56 40 66 42 C76 44 85 50 92 57 C97 61 103 67 108 73 Q115 79 112.5 82.5 Q110 85.5 103 86 Z" fill="#E4E7F1"/>
+  <text x="146" y="86" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace" font-size="46" font-weight="700" fill="#E4E7F1">prickle<tspan font-weight="400" fill="#8B90A2">-exporter</tspan></text>
+</svg>
