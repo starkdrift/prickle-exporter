@@ -13,6 +13,63 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+Phase 2: the container collector. Nothing in Phase 1's output changes — no
+metric was renamed, no label added to an existing series — so a Prometheus
+already scraping 0.1.x keeps every rule and dashboard it has. What arrives is a
+new `prickle_container_*` namespace and three new flags.
+
+### Added
+
+- **Container collector**, walking the cgroup v2 tree and reporting CPU (with
+  quota and throttling), memory (usage, the four limit files, nine `memory.stat`
+  fields, page faults), block I/O per device, process counts, and per-cgroup
+  PSI. About 25 series per container. Identity comes from the directory names
+  the runtimes write — `docker-<hex>.scope`, `cri-containerd-<hex>.scope`,
+  `crio-<hex>.scope`, and the pod slices under `kubepods.slice`.
+- `prickle_container_info`, the companion gauge carrying the runtime, the
+  Kubernetes QoS class, and — with Docker enrichment on — the container's name
+  and image. Join it with `group_left`; none of those attributes appears on a
+  hot series.
+- **`-collector.container.docker-socket`**, the optional enrichment path from
+  SPEC.md §Collectors: one GET request per pass for names and images. Off by
+  default — the exporter opens no socket nobody asked it to open — and bounded
+  by `-collector.container.docker-timeout` (2s), because a wedged daemon must
+  cost the names and not the metrics.
+- **`-collector.container`** (default `true`) to switch the whole walk off.
+- `prickle diagnose` gained a Phase 2 section: whether the cgroup root can be
+  walked, how many containers were found and under which runtimes, and whether
+  Docker enrichment is on and working. When it finds none, it names the three
+  causes worth checking rather than leaving you with an empty scrape.
+
+### Notes
+
+- **`pod` carries the pod's UID, not its name, and `namespace` is not emitted.**
+  A cgroup directory name holds a UID and nothing else — the kernel stores no
+  pod name or namespace anywhere in the tree — so those are the honest values.
+  The UID is unescaped from systemd's spelling
+  (`6eb5044d_ef2e_49d1_a9cc_28f4e3fe88a3`) back to the one `kubectl` reports.
+  Resolving a name needs a Kubernetes-aware source, which a cgroup walk is not;
+  if that lands, `pod` changing meaning would be a major bump, and the label
+  would gain a companion rather than change under you.
+- **Only leaf containers are sampled.** The pod, QoS and root slices above them
+  are walked for identity and never emitted: a `sum` over the family is the
+  node's containers once, not once per level of the hierarchy. Pod totals are
+  `sum by (pod)`.
+- **An unset limit is an absent series.** `memory.max` reading `max` produces no
+  `prickle_container_memory_limit_bytes` sample rather than the kernel's
+  9.2-exabyte sentinel, so a usage/limit ratio silently drops unconstrained
+  containers instead of reporting them as 0% full.
+- `cgroup.procs` is never read. It is the one file in a container's cgroup that
+  contains PIDs, SPEC.md §Metrics contract forbids those everywhere, and a test
+  fails if any source file starts to read it.
+- Known coverage gaps, recorded in full in
+  [internal/collector/container/testdata/README.md](internal/collector/container/testdata/README.md#coverage-gaps):
+  CRI-O and Guaranteed-pod directory names are unit-tested on the name parse
+  only, and the **cgroupfs-driver layouts** (`/sys/fs/cgroup/docker/<hex>/` and
+  `kubepods/besteffort/pod<uid>/<hex>`) are **not implemented** — a host using
+  them reports no containers. Closing those needs a capture from a host
+  configured that way; no format was guessed at in the meantime.
+
 ## [0.1.1] — 2026-07-27
 
 ### Fixed

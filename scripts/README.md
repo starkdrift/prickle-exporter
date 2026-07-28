@@ -38,7 +38,11 @@ Notes on the two less obvious modes:
 - **`fixture`** finds the tree itself by looking for a `proc/` directory under
   `internal/collector/*/testdata/*/`, so a new capture doesn't leave the script
   pointing at the old one; pass a path as the first argument when there is more
-  than one. It sets `-node=prickle-fixture` so output doesn't carry your
+  than one. There is more than one as of Phase 2: each collector's `testdata/`
+  holds the subset of the capture that *its* parsers read, so the host tree has
+  no cgroups and the container tree has only the one `/proc` file it needs.
+  Neither exercises every phase at once, and the script says so rather than
+  picking for you. It sets `-node=prickle-fixture` so output doesn't carry your
   hostname. `Statfs` is a syscall rather than a file (SPEC §Collectors), so the
   filesystem series still describe *your* machine, and fixture mount points that
   don't exist locally come back as `prickle_filesystem_error 1`. That is the
@@ -116,6 +120,27 @@ Per-cgroup files captured: `cgroup.type`, `cgroup.procs`, `cpu.stat`, `cpu.max`,
 `Statfs` (SPEC §Collectors, Phase 1) can't be captured as a file — it's a
 syscall behind an interface. The script writes `meta/statfs-reference.txt` from
 `df -B1` instead, as a cross-check for hand-built values.
+
+### What the next capture should add
+
+The captured H200 answered Phase 1 and most of Phase 2. What it did not contain
+is the reason for the coverage gaps recorded in
+[internal/collector/container/testdata/README.md](../internal/collector/container/testdata/README.md#coverage-gaps),
+and `check` does not currently flag any of it. If you are renting a host anyway,
+these are cheap to arrange and each one closes a gap:
+
+| Arrange | Closes |
+|---|---|
+| Docker configured with `"exec-opts": ["native.cgroupdriver=cgroupfs"]`, or a second capture from such a host | Docker's cgroupfs-driver layout, `/sys/fs/cgroup/docker/<hex>/` — **unimplemented today, so those hosts report no containers at all** |
+| A kubelet with `cgroupDriver: cgroupfs` | The matching `kubepods/besteffort/pod<uid>/<hex>` layout — same, unimplemented |
+| A CRI-O host | `crio-<hex>.scope`, currently unit-tested on the name parse only |
+| One pod with equal requests and limits | Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component in the name |
+| `docker run --cpus=2`, or a pod with a CPU limit | A non-`max` `cpu.max`, so `cpu_limit_cores` and the throttling counters are seen with real values rather than parsed in the dark |
+| Adding `cpu.pressure` and `io.pressure` to `CG_FILES` | Two files the collector already reads, covered today by a hand-written tree rather than a capture |
+
+The first two rows are the ones that cost a real operator metrics, so they are
+worth a capture on their own. Everything else can ride along with the Phase 3
+GPU capture.
 
 ### Output layout
 

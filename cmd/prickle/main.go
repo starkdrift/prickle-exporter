@@ -2,8 +2,9 @@
 
 // Command prickle is a Prometheus exporter for host, container and GPU metrics.
 //
-// See SPEC.md for the contract this implements. Phase 1 ships the host
-// collector; `prickle diagnose` reports what the exporter can and cannot read.
+// See SPEC.md for the contract this implements. Phases 1 and 2 ship the host
+// and container collectors; `prickle diagnose` reports what the exporter can
+// and cannot read.
 package main
 
 import (
@@ -18,8 +19,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/starkdrift/prickle-exporter/internal/collector"
-	"github.com/starkdrift/prickle-exporter/internal/collector/host"
 	"github.com/starkdrift/prickle-exporter/internal/exposition"
 	"github.com/starkdrift/prickle-exporter/internal/sampler"
 )
@@ -54,12 +53,10 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	hostOpts, err := cfg.hostOptions()
+	collectors, err := cfg.collectors()
 	if err != nil {
 		return err
 	}
-
-	collectors := []collector.Collector{host.New(hostOpts)}
 
 	s := sampler.New(collectors, sampler.Options{
 		Interval:    cfg.interval,

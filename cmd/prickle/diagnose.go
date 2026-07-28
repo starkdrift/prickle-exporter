@@ -12,7 +12,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/starkdrift/prickle-exporter/internal/collector/host"
+	"github.com/starkdrift/prickle-exporter/internal/collector/container"
 	"github.com/starkdrift/prickle-exporter/internal/exposition"
 	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
@@ -59,36 +59,107 @@ func diagnose(args []string, w io.Writer) error {
 	}
 	tw.Flush()
 
+	fmt.Fprintln(w, "\nPhase 2 containers")
+	if err := describeContainers(w, cfg); err != nil {
+		return err
+	}
+
 	fmt.Fprintln(w, "\nGPU")
 	fmt.Fprintln(w, "  NVIDIA source selection is Phase 3 and not implemented yet.")
 
-	hostOpts, err := cfg.hostOptions()
+	collectors, err := cfg.collectors()
 	if err != nil {
 		return err
 	}
-	set := exposition.NewSet(exposition.L("node", node))
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
 
-	start := time.Now()
-	collectErr := host.New(hostOpts).Collect(ctx, set)
-	elapsed := time.Since(start)
+	fmt.Fprintln(w)
+	for _, c := range collectors {
+		// A fresh Set per collector, so the series count below is that
+		// collector's own and not a running total.
+		one := exposition.NewSet(exposition.L("node", node))
+		start := time.Now()
+		collectErr := c.Collect(ctx, one)
+		elapsed := time.Since(start)
 
-	rendered := set.String()
-	fmt.Fprintf(w, "\nhost collector: %d series in %s\n", countSeries(rendered), elapsed.Round(time.Microsecond))
-	if collectErr != nil {
-		fmt.Fprintln(w, "  errors:")
-		for _, line := range strings.Split(collectErr.Error(), "\n") {
-			fmt.Fprintf(w, "    %s\n", line)
+		fmt.Fprintf(w, "%s collector: %d series in %s\n",
+			c.Name(), countSeries(one.String()), elapsed.Round(time.Microsecond))
+		if collectErr != nil {
+			fmt.Fprintln(w, "  errors:")
+			for _, line := range strings.Split(collectErr.Error(), "\n") {
+				fmt.Fprintf(w, "    %s\n", line)
+			}
+		}
+		if err := one.Err(); err != nil {
+			// A naming or duplicate-series problem is a bug in the exporter,
+			// not a property of the host. Surface it separately.
+			fmt.Fprintln(w, "  exposition problems:")
+			for _, line := range strings.Split(err.Error(), "\n") {
+				fmt.Fprintf(w, "    %s\n", line)
+			}
 		}
 	}
-	if err := set.Err(); err != nil {
-		// A naming or duplicate-series problem is a bug in the exporter, not a
-		// property of the host. Surface it separately from collector errors.
-		fmt.Fprintln(w, "  exposition problems:")
-		for _, line := range strings.Split(err.Error(), "\n") {
-			fmt.Fprintf(w, "    %s\n", line)
+	return nil
+}
+
+// describeContainers reports what the cgroup walk finds, broken down the way
+// the questions arrive: "why is my container missing" is almost always a
+// runtime whose directory shape is not covered, a walk that cannot read the
+// tree, or the collector being switched off.
+func describeContainers(w io.Writer, cfg config) error {
+	if !cfg.containers {
+		fmt.Fprintln(w, "  disabled with -collector.container=false.")
+		return nil
+	}
+
+	roots := cfg.roots()
+	fmt.Fprintf(w, "  cgroup root: %s — %s\n", roots.CgroupPath(), describeWalkable(roots.CgroupPath()))
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+	defer cancel()
+
+	set := exposition.NewSet()
+	if err := container.New(cfg.containerOptions()).Collect(ctx, set); err != nil {
+		fmt.Fprintf(w, "  reported: %v\n", err)
+	}
+
+	// The _info gauge carries one sample per container found, with the runtime
+	// it was identified by and the name enrichment did or did not supply.
+	runtimes := map[string]int{}
+	var total, named int
+	for _, line := range strings.Split(set.String(), "\n") {
+		if !strings.HasPrefix(line, "prickle_container_info{") {
+			continue
 		}
+		total++
+		if !strings.Contains(line, `name=""`) {
+			named++
+		}
+		for _, r := range []string{"docker", "containerd", "crio"} {
+			if strings.Contains(line, `runtime="`+r+`"`) {
+				runtimes[r]++
+			}
+		}
+	}
+
+	if total == 0 {
+		fmt.Fprintln(w, "  no containers found. On a host that is running some, this is")
+		fmt.Fprintln(w, "  either cgroup v1 (see above), a cgroup tree this process cannot")
+		fmt.Fprintln(w, "  read, or a runtime layout Phase 2 does not cover — see")
+		fmt.Fprintln(w, "  internal/collector/container/testdata/README.md §Coverage gaps.")
+		return nil
+	}
+
+	fmt.Fprintf(w, "  containers found: %d (docker %d, containerd %d, crio %d)\n",
+		total, runtimes["docker"], runtimes["containerd"], runtimes["crio"])
+
+	if cfg.dockerSocket == "" {
+		fmt.Fprintln(w, "  Docker enrichment: off. Names and images are absent from")
+		fmt.Fprintln(w, "  prickle_container_info; -collector.container.docker-socket turns it on.")
+	} else {
+		fmt.Fprintf(w, "  Docker enrichment: %s, %d of %d Docker containers named\n",
+			cfg.dockerSocket, named, runtimes["docker"])
 	}
 	return nil
 }
@@ -127,6 +198,29 @@ func describeReadable(path string) string {
 		return fmt.Sprintf("UNREADABLE (%v)", err)
 	}
 	return "ok"
+}
+
+// describeWalkable reports whether a directory can be listed, by listing it.
+//
+// The container collector's input is a tree, not a file, so describeReadable's
+// one-byte read is the wrong question — it reports "is a directory" for a
+// perfectly good cgroup mount. What matters here is whether the walk can
+// enumerate entries and how many it finds at the top level.
+func describeWalkable(path string) string {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "missing — no cgroup v2 mount here"
+		}
+		return fmt.Sprintf("UNREADABLE (%v)", err)
+	}
+	var dirs int
+	for _, e := range entries {
+		if e.IsDir() {
+			dirs++
+		}
+	}
+	return fmt.Sprintf("ok, %d top-level cgroups", dirs)
 }
 
 // describeCgroup reports the cgroup hierarchy version.

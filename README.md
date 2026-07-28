@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/license-Apache--2.0-2B3044" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/go-1.26-2B3044" alt="Go 1.26">
   <img src="https://img.shields.io/badge/dependencies-0-2B3044" alt="Zero dependencies">
-  <img src="https://img.shields.io/badge/status-phase%201-F0A202" alt="Phase 1">
+  <img src="https://img.shields.io/badge/status-phase%202-F0A202" alt="Phase 2">
 </p>
 
 ---
@@ -52,13 +52,13 @@ changing a decision means editing SPEC.md first, in its own commit.
 
 ## Status
 
-**Phase 1.** The host collector is implemented and tested against a captured
-fixture tree. Containers and GPUs are specified but not yet written.
+**Phase 2.** The host and container collectors are implemented and tested
+against a captured fixture tree. GPUs are specified but not yet written.
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
-| 2 | Containers — cgroup v2 walk, Docker/containerd/CRI-O/Kubernetes identity | planned |
+| 2 | Containers — cgroup v2 walk, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
 | 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo, Intel DRM fdinfo | planned |
 | 4 | Per-collector timeouts, cardinality caps, self-instrumentation | partial — self-metrics exist, caps do not |
 | 5 | Distribution — systemd units, Helm chart, Docker, four Grafana dashboards | planned |
@@ -142,19 +142,33 @@ Phase 1 sources
   /proc/pressure/io      ok
   /proc/mounts           ok
 
+Phase 2 containers
+  cgroup root: /sys/fs/cgroup — ok, 11 top-level cgroups
+  containers found: 16 (docker 3, containerd 13, crio 0)
+  Docker enrichment: off. Names and images are absent from
+  prickle_container_info; -collector.container.docker-socket turns it on.
+
 GPU
   NVIDIA source selection is Phase 3 and not implemented yet.
 
 host collector: 278 series in 672µs
+container collector: 403 series in 1.4ms
 ```
+
+When it reports no containers on a host that is running some, the cause is
+almost always one of three things, and it says which to check: cgroup v1, a
+tree this process cannot read, or a runtime layout Phase 2 does not cover.
 
 It takes the same flags as the exporter, so it diagnoses exactly the
 configuration you would run with — including `-path.rootfs`.
 
 ## Metrics
 
-Every metric is prefixed `prickle_`, never abbreviated. Phase 1 emits ~280
-series on a plain host, from these families:
+Every metric is prefixed `prickle_`, never abbreviated.
+
+### Host — Phase 1
+
+~280 series on a plain host, from these families:
 
 | Source | Families |
 |---|---|
@@ -170,6 +184,83 @@ series on a plain host, from these families:
 The full rendered output for the captured H200 fixture is the golden file
 [internal/collector/host/testdata/golden/host.prom](internal/collector/host/testdata/golden/host.prom).
 
+### Containers — Phase 2
+
+A walk of the cgroup v2 tree, about 25 series per container. Identity comes out
+of the directory names the runtimes create: `docker-<hex>.scope`,
+`cri-containerd-<hex>.scope`, `crio-<hex>.scope`, and the pod slices under
+`kubepods.slice`.
+
+| Source | Families |
+|---|---|
+| `cpu.stat` | `prickle_container_cpu_usage_seconds_total`, `cpu_seconds_total{mode}`, `cpu_periods_total`, `cpu_throttled_periods_total`, `cpu_throttled_seconds_total` |
+| `cpu.max`, `cpu.weight` | `prickle_container_cpu_limit_cores`, `cpu_weight` |
+| `memory.current`, `memory.{max,high,min,low}` | `prickle_container_memory_usage_bytes`, `memory_limit_bytes`, `memory_high_bytes`, `memory_min_bytes`, `memory_low_bytes` |
+| `memory.stat` | `prickle_container_memory_{anon,file,inactive_file,kernel_stack,page_tables,slab,socket,shmem,unevictable}_bytes`, `memory_page_faults_total`, `memory_major_page_faults_total` |
+| `io.stat` | `prickle_container_io_{read,written,discarded}_bytes_total`, `io_{reads,writes,discards}_completed_total`, all `{device}` |
+| `pids.current`, `pids.max` | `prickle_container_processes`, `processes_limit` |
+| `{cpu,io,memory}.pressure` | `prickle_container_pressure_stalled_seconds_total{resource,kind}` |
+| identity | `prickle_container_info` |
+
+Three things about this collector are worth knowing before you query it:
+
+- **Only leaf containers are emitted.** The pod, QoS and root slices above them
+  are walked for identity and never sampled — emitting them alongside their
+  children would make `sum(prickle_container_memory_usage_bytes)` count every
+  byte two or three times. A pod total is `sum by (pod)`.
+- **An unset limit is an absent series, not a sentinel.** `memory.max` reading
+  `max` produces no `memory_limit_bytes` sample at all, rather than the kernel's
+  internal 9.2-exabyte sentinel on every unconstrained container.
+- **`pod` holds the pod's UID, not its name,** and `namespace` is not emitted at
+  all. The cgroup tree is all the kernel knows, and it stores neither — see
+  [the label contract](#the-label-contract) below.
+
+The full rendered output for the captured fixture tree is
+[internal/collector/container/testdata/golden/container.prom](internal/collector/container/testdata/golden/container.prom).
+
+#### Coverage gaps
+
+SPEC §Testing rules forbids inventing a file format or a path shape: where no
+capture exists, the code says so instead of guessing. These are the shapes
+Phase 2 does not cover, and the two that can leave you with an empty scrape are
+first.
+
+| Gap | Effect | What closes it |
+|---|---|---|
+| **Docker with the cgroupfs driver** — `/sys/fs/cgroup/docker/<hex>/` | **No containers reported at all** on such a host. | A capture from a host running `"exec-opts": ["native.cgroupdriver=cgroupfs"]`. |
+| **Kubelet with the cgroupfs driver** — `kubepods/besteffort/pod<uid>/<hex>` | **No containers reported** on such a node. | A capture from a node with `cgroupDriver: cgroupfs`. |
+| CRI-O — `crio-<hex>.scope` | Directory-name parse is unit-tested; nothing beyond it is. | A capture from a CRI-O host. |
+| Guaranteed pods — `kubepods-pod<uid>.slice`, no QoS component | Same: name parse only. The rental ran none. | A pod with equal requests and limits during capture. |
+| A container with a CPU quota | `cpu_limit_cores` and the throttling counters are parsed and unit-tested but never seen with a non-zero value — every `cpu.max` in the capture is `max 100000`. | `docker run --cpus=2`, or a pod with a CPU limit, during capture. |
+| `cpu.pressure`, `io.pressure` | **Implemented and emitted.** The capture script collects only `memory.pressure`, but the format is byte-identical to it and to the `/proc/pressure/*` files Phase 1 does capture, so a hand-written tree covers them in `TestPerCgroupPressure`. | Adding the two files to `capture-fixtures.sh`. |
+
+If `prickle diagnose` reports no containers on a host that is running some, the
+first two rows are the likeliest reason after cgroup v1 and a permissions
+problem — it says as much. The authoritative list, with what each row is tested
+by, lives beside the fixtures in
+[internal/collector/container/testdata/README.md](internal/collector/container/testdata/README.md#coverage-gaps).
+
+```promql
+# The containers closest to their memory limit. The limit series is absent for
+# unlimited containers, so the division drops them rather than dividing by a
+# sentinel — which is the point of emitting nothing.
+topk(10,
+  prickle_container_memory_usage_bytes / on (node, container) prickle_container_memory_limit_bytes
+)
+
+# CPU throttling: the fraction of enforcement periods in which a container hit
+# its quota. Anything sustained above zero is a container that needs more CPU
+# than it is allowed.
+rate(prickle_container_cpu_throttled_periods_total[5m])
+  / rate(prickle_container_cpu_periods_total[5m])
+
+# Container memory with the name and image grafted on for display. Both live
+# on the _info gauge because they are descriptive attributes, and never on a
+# hot series — this is the group_left join that puts them back together.
+prickle_container_memory_usage_bytes
+  * on (node, container) group_left (name, image, runtime) prickle_container_info
+```
+
 ### The label contract
 
 This is the part worth reading before you build dashboards on it.
@@ -184,6 +275,15 @@ per-core series, `device` on disks, `interface` on links, `mountpoint` on
 filesystems, `resource`/`kind` on PSI. A dimensional label partitions one metric
 across the parts of one entity; it never names an entity another metric could
 also be about.
+
+**`pod` carries the pod's UID, and `namespace` is not emitted yet.** This is the
+one place the closed set is currently filled with less than you would want, and
+it is a limit of the source rather than a choice: a cgroup directory name is
+`kubepods-burstable-pod6eb5044d_ef2e_49d1_a9cc_28f4e3fe88a3.slice`, and the
+kernel stores no pod name and no namespace anywhere in the tree. The UID is
+unescaped back to the form `kubectl get pod -o jsonpath='{.metadata.uid}'`
+reports, so it joins to anything that knows about pods. Resolving the name needs
+a Kubernetes-aware source, which a cgroup walk is not.
 
 **Descriptive attributes live on `_info` gauges,** never on hot series — join
 them with `group_left`. Where a hot series already has a natural key, the
@@ -242,6 +342,9 @@ All flags, with defaults:
 | `-collector.netdev.ignored-devices` | *(none)* | Regexp. `^veth` is the usual choice on a Kubernetes node. |
 | `-collector.filesystem.excluded-fs-types` | pseudo-filesystems, `overlay`, `squashfs` | Regexp. |
 | `-collector.filesystem.excluded-mount-points` | `/dev`, `/proc`, `/sys`, per-container and per-pod mounts | Regexp. |
+| `-collector.container` | `true` | Walk the cgroup v2 tree. Set false on a host where you only want node metrics. |
+| `-collector.container.docker-socket` | *(none)* | Path to the Docker socket, usually `/var/run/docker.sock`. Enables one GET request per pass for container names and images, which land on `prickle_container_info` and never on a hot series. Empty — the default — opens no socket at all. |
+| `-collector.container.docker-timeout` | `2s` | Deadline for that request. A wedged daemon costs the names, not the metrics. |
 | `-log.level` | `info` | `debug`, `info`, `warn`, `error`. |
 | `-version` | | Print version and exit. |
 

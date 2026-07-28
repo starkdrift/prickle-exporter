@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/starkdrift/prickle-exporter/internal/collector"
+	"github.com/starkdrift/prickle-exporter/internal/collector/container"
 	"github.com/starkdrift/prickle-exporter/internal/collector/host"
 	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
@@ -37,6 +39,10 @@ type config struct {
 	ignoredNetDevices   string
 	excludedFSTypes     string
 	excludedMountPoints string
+
+	containers    bool
+	dockerSocket  string
+	dockerTimeout time.Duration
 
 	logLevel    string
 	showVersion bool
@@ -74,6 +80,17 @@ func (c *config) register(fs *flag.FlagSet) {
 		host.DefaultExcludedFSTypes.String(), "Regexp of filesystem types to skip.")
 	fs.StringVar(&c.excludedMountPoints, "collector.filesystem.excluded-mount-points",
 		host.DefaultExcludedMountPoints.String(), "Regexp of mount points to skip.")
+
+	fs.BoolVar(&c.containers, "collector.container", true,
+		"Walk the cgroup v2 tree and expose per-container metrics.")
+	fs.StringVar(&c.dockerSocket, "collector.container.docker-socket", "",
+		"Path to the Docker socket, usually `/var/run/docker.sock`. Enables one "+
+			"GET request per pass for container names and images, which land on "+
+			"prickle_container_info and never on a hot series. Empty — the "+
+			"default — opens no socket at all.")
+	fs.DurationVar(&c.dockerTimeout, "collector.container.docker-timeout",
+		container.DefaultDockerTimeout,
+		"Deadline for that request. A wedged daemon costs the names, not the metrics.")
 
 	fs.StringVar(&c.logLevel, "log.level", "info", "One of debug, info, warn, error.")
 	fs.BoolVar(&c.showVersion, "version", false, "Print the version and exit.")
@@ -114,6 +131,29 @@ func (c *config) hostOptions() (host.Options, error) {
 		*f.dst = re
 	}
 	return opts, nil
+}
+
+// containerOptions builds the Phase 2 collector's configuration.
+func (c *config) containerOptions() container.Options {
+	return container.Options{
+		Roots:         c.roots(),
+		DockerSocket:  c.dockerSocket,
+		DockerTimeout: c.dockerTimeout,
+	}
+}
+
+// collectors builds the set the sampler polls, in the order SPEC.md §Collectors
+// lists the phases.
+func (c *config) collectors() ([]collector.Collector, error) {
+	hostOpts, err := c.hostOptions()
+	if err != nil {
+		return nil, err
+	}
+	collectors := []collector.Collector{host.New(hostOpts)}
+	if c.containers {
+		collectors = append(collectors, container.New(c.containerOptions()))
+	}
+	return collectors, nil
 }
 
 // nodeName resolves the `node` identity label.

@@ -1,0 +1,461 @@
+# HELP prickle_container_cpu_periods_total Bandwidth-enforcement periods elapsed. Zero until a CPU quota is set.
+# TYPE prickle_container_cpu_periods_total counter
+prickle_container_cpu_periods_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_cpu_periods_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_cpu_periods_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_periods_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_periods_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_periods_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_cpu_periods_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_cpu_periods_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_cpu_periods_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_cpu_periods_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_cpu_periods_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_cpu_periods_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_cpu_periods_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_cpu_periods_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0
+prickle_container_cpu_periods_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_cpu_periods_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_cpu_seconds_total CPU time consumed, split by mode.
+# TYPE prickle_container_cpu_seconds_total counter
+prickle_container_cpu_seconds_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",mode="user"} 0.018144
+prickle_container_cpu_seconds_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",mode="system"} 0.004536
+prickle_container_cpu_seconds_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",mode="user"} 0.613407
+prickle_container_cpu_seconds_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",mode="system"} 0.064796
+prickle_container_cpu_seconds_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d",mode="user"} 0.017795
+prickle_container_cpu_seconds_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d",mode="system"} 0.004448
+prickle_container_cpu_seconds_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d",mode="user"} 0.003637
+prickle_container_cpu_seconds_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d",mode="system"} 0.010913
+prickle_container_cpu_seconds_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d",mode="user"} 0.005396
+prickle_container_cpu_seconds_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d",mode="system"} 0.008095
+prickle_container_cpu_seconds_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",mode="user"} 0.018347
+prickle_container_cpu_seconds_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",mode="system"} 0.004586
+prickle_container_cpu_seconds_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",mode="user"} 0.07052
+prickle_container_cpu_seconds_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",mode="system"} 0.032054
+prickle_container_cpu_seconds_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",mode="user"} 0.017507
+prickle_container_cpu_seconds_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",mode="system"} 0.004376
+prickle_container_cpu_seconds_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",mode="user"} 0.015517
+prickle_container_cpu_seconds_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",mode="system"} 0.020689
+prickle_container_cpu_seconds_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",mode="user"} 0.022933
+prickle_container_cpu_seconds_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",mode="system"} 0
+prickle_container_cpu_seconds_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",mode="user"} 0.525681
+prickle_container_cpu_seconds_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",mode="system"} 0.468851
+prickle_container_cpu_seconds_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946",mode="user"} 0.02295
+prickle_container_cpu_seconds_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946",mode="system"} 0
+prickle_container_cpu_seconds_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",mode="user"} 2.439692
+prickle_container_cpu_seconds_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",mode="system"} 0.878277
+prickle_container_cpu_seconds_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",mode="user"} 0.02271
+prickle_container_cpu_seconds_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",mode="system"} 0.028388
+prickle_container_cpu_seconds_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",mode="user"} 0.018586
+prickle_container_cpu_seconds_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",mode="system"} 0.003717
+prickle_container_cpu_seconds_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",mode="user"} 0.942017
+prickle_container_cpu_seconds_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",mode="system"} 0.296551
+# HELP prickle_container_cpu_throttled_periods_total Periods in which the container exhausted its CPU quota and was throttled.
+# TYPE prickle_container_cpu_throttled_periods_total counter
+prickle_container_cpu_throttled_periods_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_cpu_throttled_seconds_total Seconds the container spent throttled against its CPU quota.
+# TYPE prickle_container_cpu_throttled_seconds_total counter
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_cpu_usage_seconds_total Total CPU time consumed. The sum of the user and system modes below, from the kernel's own accounting.
+# TYPE prickle_container_cpu_usage_seconds_total counter
+prickle_container_cpu_usage_seconds_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0.02268
+prickle_container_cpu_usage_seconds_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0.678204
+prickle_container_cpu_usage_seconds_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0.022244
+prickle_container_cpu_usage_seconds_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0.014551
+prickle_container_cpu_usage_seconds_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0.013492
+prickle_container_cpu_usage_seconds_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0.022934
+prickle_container_cpu_usage_seconds_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0.102574
+prickle_container_cpu_usage_seconds_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0.021883
+prickle_container_cpu_usage_seconds_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0.036207
+prickle_container_cpu_usage_seconds_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0.022933
+prickle_container_cpu_usage_seconds_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0.994532
+prickle_container_cpu_usage_seconds_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0.02295
+prickle_container_cpu_usage_seconds_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 3.317969
+prickle_container_cpu_usage_seconds_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0.051099
+prickle_container_cpu_usage_seconds_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0.022304
+prickle_container_cpu_usage_seconds_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 1.238568
+# HELP prickle_container_cpu_weight Relative share of CPU time under contention. The cgroup v2 cpu.weight, 1 to 10000, default 100.
+# TYPE prickle_container_cpu_weight gauge
+prickle_container_cpu_weight{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 1
+prickle_container_cpu_weight{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 1
+prickle_container_cpu_weight{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1
+prickle_container_cpu_weight{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1
+prickle_container_cpu_weight{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1
+prickle_container_cpu_weight{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 1
+prickle_container_cpu_weight{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 1
+prickle_container_cpu_weight{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 1
+prickle_container_cpu_weight{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 1
+prickle_container_cpu_weight{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 1
+prickle_container_cpu_weight{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 17
+prickle_container_cpu_weight{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 1
+prickle_container_cpu_weight{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 17
+prickle_container_cpu_weight{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 100
+prickle_container_cpu_weight{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 100
+prickle_container_cpu_weight{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 100
+# HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
+# TYPE prickle_container_info gauge
+prickle_container_info{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",runtime="containerd",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",runtime="containerd",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",runtime="containerd",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946",runtime="containerd",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",runtime="containerd",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",pod="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",pod="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",pod="",runtime="docker",qos="",name="",image=""} 1
+# HELP prickle_container_io_discarded_bytes_total Bytes discarded.
+# TYPE prickle_container_io_discarded_bytes_total counter
+prickle_container_io_discarded_bytes_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",device="vda"} 0
+prickle_container_io_discarded_bytes_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",device="vda"} 0
+prickle_container_io_discarded_bytes_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",device="vda"} 0
+# HELP prickle_container_io_discards_completed_total Discard operations completed.
+# TYPE prickle_container_io_discards_completed_total counter
+prickle_container_io_discards_completed_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",device="vda"} 0
+prickle_container_io_discards_completed_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",device="vda"} 0
+prickle_container_io_discards_completed_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",device="vda"} 0
+# HELP prickle_container_io_read_bytes_total Bytes read from block devices.
+# TYPE prickle_container_io_read_bytes_total counter
+prickle_container_io_read_bytes_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",device="vda"} 0
+prickle_container_io_read_bytes_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",device="vda"} 0
+prickle_container_io_read_bytes_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",device="vda"} 0
+# HELP prickle_container_io_reads_completed_total Read operations completed.
+# TYPE prickle_container_io_reads_completed_total counter
+prickle_container_io_reads_completed_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",device="vda"} 0
+prickle_container_io_reads_completed_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",device="vda"} 0
+prickle_container_io_reads_completed_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",device="vda"} 0
+# HELP prickle_container_io_writes_completed_total Write operations completed.
+# TYPE prickle_container_io_writes_completed_total counter
+prickle_container_io_writes_completed_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",device="vda"} 3
+prickle_container_io_writes_completed_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",device="vda"} 2
+prickle_container_io_writes_completed_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",device="vda"} 3
+# HELP prickle_container_io_written_bytes_total Bytes written to block devices.
+# TYPE prickle_container_io_written_bytes_total counter
+prickle_container_io_written_bytes_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",device="vda"} 12288
+prickle_container_io_written_bytes_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",device="vda"} 8192
+prickle_container_io_written_bytes_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",device="vda"} 12288
+# HELP prickle_container_memory_anon_bytes Anonymous memory: heap and stack, not backed by a file, reclaimable only to swap.
+# TYPE prickle_container_memory_anon_bytes gauge
+prickle_container_memory_anon_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 36864
+prickle_container_memory_anon_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 19763200
+prickle_container_memory_anon_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 40960
+prickle_container_memory_anon_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 86016
+prickle_container_memory_anon_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 86016
+prickle_container_memory_anon_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 40960
+prickle_container_memory_anon_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 8290304
+prickle_container_memory_anon_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 40960
+prickle_container_memory_anon_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 15421440
+prickle_container_memory_anon_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 40960
+prickle_container_memory_anon_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 14286848
+prickle_container_memory_anon_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 36864
+prickle_container_memory_anon_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 23113728
+prickle_container_memory_anon_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 15523840
+prickle_container_memory_anon_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 126976
+prickle_container_memory_anon_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 5242880
+# HELP prickle_container_memory_file_bytes Page cache.
+# TYPE prickle_container_memory_file_bytes gauge
+prickle_container_memory_file_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 24576
+prickle_container_memory_file_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 8192
+prickle_container_memory_file_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 24576
+prickle_container_memory_file_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 274432
+prickle_container_memory_file_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 32768
+prickle_container_memory_file_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 16384
+prickle_container_memory_file_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 32768
+prickle_container_memory_file_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 266240
+prickle_container_memory_file_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_memory_file_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_memory_inactive_file_bytes Page cache on the inactive LRU list, the first thing reclaimed under pressure. Subtract it from memory_usage_bytes for the working set.
+# TYPE prickle_container_memory_inactive_file_bytes gauge
+prickle_container_memory_inactive_file_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 204800
+prickle_container_memory_inactive_file_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 204800
+prickle_container_memory_inactive_file_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_memory_kernel_stack_bytes Kernel stacks of the container's threads.
+# TYPE prickle_container_memory_kernel_stack_bytes gauge
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 458752
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 245760
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 409600
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 245760
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 425984
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 409600
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 344064
+# HELP prickle_container_memory_limit_bytes Hard memory limit: the container is OOM-killed above it. Absent when unlimited.
+# TYPE prickle_container_memory_limit_bytes gauge
+prickle_container_memory_limit_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 178257920
+# HELP prickle_container_memory_major_page_faults_total Page faults that required a disk read. A rising rate here is a container swapping or thrashing its page cache.
+# TYPE prickle_container_memory_major_page_faults_total counter
+prickle_container_memory_major_page_faults_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_memory_page_faults_total Page faults taken by the container, major and minor together.
+# TYPE prickle_container_memory_page_faults_total counter
+prickle_container_memory_page_faults_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 1375
+prickle_container_memory_page_faults_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 14660
+prickle_container_memory_page_faults_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1238
+prickle_container_memory_page_faults_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 2031
+prickle_container_memory_page_faults_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 2021
+prickle_container_memory_page_faults_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 1258
+prickle_container_memory_page_faults_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 3860
+prickle_container_memory_page_faults_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 1369
+prickle_container_memory_page_faults_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 7593
+prickle_container_memory_page_faults_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 1261
+prickle_container_memory_page_faults_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 5798
+prickle_container_memory_page_faults_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 1238
+prickle_container_memory_page_faults_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 8280
+prickle_container_memory_page_faults_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 8095
+prickle_container_memory_page_faults_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 1261
+prickle_container_memory_page_faults_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 4218
+# HELP prickle_container_memory_page_tables_bytes Page tables mapping the container's address spaces.
+# TYPE prickle_container_memory_page_tables_bytes gauge
+prickle_container_memory_page_tables_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 20480
+prickle_container_memory_page_tables_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 438272
+prickle_container_memory_page_tables_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 20480
+prickle_container_memory_page_tables_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 32768
+prickle_container_memory_page_tables_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 36864
+prickle_container_memory_page_tables_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 20480
+prickle_container_memory_page_tables_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 200704
+prickle_container_memory_page_tables_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 20480
+prickle_container_memory_page_tables_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 1232896
+prickle_container_memory_page_tables_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 20480
+prickle_container_memory_page_tables_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 253952
+prickle_container_memory_page_tables_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 20480
+prickle_container_memory_page_tables_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 266240
+prickle_container_memory_page_tables_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 1327104
+prickle_container_memory_page_tables_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 32768
+prickle_container_memory_page_tables_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 151552
+# HELP prickle_container_memory_shmem_bytes Shared memory and tmpfs, charged to the container that faulted it in.
+# TYPE prickle_container_memory_shmem_bytes gauge
+prickle_container_memory_shmem_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 4096
+prickle_container_memory_shmem_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 4096
+prickle_container_memory_shmem_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_memory_slab_bytes Kernel data structures allocated on the container's behalf.
+# TYPE prickle_container_memory_slab_bytes gauge
+prickle_container_memory_slab_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 98224
+prickle_container_memory_slab_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 829216
+prickle_container_memory_slab_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 98224
+prickle_container_memory_slab_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 170248
+prickle_container_memory_slab_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 154776
+prickle_container_memory_slab_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 98224
+prickle_container_memory_slab_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 276592
+prickle_container_memory_slab_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 98224
+prickle_container_memory_slab_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 1190648
+prickle_container_memory_slab_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 98224
+prickle_container_memory_slab_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 321968
+prickle_container_memory_slab_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 99024
+prickle_container_memory_slab_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 372736
+prickle_container_memory_slab_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 1306112
+prickle_container_memory_slab_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 244384
+prickle_container_memory_slab_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 528136
+# HELP prickle_container_memory_socket_bytes Memory held in network socket buffers.
+# TYPE prickle_container_memory_socket_bytes gauge
+prickle_container_memory_socket_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 4096
+prickle_container_memory_socket_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 4096
+prickle_container_memory_socket_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_memory_unevictable_bytes Memory that cannot be reclaimed at all, such as mlock'd pages.
+# TYPE prickle_container_memory_unevictable_bytes gauge
+prickle_container_memory_unevictable_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 0
+# HELP prickle_container_memory_usage_bytes Total memory charged to the container, including page cache.
+# TYPE prickle_container_memory_usage_bytes gauge
+prickle_container_memory_usage_bytes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 229376
+prickle_container_memory_usage_bytes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 21573632
+prickle_container_memory_usage_bytes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 237568
+prickle_container_memory_usage_bytes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 352256
+prickle_container_memory_usage_bytes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 352256
+prickle_container_memory_usage_bytes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 233472
+prickle_container_memory_usage_bytes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 9084928
+prickle_container_memory_usage_bytes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 245760
+prickle_container_memory_usage_bytes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 19075072
+prickle_container_memory_usage_bytes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 233472
+prickle_container_memory_usage_bytes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 15187968
+prickle_container_memory_usage_bytes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 233472
+prickle_container_memory_usage_bytes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 24244224
+prickle_container_memory_usage_bytes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 19509248
+prickle_container_memory_usage_bytes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 458752
+prickle_container_memory_usage_bytes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 6311936
+# HELP prickle_container_pressure_stalled_seconds_total Seconds of stall from resource pressure. kind=some: at least one task stalled; kind=full: every task stalled.
+# TYPE prickle_container_pressure_stalled_seconds_total counter
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",resource="memory",kind="full"} 0
+# HELP prickle_container_processes Processes and threads currently in the container's cgroup.
+# TYPE prickle_container_processes gauge
+prickle_container_processes{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 1
+prickle_container_processes{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 28
+prickle_container_processes{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1
+prickle_container_processes{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1
+prickle_container_processes{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 1
+prickle_container_processes{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 1
+prickle_container_processes{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 15
+prickle_container_processes{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 1
+prickle_container_processes{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 25
+prickle_container_processes{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 1
+prickle_container_processes{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 15
+prickle_container_processes{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 1
+prickle_container_processes{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 26
+prickle_container_processes{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 25
+prickle_container_processes{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 1
+prickle_container_processes{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 21
+# HELP prickle_container_processes_limit Maximum processes and threads the container may create. Absent when unlimited.
+# TYPE prickle_container_processes_limit gauge
+prickle_container_processes_limit{node="fixture",container="03012e43b5bb1fd8b17930c4ef4b75d2362b57a965092d75155e29eac31da75e",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 289773
+prickle_container_processes_limit{node="fixture",container="6ce08e8f53c8f62691f5331f05c834bc5bce39e113fc51aae8cdded847b3b987",pod="07fc7cef-656b-48a7-929d-2734c2b4498e"} 289773
+prickle_container_processes_limit{node="fixture",container="3a82d43bf24b93b28a6650c5eac1b4fa7eb64ab9e970120027cd5f577489109c",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 289773
+prickle_container_processes_limit{node="fixture",container="7a36b33b77c7de60eb7cab2010051cd1e006078ac969b1014aab308e1fddef49",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 289773
+prickle_container_processes_limit{node="fixture",container="fbc4fcaba18e7bd21227e491993a7160acce663f78067c9db0d7e85e59ffb94f",pod="447e48e6-671a-459d-af5c-ac8189c9969d"} 289773
+prickle_container_processes_limit{node="fixture",container="4272073d274e4c0868c109a0f6bb906b8367e284c8d313bf3eec427aec135627",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 289773
+prickle_container_processes_limit{node="fixture",container="b6510ea131dffd026157d9da6c75809dbdc83a976dc9b031e116eac40f4d2cd2",pod="6ebad9d6-77d7-4e4a-a73e-22f205399a5b"} 289773
+prickle_container_processes_limit{node="fixture",container="0dbf9424e42060265b857cc326b3c9b83f739d2888f8443b4e5fad87ff4c71f1",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 289773
+prickle_container_processes_limit{node="fixture",container="9286dcfa0d1db9900c31d386cea9bb16f6af504b0a039d354bf5d235a24c64d9",pod="d79708e2-2596-4af9-92c5-c9b8f5fd1d1b"} 289773
+prickle_container_processes_limit{node="fixture",container="5bd7fbca43b63e9776c3687d6a6379db81a98b702a293442e34f39f2f325eef5",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 289773
+prickle_container_processes_limit{node="fixture",container="9973c4b071d3315ccfff4511c511e01756e000000fbf887c420d63d213faa359",pod="6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3"} 289773
+prickle_container_processes_limit{node="fixture",container="07567b640fb272f9ae43a1e020ca43d576a2b39f0122791381c48274630bb62d",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 289773
+prickle_container_processes_limit{node="fixture",container="4a81bc18c13d0dd4f0b823102f28b3f458b8fc79eb664f7e79c4a4e46db6e6df",pod="91a7a0ad-cc52-4896-8357-7b935e779946"} 289773
+prickle_container_processes_limit{node="fixture",container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74"} 289773
+prickle_container_processes_limit{node="fixture",container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b"} 289773
+prickle_container_processes_limit{node="fixture",container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2"} 289773

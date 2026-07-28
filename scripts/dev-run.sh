@@ -71,6 +71,9 @@ find_fixture() {
     1) printf '%s\n' "${trees[0]}" ;;
     *) printf 'more than one fixture tree; pass the one you want:\n' >&2
        printf '  %s\n' "${trees[@]}" >&2
+       printf 'Each is the subset of a capture that its own collector reads, so\n' >&2
+       printf 'no one tree exercises every phase at once — pick the phase you are\n' >&2
+       printf 'working on.\n' >&2
        exit 1 ;;
   esac
 }
