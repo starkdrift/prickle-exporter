@@ -35,6 +35,12 @@ go.work.sum
 .env.local
 *.local.env
 
+# Per-machine agent settings. Only the .local.json overlay is ignored —
+# .claude/settings.json and CLAUDE.md are shared config and stay tracked.
+# Same reasoning as /build/ above: an untracked file here would stamp
+# release binaries +dirty, so ignoring it is load-bearing, not tidiness.
+.claude/settings.local.json
+
 # Editor / OS cruft.
 .idea/
 .vscode/
