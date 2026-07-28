@@ -13,6 +13,8 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-07-28
+
 Phase 2: the container collector. Nothing in Phase 1's output changes — no
 metric was renamed, no label added to an existing series — so a Prometheus
 already scraping 0.1.x keeps every rule and dashboard it has. What arrives is a
@@ -129,6 +131,7 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/starkdrift/prickle-exporter/releases/tag/v0.1.0
