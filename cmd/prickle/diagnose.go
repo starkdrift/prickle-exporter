@@ -219,8 +219,9 @@ func describeGPUs(w io.Writer, cfg config) {
 	if !cfg.gpuPerProcess {
 		fmt.Fprintln(w, "  per-process attribution: off (-collector.gpu.per-process turns it on).")
 	}
-	fmt.Fprintln(w, "  AMD and Intel are SPEC.md §Collectors scope but unimplemented: no")
-	fmt.Fprintln(w, "  capture exists for either, so neither reports anything. See")
+	fmt.Fprintln(w, "  AMD is SPEC.md §Collectors scope but unimplemented: no capture")
+	fmt.Fprintln(w, "  exists for it, so an AMD host reports nothing. Intel is out of")
+	fmt.Fprintln(w, "  scope. See")
 	fmt.Fprintln(w, "  internal/collector/gpu/testdata/README.md §Coverage gaps.")
 }
 

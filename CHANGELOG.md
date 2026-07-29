@@ -14,8 +14,8 @@ what to do about it, which no commit-log generator writes.
 ## [Unreleased]
 
 Phase 3: the GPU collector, **NVIDIA only**. Nothing in Phase 1 or 2 output
-changes. AMD and Intel are in SPEC.md §Collectors' Phase 3 scope and are *not*
-implemented — see Notes.
+changes. AMD is in SPEC.md §Collectors' Phase 3 scope and is *not* implemented;
+Intel was dropped from that scope — see Notes.
 
 ### Added
 
@@ -96,12 +96,18 @@ Also fixed, in the same pass:
 
 ### Notes
 
-- **AMD and Intel are not implemented.** They are Phase 3 scope, but the
-  captured host is NVIDIA-only: there is no `gpu_busy_percent`, no
-  `mem_info_vram_*`, no `hwmon` tree and no `drm-*` fdinfo to develop against,
-  and SPEC.md §Testing rules forbids inventing a sysfs layout. An AMD or Intel
-  host reports no GPU metrics at all. Closing this needs a capture from such a
-  host with a workload running.
+- **AMD is not implemented.** It is Phase 3 scope, but every captured host is
+  NVIDIA-only: there is no `gpu_busy_percent`, no `mem_info_vram_*`, no `hwmon`
+  tree and no `drm-*` fdinfo to develop against, and SPEC.md §Testing rules
+  forbids inventing a sysfs layout. An AMD host reports no GPU metrics at all.
+  Closing this needs a capture from such a host with a ROCm workload running.
+- **Intel is no longer Phase 3 scope.** SPEC.md §Collectors dropped it: no
+  capture host is obtainable, and scope that is never going to arrive is worse
+  than a stated limit — it promises metrics an Intel host was always going to
+  return none of. Nothing was deleted to do this. Intel reads through the same
+  DRM fdinfo path the AMD collector needs anyway, and `capture-fixtures.sh`
+  still captures it, so reopening the decision costs a fixture tree rather than
+  a redesign.
 - **The NVML path has now run on hardware** — an H100 80GB, driver 580.173.02,
   in Default and MIG mode — and its output was diffed against the same card's
   `nvidia-smi` source. That is what SPEC.md §Testing rules means by the two

@@ -99,8 +99,8 @@ func (c *config) register(fs *flag.FlagSet) {
 		"Deadline for that request. A wedged daemon costs the names, not the metrics.")
 
 	fs.BoolVar(&c.gpus, "collector.gpu", true,
-		"Expose GPU metrics. NVIDIA only; AMD and Intel are Phase 3 scope with no "+
-			"captured fixtures yet, so they report nothing.")
+		"Expose GPU metrics. NVIDIA only; AMD is Phase 3 scope with no captured "+
+			"fixtures yet and reports nothing, and Intel is out of scope.")
 	fs.StringVar(&c.nvidiaSource, "collector.gpu.nvidia-source", gpu.SourceAuto,
 		"Force an NVIDIA implementation: `auto`, nvml or smi. auto tries NVML and "+
 			"falls back to nvidia-smi. A debugging flag, not a tuning knob.")

@@ -108,7 +108,7 @@ they are not parsed because:
 | Gap | Status |
 |---|---|
 | **AMD — sysfs + DRM fdinfo** | **Not implemented.** SPEC.md §Collectors scope; the captured host is NVIDIA-only, so there is no `gpu_busy_percent`, no `mem_info_vram_*` and no `hwmon` tree to develop against. An AMD host reports nothing. |
-| **Intel — DRM fdinfo** | **Not implemented**, same reason. |
+| **Intel — DRM fdinfo** | **Out of scope** as of SPEC.md §Collectors: no capture host is obtainable, and a parser developed against a layout nobody has captured is forbidden by §Testing rules. Reopening it costs a capture, not a redesign — Intel rides the same DRM fdinfo path AMD needs. |
 | NVML — the whole path | Still not fixture-testable: a C call, not a file read (SPEC.md §Testing rules). **No longer unverified** — see [Hardware verification](#hardware-verification) below. Unit tests drive the shared emission code through a fake source; `nvml_hardware_test.go` re-checks the real one wherever a GPU is present. |
 | ~~A card in Default mode (MIG off)~~ | **Closed** by `h100-default-20260729`. The hand-written `-L` override in `TestDefaultModeCardHasNoMIG` is kept: it is now the *unit* of that behaviour, with the capture as the integration case. |
 | A multi-GPU host | Single card. The parsers key on UUID rather than position specifically so a second card cannot silently attach its partitions to the first, but nothing captured proves it. |

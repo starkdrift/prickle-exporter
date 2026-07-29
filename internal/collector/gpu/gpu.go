@@ -24,9 +24,10 @@
 // promise. Per-process attribution is keyed on `command`, the basename of the
 // process path, and is opt-in.
 //
-// AMD and Intel are specified in SPEC.md §Collectors but not implemented: the
-// captured host has neither, and testdata/README.md records that gap rather
-// than this package guessing at a sysfs layout it has never seen.
+// AMD is specified in SPEC.md §Collectors but not implemented: no captured
+// host has one, and testdata/README.md records that gap rather than this
+// package guessing at a sysfs layout it has never seen. Intel is out of scope
+// there, for the same want of a capture.
 package gpu
 
 import (
@@ -133,8 +134,8 @@ type nvidiaSource interface {
 // Options configures the GPU collector. The zero value is usable: it selects a
 // source automatically and leaves per-process attribution off.
 type Options struct {
-	// Roots is carried for the AMD and Intel collectors, which read sysfs and
-	// DRM fdinfo. Unused until those exist (testdata/README.md §Coverage gaps).
+	// Roots is carried for the AMD collector, which reads sysfs and DRM fdinfo.
+	// Unused until it exists (testdata/README.md §Coverage gaps).
 	Roots fsroot.Roots
 
 	// NVIDIASource forces one implementation: "auto" (default), "nvml" or

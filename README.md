@@ -53,14 +53,14 @@ changing a decision means editing SPEC.md first, in its own commit.
 ## Status
 
 **Phase 3, NVIDIA only.** Host, container and NVIDIA GPU collectors are
-implemented and tested against a captured fixture tree. AMD and Intel are
-specified but not written — no capture exists for either.
+implemented and tested against a captured fixture tree. AMD is specified but
+not written — no capture exists for it. Intel is out of scope (SPEC §Collectors).
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
 | 2 | Containers — cgroup v2 walk, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
-| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo, Intel DRM fdinfo | **NVIDIA shipped**; [AMD and Intel unimplemented](#coverage-gaps-1) |
+| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; [AMD unimplemented](#coverage-gaps-1), Intel out of scope |
 | 4 | Per-collector timeouts, cardinality caps, self-instrumentation | partial — self-metrics exist, caps do not |
 | 5 | Distribution — systemd units, Helm chart, Docker, four Grafana dashboards | planned |
 
@@ -154,8 +154,8 @@ Phase 3 GPU
   live source: smi
   GPUs: 1, MIG instances: 2
   per-process attribution: off (-collector.gpu.per-process turns it on).
-  AMD and Intel are SPEC.md §Collectors scope but unimplemented: no
-  capture exists for either, so neither reports anything.
+  AMD is SPEC.md §Collectors scope but unimplemented: no capture
+  exists for it, so an AMD host reports nothing. Intel is out of scope.
 
 host collector: 278 series in 672µs
 container collector: 403 series in 1.4ms
@@ -275,8 +275,8 @@ prickle_container_memory_usage_bytes
 ### GPUs — Phase 3 (NVIDIA only)
 
 About 12 series for one MIG-partitioned card. NVIDIA is served by two
-interchangeable implementations behind one interface; **AMD and Intel are
-specified but not implemented** — see [Coverage gaps](#coverage-gaps-1).
+interchangeable implementations behind one interface; **AMD is specified but
+not implemented and Intel is out of scope** — see [Coverage gaps](#coverage-gaps-1).
 
 | Source | Families |
 |---|---|
@@ -323,7 +323,7 @@ prickle_gpu_nvidia_source_info
 | Gap | Effect | What closes it |
 |---|---|---|
 | **AMD — sysfs + DRM fdinfo** | **No AMD metrics at all.** A third of what SPEC §Collectors assigns to Phase 3. | A capture from an AMD host with a ROCm workload running. `capture-fixtures.sh check` already reports whether one would produce usable `drm-*` fdinfo keys. |
-| **Intel — DRM fdinfo** | **No Intel metrics at all.** | A capture from an Intel GPU host. |
+| **Intel — DRM fdinfo** | **Out of scope** as of SPEC §Collectors: no capture host is obtainable, so listing it would be scope on paper and an empty scrape in practice. | A capture. Intel rides the same DRM fdinfo path AMD needs, so reopening it costs a fixture tree, not a redesign. |
 | ~~**NVML — the entire path**~~ | **Closed.** Verified on an H100 80GB / driver 580.173.02, Default and MIG mode, 2026-07-29; the hardware test that asserts the two sources agree ships in the package. Still not fixture-testable — a C call is not a file read — so it re-verifies only where a GPU is present. | — |
 | Per-MIG memory and utilization from `nvidia-smi` | Absent from that source. No CSV query publishes them, and the human-readable table is not parsed. | Nothing — this is a real limitation of the fallback. NVML supplies them. |
 | GPU-instance / compute-instance IDs | Not exposed by either source. Nothing captured joins a MIG UUID to a GI/CI ID, and pairing the two listings would assume they are in the same order. | A capture that joins them, or an NVML-only label — the latter would break the identical-output requirement. |

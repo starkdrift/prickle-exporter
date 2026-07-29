@@ -212,9 +212,11 @@ since a symlink into a fixture tree would dangle.
 
 #### Intel
 
-Intel GPUs are read through DRM fdinfo, same path as AMD, with no vendor-tool
-section. The `/dev/dri/*` fdinfo capture already covers them; a dedicated Intel
-run is worth doing once Phase 3 has an Intel code path.
+**Out of scope** as of SPEC §Collectors — no capture host is obtainable, and a
+parser developed against a layout nobody has captured is exactly what §Testing
+rules forbids. The script still grabs `/dev/dri/*` fdinfo, because that is the
+same path AMD needs and costs nothing to keep: an Intel host that wandered past
+would produce a usable tree, which is all reopening the decision would take.
 
 ### After the capture
 
