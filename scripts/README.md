@@ -175,9 +175,23 @@ since a symlink into a fixture tree would dangle.
   activates; capture after the reboot.
 - **A compute workload must be running** or `query-compute-apps.csv` is empty
   and there is nothing to test per-process attribution against. `prep` uses
-  `dcgmproftester` when present, falling back to a torch matmul loop, pinned via
-  `CUDA_VISIBLE_DEVICES` to the first MIG UUID so the CSV rows are
-  MIG-attributed — the exact row shape the parser most needs.
+  `dcgmproftester` when present, falling back to a torch matmul loop, then to an
+  `nvcc`-built kernel, then to a `gcc` + `dlopen(libcuda)` spinner that
+  JIT-compiles embedded PTX. All are pinned via `CUDA_VISIBLE_DEVICES` to the
+  first MIG UUID when there is one, so the CSV rows are MIG-attributed — the
+  exact row shape the parser most needs.
+- **A workload that holds a context but runs no kernels is worse than none.**
+  The PTX spinner's JIT is the fragile link in that chain: on an H100 with
+  driver 580 / CUDA 13.0 its kernel launch failed with
+  `CUDA_ERROR_CONTEXT_IS_DESTROYED` and it degraded to holding a context. The
+  degradation is silent — `query-compute-apps` still has its row, so the old
+  `check` passed — and the capture goes home with `utilization.gpu` reading `0`.
+  **A `0` in a fixture cannot be told apart from a parser that turned an absent
+  `[N/A]` into a zero**, which is the single most important thing the GPU
+  fixtures exist to distinguish. `nvcc` is now tried before that path (NVIDIA's
+  own images ship a toolkit at `/usr/local/cuda`), and both `check` and
+  `capture` now report a numeric `0` alongside a resident process as a gap. A
+  literal `[N/A]` is not flagged: under MIG it is the correct answer.
 - **The proprietary driver emits no `drm-*` keys in fdinfo.** Processes holding
   `/dev/nvidia*` fds show only `pos`/`flags`/`mnt_id`/`ino`. This is a wanted
   *negative* fixture, not a failed capture: it's the evidence that per-process
@@ -220,10 +234,30 @@ run is worth doing once Phase 3 has an Intel code path.
 
 ### Known-good and known-empty
 
-The first H200 rental (Ubuntu 5.15, driver 580.173.02) produced complete and
-correct Phase 1 material, `cgroup2fs` confirming pure v2, and the NVIDIA
-empty-fdinfo negative fixture above. It missed everything else: MIG was
+**H200, 2026-07-26** (Ubuntu 5.15, driver 580.173.02). The first rental produced
+complete and correct Phase 1 material, `cgroup2fs` confirming pure v2, and the
+NVIDIA empty-fdinfo negative fixture above. It missed everything else: MIG was
 disabled, no GPU workload was running, and the host had no containers at all —
 so `containers.json` was `[]` and there was no `sys/` tree. That run is why
-`check` and `prep` exist. Run `check` before you capture, and read the banner
-before you destroy the host.
+`check` and `prep` exist. A second pass on the same host, after `prep`, is what
+[internal/collector/gpu/testdata/h200-mig-20260726](../internal/collector/gpu/testdata/h200-mig-20260726)
+holds.
+
+**H100 80GB, 2026-07-29** (Ubuntu 22.04, driver 580.173.02, CUDA 13.1 toolkit
+present). Captured twice on purpose: once in **Default mode** under a real
+kernel — that tree is
+[h100-default-20260729](../internal/collector/gpu/testdata/h100-default-20260729),
+and it closes the "no unpartitioned card" gap the H200 left open — and once
+with MIG enabled, to run the NVML hardware test in both modes before the host
+was released. Docker and k3s were deliberately *not* installed: Phase 1 and
+Phase 2 were already covered by the H200, and this rental was for the GPU.
+
+Two things this rental taught, both now handled by the script:
+
+- The PTX spinner degraded silently to a 0%-utilization load (see
+  [NVIDIA](#nvidia) above). The first capture attempt looked complete and would
+  have been ambiguous.
+- `pkill -f <pattern>` inside an `ssh` one-liner matches the remote shell's own
+  command line and kills the session. Use `pkill -x <name>`.
+
+Run `check` before you capture, and read the banner before you destroy the host.

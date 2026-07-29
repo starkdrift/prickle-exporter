@@ -324,7 +324,7 @@ prickle_gpu_nvidia_source_info
 |---|---|---|
 | **AMD — sysfs + DRM fdinfo** | **No AMD metrics at all.** A third of what SPEC §Collectors assigns to Phase 3. | A capture from an AMD host with a ROCm workload running. `capture-fixtures.sh check` already reports whether one would produce usable `drm-*` fdinfo keys. |
 | **Intel — DRM fdinfo** | **No Intel metrics at all.** | A capture from an Intel GPU host. |
-| **NVML — the entire path** | Builds and is wired in, but **has never run**: it needs an NVIDIA driver, and no fixture can stand in for a C call (SPEC §Testing rules). Treat `prickle-nvml` as unverified until it runs on hardware. | One run on an NVIDIA host, checked against the captured `nvidia-smi` output. |
+| ~~**NVML — the entire path**~~ | **Closed.** Verified on an H100 80GB / driver 580.173.02, Default and MIG mode, 2026-07-29; the hardware test that asserts the two sources agree ships in the package. Still not fixture-testable — a C call is not a file read — so it re-verifies only where a GPU is present. | — |
 | Per-MIG memory and utilization from `nvidia-smi` | Absent from that source. No CSV query publishes them, and the human-readable table is not parsed. | Nothing — this is a real limitation of the fallback. NVML supplies them. |
 | GPU-instance / compute-instance IDs | Not exposed by either source. Nothing captured joins a MIG UUID to a GI/CI ID, and pairing the two listings would assume they are in the same order. | A capture that joins them, or an NVML-only label — the latter would break the identical-output requirement. |
 | A multi-GPU host | Single card captured. Parsers key on UUID rather than position so a second card cannot attach its partitions to the first, but nothing proves it. | A capture from a multi-GPU host. |
@@ -445,13 +445,20 @@ rule holds for both. Both sources sit behind one `nvidiaSource` interface and
 **must emit identical metric output for the same GPU** — a hardware test asserts
 it.
 
-> **The NVML path is unverified.** It compiles, `ci/check.sh` builds and vets it
-> on every run, and it is wired into selection — but it has never executed,
-> because that needs an NVIDIA driver and no fixture can stand in for a C call
-> (SPEC §Testing rules says as much). The static `prickle` binary is unaffected:
-> the build tag means it cannot contain any of that code. Treat `prickle-nvml`
-> as unreleased until someone runs it on a GPU and diffs its output against the
-> captured `nvidia-smi` reference.
+The hardware test lives in
+[internal/collector/gpu/nvml_hardware_test.go](internal/collector/gpu/nvml_hardware_test.go)
+and skips itself wherever NVML does not load, so `go test -tags nvml` stays
+green on a laptop. It was run on an **H100 80GB, driver 580.173.02, in both
+Default and MIG mode** (2026-07-29), and it found three disagreements that no
+fixture could have:
+
+| Found | Effect had it shipped |
+|---|---|
+| NVML counted driver-reserved memory as used | `prickle_gpu_memory_used_bytes` 480 MiB higher per card from `prickle-nvml` than from `prickle` — every memory panel and capacity alert shifting with the artifact deployed |
+| NVML spelled a MIG profile `10gb` where `nvidia-smi -L` spells it `1g.10gb` | The `profile` label on `prickle_gpu_mig_info` differing between the two binaries for the same card |
+| A second GPU collector in one process got an already-closed NVML handle | `prickle diagnose` reporting `NVML source is closed` on a host where NVML worked perfectly |
+
+All three are fixed, and each has a test that fails if it comes back.
 
 Both are read-only. Every NVML symbol bound is a `Get`, resolved by its
 versioned name (`nvmlDeviceGetComputeRunningProcesses_v3`) so the struct layouts

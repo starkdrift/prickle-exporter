@@ -37,6 +37,62 @@ implemented — see Notes.
 - `ci/check.sh` now compiles, vets and tests the `-tags nvml` build. That source
   is invisible to every other step, so an edit to shared GPU code could break
   the second shipped artifact silently.
+- **A hardware test asserting the two sources agree**, which SPEC.md §Testing
+  rules requires and nothing implemented. It reads the same card through both
+  implementations and compares whole series identities — name, label keys *and*
+  label values — so a divergence in a label shows up as a missing series rather
+  than as a value that looks close enough. It skips wherever NVML does not
+  load, so `go test -tags nvml` stays green off hardware.
+- A second fixture capture, `h100-default-20260729`: an H100 in **Default
+  mode** under a real CUDA kernel, with its own golden file. The first capture
+  was MIG-partitioned for its whole life, so "what does an unpartitioned card
+  report" was answered by a hand-written `nvidia-smi -L` line, and "does a real
+  utilization reading survive the parser" could not be answered at all — an
+  idle card reads `0`, which is indistinguishable from a parser wrongly turning
+  an absent `[N/A]` into a zero. This card was pinned at 100%.
+
+### Fixed
+
+Three defects in the NVML path, all found by its **first execution on hardware**
+(H100 80GB, driver 580.173.02, Default and MIG mode, 2026-07-29). None was
+reachable from a fixture; each now has a test that fails if it returns.
+
+- **`prickle_gpu_memory_used_bytes` was 480 MiB too high from `prickle-nvml`.**
+  It bound `nvmlDeviceGetMemoryInfo`, whose `used` is `total - free` and so
+  includes memory the driver reserves; `nvidia-smi` reports the `_v2` number,
+  which excludes it. The two artifacts therefore disagreed about the same card
+  by half a gigabyte — enough to move every memory panel and capacity alert
+  depending on which binary was deployed. Now binds
+  `nvmlDeviceGetMemoryInfo_v2`, falling back to the original only on drivers too
+  old to publish it, which are the drivers whose `nvidia-smi` reports the old
+  accounting anyway.
+- **The `profile` label on `prickle_gpu_mig_info` differed between the two
+  sources.** NVML has no entry point returning the profile name, and the label
+  was derived from the instance's memory alone: `10gb` where `nvidia-smi -L`
+  spells it `1g.10gb`. The leading slice count now comes from
+  `nvmlDeviceGetAttributes_v2`. **Operator impact:** a dashboard or recording
+  rule filtering on `profile` matched only one of the two artifacts.
+- **`prickle diagnose` reported `NVML source is closed` on hosts where NVML
+  worked.** The library handle is process-global; diagnose builds a GPU
+  collector to describe the live source, closes it, and then builds the real
+  one, which was handed the same already-closed source. The load is now
+  reference-counted and re-established after a full release. A failed load is
+  still never retried, which is what SPEC.md §Collectors' "attempt once at
+  startup" protects.
+
+Also fixed, in the same pass:
+
+- `prickle diagnose` no longer says "On a host with no NVIDIA GPU this is
+  expected" after an operator *forced* an unavailable source with
+  `-collector.gpu.nvidia-source`. On a host that plainly has a GPU, that line
+  answered a question nobody asked.
+- `scripts/capture-fixtures.sh` prefers an `nvcc`-built kernel over its
+  `gcc` + embedded-PTX spinner, whose JIT fails on CUDA 13 drivers and degrades
+  *silently* to a context-only load. The old chain produced a capture that
+  looked complete with `utilization.gpu` reading `0` — the one value a GPU
+  fixture must never be ambiguous about. `check` and `capture` now report a
+  numeric `0` alongside a resident compute process as a gap; a literal `[N/A]`
+  is not flagged, because under MIG it is the correct answer.
 
 ### Notes
 
@@ -46,14 +102,13 @@ implemented — see Notes.
   and SPEC.md §Testing rules forbids inventing a sysfs layout. An AMD or Intel
   host reports no GPU metrics at all. Closing this needs a capture from such a
   host with a workload running.
-- **The NVML path has never executed.** It builds, it is gated in CI, and it is
-  wired into selection — but running it needs an NVIDIA driver, and SPEC.md
-  §Testing rules is explicit that a C call cannot be fixture-tested. The static
-  `prickle` binary is unaffected: the build tag means it cannot contain that
-  code, and it uses `nvidia-smi`. **`prickle-nvml` should not be released until
-  someone runs it on a GPU** and diffs its output against the captured
-  `nvidia-smi` reference — which is what SPEC.md §Testing rules means by the two
-  sources having to agree.
+- **The NVML path has now run on hardware** — an H100 80GB, driver 580.173.02,
+  in Default and MIG mode — and its output was diffed against the same card's
+  `nvidia-smi` source. That is what SPEC.md §Testing rules means by the two
+  sources having to agree, and it took three fixes to be true (see Fixed). It
+  remains un-fixture-testable: a C call is not a file read, so the assertion
+  re-runs only where a GPU is present. What is still unproven for both sources
+  is a **multi-GPU host** — every capture so far is a single card.
 - **An absent metric means the driver would not say.** `utilization_ratio`
   vanishes for the whole card once MIG is enabled — the driver reports `[N/A]`,
   verified on H200 / driver 580 and present in the fixture. Reporting zero there

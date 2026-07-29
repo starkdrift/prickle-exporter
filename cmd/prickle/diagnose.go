@@ -190,7 +190,16 @@ func describeGPUs(w io.Writer, cfg config) {
 				fmt.Fprintf(w, "    %s\n", line)
 			}
 		}
-		fmt.Fprintln(w, "  On a host with no NVIDIA GPU this is expected and not an error.")
+		// Only true of automatic selection. Saying it after an operator forced
+		// a source that this build or host cannot provide reads as "you have no
+		// GPU" on a machine that has one — which is the opposite of the answer
+		// they came for.
+		if cfg.nvidiaSource == gpu.SourceAuto {
+			fmt.Fprintln(w, "  On a host with no NVIDIA GPU this is expected and not an error.")
+		} else {
+			fmt.Fprintf(w, "  -collector.gpu.nvidia-source=%s forced this source; %s selects one automatically.\n",
+				cfg.nvidiaSource, gpu.SourceAuto)
+		}
 		return
 	}
 

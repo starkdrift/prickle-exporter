@@ -73,13 +73,76 @@ nvidia_mig_enabled()  { nvidia-smi -L 2>/dev/null | grep -q 'MIG '; }
 nvidia_compute_apps() {
   nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c .
 }
+# Echoes the first card's utilization as the driver prints it: a number, or
+# [N/A] whenever MIG is enabled.
+nvidia_utilization() {
+  nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null \
+    | head -1 | tr -d ' '
+}
 amd_present() { compgen -G '/sys/class/drm/card*/device/gpu_busy_percent' >/dev/null; }
 
 # ---------------------------------------------------------------------------
 # GPU workload: needed so query-compute-apps and per-process fdinfo have rows.
-# Fallback chain: dcgmproftester -> torch -> self-built spinner (gcc + libcuda
-# driver API via dlopen + embedded PTX — needs NO CUDA toolkit, no downloads).
+# Fallback chain: dcgmproftester -> torch -> nvcc-built kernel -> self-built
+# spinner (gcc + libcuda driver API via dlopen + embedded PTX — needs NO CUDA
+# toolkit, no downloads).
+#
+# nvcc comes before the PTX spinner because the spinner's JIT is the fragile
+# link: on an H100 with driver 580 / CUDA 13.0 its kernel launch failed with
+# CUDA_ERROR_CONTEXT_IS_DESTROYED and it fell back to holding a context, which
+# is a *silent* degradation — query-compute-apps still has its row, so `check`
+# passes, and the capture goes home with utilization.gpu reading 0. A fixture
+# that says 0 cannot be told apart from one where the parser wrongly turned an
+# absent [N/A] into a zero, which is the single most important thing the GPU
+# fixtures exist to distinguish. NVIDIA's own images ship a toolkit; use it.
 # ---------------------------------------------------------------------------
+emit_spinner_cu() {
+  cat > "$1" <<'CUEOF'
+/* prickle-gpu-spin (nvcc): a real kernel, so utilization.gpu reads 100 rather
+ * than 0. Preferred over the PTX spinner whenever a CUDA toolkit is present. */
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+
+__global__ void spin(float *out, unsigned long long iters) {
+  float f = 1.0000001f;
+  for (unsigned long long i = 0; i < iters; i++) f = fmaf(f, f, f);
+  out[blockIdx.x * blockDim.x + threadIdx.x] = f;
+}
+
+int main(int argc, char **argv) {
+  long duration = argc > 1 ? atol(argv[1]) : 600;
+  float *out = NULL; void *ballast = NULL;
+  cudaMalloc(&out, 1024 * 1024 * sizeof(float));
+  cudaMalloc(&ballast, 4ULL << 30);        /* best effort: visible memory use */
+  setvbuf(stderr, NULL, _IONBF, 0);
+
+  time_t end = time(NULL) + duration;
+  long n = 0;
+  while (time(NULL) < end) {
+    spin<<<1024, 256>>>(out, 2000000ULL);
+    cudaError_t e = cudaDeviceSynchronize();
+    if (e != cudaSuccess) {
+      fprintf(stderr, "cudaDeviceSynchronize: %s\n", cudaGetErrorString(e));
+      return 1;
+    }
+    if (++n == 1) fprintf(stderr, "first kernel iteration OK\n");
+  }
+  fprintf(stderr, "done: %ld kernel iterations\n", n);
+  return 0;
+}
+CUEOF
+}
+
+# nvcc_path echoes a usable nvcc, or nothing.
+nvcc_path() {
+  if have nvcc; then command -v nvcc; return; fi
+  local c
+  for c in /usr/local/cuda/bin/nvcc /usr/local/cuda-*/bin/nvcc; do
+    [[ -x $c ]] && { echo "$c"; return; }
+  done
+}
+
 emit_spinner_c() {
   cat > "$1" <<'CEOF'
 /* prickle-gpu-spin: minimal CUDA driver-API load generator.
@@ -201,8 +264,26 @@ import torch
 a = torch.rand(8192, 8192, device="cuda")
 while True: a = a @ a' >/tmp/gpu-workload.log 2>&1 &
     note "torch matmul loop running${uuid:+ on $uuid}"
+  elif [[ -n $(nvcc_path) ]]; then
+    local nvcc; nvcc=$(nvcc_path)
+    note "no dcgmproftester/torch — building prickle-gpu-spin with $nvcc"
+    emit_spinner_cu /tmp/prickle-gpu-spin.cu
+    # sm_90 is Hopper (H100/H200); -arch=native lets older and newer cards
+    # build the same source. Try native first, since it needs no table here.
+    if "$nvcc" -O2 -arch=native -o /tmp/prickle-gpu-spin /tmp/prickle-gpu-spin.cu \
+         >/tmp/gpu-workload.log 2>&1 ||
+       "$nvcc" -O2 -o /tmp/prickle-gpu-spin /tmp/prickle-gpu-spin.cu \
+         >>/tmp/gpu-workload.log 2>&1; then
+      nohup "${runner[@]}" /tmp/prickle-gpu-spin $dur >>/tmp/gpu-workload.log 2>&1 &
+      note "prickle-gpu-spin running (${dur}s)${uuid:+ on $uuid}"
+    else
+      warn "nvcc build failed — see /tmp/gpu-workload.log"
+    fi
   elif have gcc; then
-    note "no dcgmproftester/torch — building prickle-gpu-spin (gcc + libcuda, no toolkit needed)"
+    note "no dcgmproftester/torch/nvcc — building prickle-gpu-spin (gcc + libcuda, no toolkit needed)"
+    note "NOTE: this path JIT-compiles PTX and has been seen to fail on CUDA 13"
+    note "      drivers, degrading to a context-only load with 0% utilization."
+    note "      Check the captured query-gpu.csv before destroying the host."
     emit_spinner_c /tmp/prickle-gpu-spin.c
     if gcc -O2 -o /tmp/prickle-gpu-spin /tmp/prickle-gpu-spin.c -ldl 2>/tmp/gpu-workload.log; then
       nohup "${runner[@]}" /tmp/prickle-gpu-spin $dur >>/tmp/gpu-workload.log 2>&1 &
@@ -254,7 +335,16 @@ cmd_check() {
       note "GPU is not MIG-capable (consumer/workstation card) — MIG fixtures not expected here"
     fi
     n=$(nvidia_compute_apps)
-    if [[ $n -gt 0 ]]; then ok "GPU compute apps running: $n — query-compute-apps will have rows"
+    if [[ $n -gt 0 ]]; then
+      ok "GPU compute apps running: $n — query-compute-apps will have rows"
+      # A process can hold a CUDA context without running a single kernel, and
+      # that capture is worse than useless: utilization.gpu reads 0, which is
+      # indistinguishable from a parser wrongly turning an absent [N/A] into a
+      # zero. [N/A] itself is fine and expected under MIG — only a numeric 0 is
+      # the problem.
+      if [[ $(nvidia_utilization) == 0 ]]; then
+        gap "a GPU process is resident but utilization.gpu is 0 — the workload holds a context without running kernels, and a 0 in the fixture cannot be told from a mis-parsed [N/A]"
+      fi
     else gap "no GPU compute processes — query-compute-apps.csv will be EMPTY"; fi
   else
     note "no nvidia-smi (fine on AMD hosts)"
@@ -415,6 +505,8 @@ cmd_capture() {
       && gap "MIG-capable GPU captured with MIG disabled"
     [[ ! -s $OUT_DIR/nvidia/query-compute-apps.csv ]] \
       && gap "query-compute-apps.csv is empty (no GPU workload was running)"
+    [[ -s $OUT_DIR/nvidia/query-compute-apps.csv && $(nvidia_utilization) == 0 ]] \
+      && gap "utilization.gpu captured as 0 with a process resident — see 'check'"
   else note "no nvidia-smi"; fi
 
   say "AMD sysfs + rocm-smi"

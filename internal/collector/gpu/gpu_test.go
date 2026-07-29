@@ -18,7 +18,9 @@ import (
 
 var updateGolden = flag.Bool("update-golden", false, "rewrite testdata/golden/*.prom")
 
-// fixtureDir is the captured NVIDIA output every parser test reads through.
+// fixtureDir is the captured NVIDIA output the tests in this file read
+// through: an H200 with MIG enabled. The second capture, an H100 in Default
+// mode, drives smi_default_mode_test.go through the same runner.
 const fixtureDir = "testdata/h200-mig-20260726"
 
 // Facts about the capture, asserted rather than assumed.
@@ -39,6 +41,10 @@ const (
 type fixtureRunner struct {
 	t *testing.T
 
+	// dir is the capture being replayed. There is more than one, and which
+	// host a test runs against is part of what it asserts.
+	dir string
+
 	// calls records what was asked for, so a test can assert on the queries
 	// themselves — the field set is part of what the fixture pins.
 	calls [][]string
@@ -52,7 +58,13 @@ type fixtureRunner struct {
 
 func newFixtureRunner(t *testing.T) *fixtureRunner {
 	t.Helper()
-	return &fixtureRunner{t: t, fail: map[string]error{}, override: map[string]string{}}
+	return newFixtureRunnerAt(t, fixtureDir)
+}
+
+// newFixtureRunnerAt replays a named capture.
+func newFixtureRunnerAt(t *testing.T, dir string) *fixtureRunner {
+	t.Helper()
+	return &fixtureRunner{t: t, dir: dir, fail: map[string]error{}, override: map[string]string{}}
 }
 
 // queryKind names the three calls smi.go makes.
@@ -93,7 +105,7 @@ func (r *fixtureRunner) Run(_ context.Context, _ string, args ...string) ([]byte
 		return nil, fmt.Errorf("fixtureRunner: unexpected query %q", kind)
 	}
 
-	body, err := os.ReadFile(filepath.Join(fixtureDir, "nvidia", name))
+	body, err := os.ReadFile(filepath.Join(r.dir, "nvidia", name))
 	if err != nil {
 		r.t.Fatal(err)
 	}

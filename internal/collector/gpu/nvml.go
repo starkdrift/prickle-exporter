@@ -63,14 +63,52 @@ typedef struct {
   unsigned int memory;
 } prickle_utilization_t;
 
-// nvmlMemory_t, as taken by nvmlDeviceGetMemoryInfo. The _v2 variant of that
-// call uses a larger struct with a version field; this binds the original,
-// whose three-field layout has never changed.
+// nvmlMemory_t, as taken by nvmlDeviceGetMemoryInfo. Its three-field layout
+// has never changed. It is the fallback: see prickle_device_memory.
 typedef struct {
   unsigned long long total;
   unsigned long long free;
   unsigned long long used;
 } prickle_memory_t;
+
+// nvmlMemory_v2_t, as taken by nvmlDeviceGetMemoryInfo_v2, which is what the
+// two accounting schemes differ in. The original call has no `reserved` field
+// and folds driver-reserved memory into `used` (it reports total - free); _v2
+// breaks the two apart and reports only what a process actually allocated.
+// nvidia-smi 580 prints the _v2 number, so binding the original made this
+// source over-report used memory by the reserved amount — 480 MiB on the H100
+// this was measured on — against the same card's nvidia-smi source. Verified
+// on hardware 2026-07-29.
+//
+// The leading `version` field is NVIDIA's NVML_STRUCT_VERSION: the struct's
+// own size ORed with the version number. The call rejects a struct whose
+// version it does not recognise, which is what makes this declared layout
+// self-checking rather than a hope about padding.
+typedef struct {
+  unsigned int version;
+  unsigned long long total;
+  unsigned long long reserved;
+  unsigned long long free;
+  unsigned long long used;
+} prickle_memory_v2_t;
+
+// nvmlDeviceAttributes_t, as taken by nvmlDeviceGetAttributes_v2. The _v2
+// suffix fixes these nine fields in this order. Only gpuInstanceSliceCount is
+// read: it is the leading "1g" of a MIG profile name, and without it this
+// source spells the same partition "10gb" while nvidia-smi spells it
+// "1g.10gb" — a label value that disagreed between the two artifacts for the
+// same card. Verified on hardware 2026-07-29.
+typedef struct {
+  unsigned int multiprocessorCount;
+  unsigned int sharedCopyEngineCount;
+  unsigned int sharedDecoderCount;
+  unsigned int sharedEncoderCount;
+  unsigned int sharedJpegCount;
+  unsigned int sharedOfaCount;
+  unsigned int gpuInstanceSliceCount;
+  unsigned int computeInstanceSliceCount;
+  unsigned long long memorySizeMB;
+} prickle_attributes_t;
 
 // nvmlProcessInfo_t, as taken by nvmlDeviceGetComputeRunningProcesses_v3.
 // The _v3 suffix is what fixes these four fields in this order.
@@ -95,11 +133,13 @@ static nvmlReturn_t (*p_device_uuid)(nvmlDevice_t, char *, unsigned int);
 static nvmlReturn_t (*p_device_name)(nvmlDevice_t, char *, unsigned int);
 static nvmlReturn_t (*p_device_utilization)(nvmlDevice_t, prickle_utilization_t *);
 static nvmlReturn_t (*p_device_memory)(nvmlDevice_t, prickle_memory_t *);
+static nvmlReturn_t (*p_device_memory_v2)(nvmlDevice_t, prickle_memory_v2_t *);
 static nvmlReturn_t (*p_device_temperature)(nvmlDevice_t, int, unsigned int *);
 static nvmlReturn_t (*p_device_power)(nvmlDevice_t, unsigned int *);
 static nvmlReturn_t (*p_device_mig_mode)(nvmlDevice_t, unsigned int *, unsigned int *);
 static nvmlReturn_t (*p_device_max_mig_count)(nvmlDevice_t, unsigned int *);
 static nvmlReturn_t (*p_device_mig_by_index)(nvmlDevice_t, unsigned int, nvmlDevice_t *);
+static nvmlReturn_t (*p_device_attributes)(nvmlDevice_t, prickle_attributes_t *);
 static nvmlReturn_t (*p_device_compute_procs)(nvmlDevice_t, unsigned int *, prickle_process_t *);
 
 // prickle_sym resolves name, then name without its version suffix. Returns
@@ -128,11 +168,13 @@ static int prickle_open(void) {
   p_device_name     = prickle_sym("nvmlDeviceGetName", NULL);
   p_device_utilization = prickle_sym("nvmlDeviceGetUtilizationRates", NULL);
   p_device_memory   = prickle_sym("nvmlDeviceGetMemoryInfo", NULL);
+  p_device_memory_v2 = prickle_sym("nvmlDeviceGetMemoryInfo_v2", NULL);
   p_device_temperature = prickle_sym("nvmlDeviceGetTemperature", NULL);
   p_device_power    = prickle_sym("nvmlDeviceGetPowerUsage", NULL);
   p_device_mig_mode = prickle_sym("nvmlDeviceGetMigMode", NULL);
   p_device_max_mig_count = prickle_sym("nvmlDeviceGetMaxMigDeviceCount", NULL);
   p_device_mig_by_index  = prickle_sym("nvmlDeviceGetMigDeviceHandleByIndex", NULL);
+  p_device_attributes    = prickle_sym("nvmlDeviceGetAttributes_v2", NULL);
   p_device_compute_procs = prickle_sym("nvmlDeviceGetComputeRunningProcesses_v3", NULL);
 
   // The minimum set without which there is nothing to report. The optional
@@ -193,8 +235,30 @@ static nvmlReturn_t prickle_device_utilization(nvmlDevice_t d, unsigned int *gpu
   return r;
 }
 
+// prickle_device_memory reports used and total bytes, preferring the _v2 call.
+//
+// The two calls disagree, and not by rounding: the original folds
+// driver-reserved memory into `used`, _v2 does not. nvidia-smi reports the _v2
+// number, and SPEC.md §Testing rules requires both sources to emit identical
+// output for the same GPU, so _v2 is what this binds wherever the driver
+// publishes it.
+//
+// The fallback is for drivers old enough not to publish the symbol at all —
+// and those are exactly the drivers whose nvidia-smi also reports the original
+// accounting, so the two sources still agree there. A driver that publishes
+// _v2 but rejects the call is not fallen back for: its error is returned, and
+// the sample goes absent rather than silently reverting to a number that would
+// disagree with the other source by half a gigabyte.
 static nvmlReturn_t prickle_device_memory(nvmlDevice_t d, unsigned long long *used,
                                           unsigned long long *total) {
+  if (p_device_memory_v2 != NULL) {
+    prickle_memory_v2_t m2;
+    memset(&m2, 0, sizeof m2);
+    m2.version = (unsigned int)(sizeof m2 | (2u << 24));
+    nvmlReturn_t r2 = p_device_memory_v2(d, &m2);
+    if (r2 == 0) { *used = m2.used; *total = m2.total; }
+    return r2;
+  }
   prickle_memory_t m;
   memset(&m, 0, sizeof m);
   nvmlReturn_t r = p_device_memory(d, &m);
@@ -231,6 +295,18 @@ static nvmlReturn_t prickle_device_max_mig_count(nvmlDevice_t d, unsigned int *n
 static nvmlReturn_t prickle_device_mig_by_index(nvmlDevice_t d, unsigned int i, nvmlDevice_t *m) {
   if (p_device_mig_by_index == NULL) return -1;
   return p_device_mig_by_index(d, i, m);
+}
+
+// Reports how many GPU slices a MIG instance holds — the "1g" of "1g.10gb".
+// Only meaningful on a MIG device handle; the parent card answers with its own
+// attributes, where the field is zero.
+static nvmlReturn_t prickle_device_gpu_instance_slices(nvmlDevice_t d, unsigned int *slices) {
+  if (p_device_attributes == NULL) return -1;
+  prickle_attributes_t a;
+  memset(&a, 0, sizeof a);
+  nvmlReturn_t r = p_device_attributes(d, &a);
+  if (r == 0) *slices = a.gpuInstanceSliceCount;
+  return r;
 }
 
 // Two-call convention: pass count=0 to learn the length, then call again with
@@ -296,11 +372,14 @@ const nvmlMemoryUnavailable = ^C.ulonglong(0)
 // nvmlSource reads the devices through libnvidia-ml.so.1.
 //
 // The library is process-global: nvmlInit_v2 and nvmlShutdown act on a
-// per-process handle, so exactly one source may own it. openOnce enforces that,
-// and the mutex serialises reads because NVML's own thread safety varies by
-// entry point and the sampler gives us no reason to need concurrency here.
+// per-process handle rather than on anything a source could own privately. So
+// the load is shared and reference-counted, and nvmlMu below both guards that
+// bookkeeping and serialises every NVML call — NVML's own thread safety varies
+// by entry point and the sampler gives us no reason to need concurrency here.
 type nvmlSource struct {
-	mu     sync.Mutex
+	// closed makes Close idempotent per source, so one source releasing the
+	// shared load twice cannot drop the reference count below the number of
+	// sources actually using it.
 	closed bool
 
 	// roots resolves /proc for the exe-symlink lookup that names a process.
@@ -309,42 +388,63 @@ type nvmlSource struct {
 }
 
 var (
-	openOnce   sync.Once
-	openErr    error
-	openSource *nvmlSource
+	// nvmlMu guards the three fields below and serialises every C call.
+	nvmlMu sync.Mutex
+
+	// nvmlLoaded is whether the library is open and nvmlInit_v2 has run.
+	nvmlLoaded bool
+
+	// nvmlRefs counts the live sources holding it open.
+	nvmlRefs int
+
+	// nvmlErr is sticky by design. SPEC.md §Collectors says to attempt the
+	// load once and fall back silently, so a host without the driver libraries
+	// pays for one dlopen, not one per collector.
+	nvmlErr error
 )
 
-// newNVMLSource loads the library and initialises NVML, once per process.
+// newNVMLSource loads the library and initialises NVML.
 //
 // SPEC.md §Collectors: attempted once at startup and fallen back from silently.
 // The error is descriptive because `prickle diagnose` reports it when asked why
 // NVML did not load — "cannot open shared object file" and "driver/library
 // version mismatch" need different fixes.
+//
+// "Once" governs *failure*: a load that failed is never retried. A load that
+// succeeded and was then fully released is re-established here, because the
+// alternative is what hardware found — `prickle diagnose` builds a GPU
+// collector to describe it, closes it, and then builds the real one, and a
+// single shared source handed out after its own Close reported "NVML source is
+// closed" on a host where NVML was working perfectly.
 func newNVMLSource(opts Options) (nvidiaSource, error) {
-	openOnce.Do(func() {
+	nvmlMu.Lock()
+	defer nvmlMu.Unlock()
+
+	if nvmlErr != nil {
+		return nil, nvmlErr
+	}
+	if !nvmlLoaded {
 		if rc := C.prickle_open(); rc != 0 {
 			switch rc {
 			case -1:
-				openErr = fmt.Errorf("%w: dlopen libnvidia-ml.so.1: %s",
+				nvmlErr = fmt.Errorf("%w: dlopen libnvidia-ml.so.1: %s",
 					ErrUnavailable, C.GoString(C.prickle_dlerror()))
 			default:
-				openErr = fmt.Errorf("%w: libnvidia-ml.so.1 is missing entry points this build requires",
+				nvmlErr = fmt.Errorf("%w: libnvidia-ml.so.1 is missing entry points this build requires",
 					ErrUnavailable)
 			}
-			return
+			return nil, nvmlErr
 		}
 		if r := C.prickle_init(); r != 0 {
 			C.prickle_close()
-			openErr = fmt.Errorf("%w: nvmlInit: %s", ErrUnavailable, nvmlError(r))
-			return
+			nvmlErr = fmt.Errorf("%w: nvmlInit: %s", ErrUnavailable, nvmlError(r))
+			return nil, nvmlErr
 		}
-		openSource = &nvmlSource{roots: opts.Roots}
-	})
-
-	if openErr != nil {
-		return nil, openErr
+		nvmlLoaded = true
 	}
-	return openSource, nil
+
+	nvmlRefs++
+	return &nvmlSource{roots: opts.Roots}, nil
 }
 
 // nvmlError renders an NVML return code.
@@ -355,20 +455,35 @@ func nvmlError(r C.nvmlReturn_t) string {
 // Name implements nvidiaSource.
 func (s *nvmlSource) Name() string { return SourceNVML }
 
-// Close implements nvidiaSource, shutting NVML down once.
+// Close implements nvidiaSource, releasing this source's reference and shutting
+// NVML down when it was the last one.
 func (s *nvmlSource) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	nvmlMu.Lock()
+	defer nvmlMu.Unlock()
 	if s.closed {
 		return nil
 	}
 	s.closed = true
-	C.prickle_close()
+
+	nvmlRefs--
+	if nvmlRefs <= 0 {
+		nvmlRefs = 0
+		if nvmlLoaded {
+			C.prickle_close()
+			nvmlLoaded = false
+		}
+	}
 	return nil
 }
 
 // DriverVersion reports the driver version string, for `prickle diagnose`.
 func DriverVersion() (string, error) {
+	nvmlMu.Lock()
+	defer nvmlMu.Unlock()
+	if !nvmlLoaded {
+		return "", fmt.Errorf("%w: NVML is not loaded", ErrUnavailable)
+	}
+
 	buf := (*C.char)(C.malloc(driverBufferSize))
 	defer C.free(unsafe.Pointer(buf))
 	if r := C.prickle_driver_version(buf, driverBufferSize); r != 0 {
@@ -386,8 +501,8 @@ func DriverVersion() (string, error) {
 // arriving by a different route: SPEC.md §Testing rules requires the two
 // sources to agree, and agreeing about absence is part of that.
 func (s *nvmlSource) Read(ctx context.Context) (snapshot, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	nvmlMu.Lock()
+	defer nvmlMu.Unlock()
 	if s.closed {
 		return snapshot{}, fmt.Errorf("NVML source is closed")
 	}
@@ -479,9 +594,9 @@ func deviceString(handle C.nvmlDevice_t, which stringField, size C.uint) (string
 //
 // This is the data SPEC.md §Collectors calls NVML the only reliable source of:
 // each instance's own UUID and its own memory, neither of which any nvidia-smi
-// CSV query publishes. The profile name is derived from the instance's memory
-// rather than queried, because the profile-name entry point is not among the
-// versioned symbols this build binds.
+// CSV query publishes. The profile name is assembled from the instance's slice
+// count and memory rather than read as a string, because NVML publishes no
+// versioned entry point returning the name nvidia-smi prints.
 func readMIG(parent C.nvmlDevice_t) []migDevice {
 	var max C.uint
 	if r := C.prickle_device_max_mig_count(parent, &max); r != 0 {
@@ -505,7 +620,10 @@ func readMIG(parent C.nvmlDevice_t) []migDevice {
 		if r := C.prickle_device_memory(handle, &used, &total); r == 0 {
 			m.MemoryUsedBytes, m.MemoryTotalBytes = uint64(used), uint64(total)
 			m.HasMemory = true
-			m.Profile = migProfile(uint64(total))
+
+			var slices C.uint
+			C.prickle_device_gpu_instance_slices(handle, &slices)
+			m.Profile = migProfile(uint64(slices), uint64(total))
 		}
 		var util C.uint
 		if r := C.prickle_device_utilization(handle, &util); r == 0 {
@@ -516,19 +634,27 @@ func readMIG(parent C.nvmlDevice_t) []migDevice {
 	return instances
 }
 
-// migProfile renders a profile name from an instance's memory size, matching
-// the "1g.18gb" spelling nvidia-smi -L uses so both sources agree.
+// migProfile renders a profile name from an instance's slice count and memory
+// size, matching the "1g.10gb" spelling nvidia-smi -L uses so both sources put
+// the same label value on prickle_gpu_mig_info.
 //
-// The slice count is not available from the versioned symbols bound here, so
-// the leading count is omitted rather than guessed: "18gb" not "1g.18gb". A
-// profile label that disagreed between the two sources would be worse than one
-// that is visibly coarser in the fallback direction.
-func migProfile(totalBytes uint64) string {
+// Memory alone is not enough: it gives "10gb", and hardware showed that
+// against the same card's nvidia-smi source reporting "1g.10gb". The slice
+// count comes from nvmlDeviceGetAttributes_v2, which is where the leading "1g"
+// lives.
+//
+// A driver too old to publish that entry point leaves slices at zero, and the
+// coarse "10gb" spelling is what remains. That is a visible degradation rather
+// than a wrong value, and it is confined to a label on an _info gauge.
+func migProfile(slices, totalBytes uint64) string {
 	if totalBytes == 0 {
 		return ""
 	}
-	gb := (totalBytes + (1 << 29)) >> 30 // nearest GiB
-	return strconv.FormatUint(gb, 10) + "gb"
+	gb := strconv.FormatUint((totalBytes+(1<<29))>>30, 10) + "gb" // nearest GiB
+	if slices == 0 {
+		return gb
+	}
+	return strconv.FormatUint(slices, 10) + "g." + gb
 }
 
 // readProcesses lists the compute processes on a device.
