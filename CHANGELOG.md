@@ -53,7 +53,12 @@ Intel was dropped from that scope — see Notes.
   zero. This card was pinned at 100%. The second, `h100-mig-20260729`, is **the
   same card** forty minutes later with MIG on, which makes the mode the only
   variable between them, and carries a profile string (`1g.10gb`) the parser
-  had not seen. The H100's `/proc` was captured too and deliberately not kept:
+  had not seen. A third, `h100-mig-mixed-20260729`, is that card partitioned
+  three ways — two profiles, one GPU instance subdivided into a compute
+  instance, three processes of which two share a command and one has had its
+  binary deleted — which pins a compute-instance profile spelling, profiles
+  staying with their own instance UUIDs, per-command summing, and the
+  deleted-binary name. The H100's `/proc` was captured too and deliberately not kept:
   same image, same disks, identical `meminfo` fields, fewer interfaces than the
   H200 tree — a second copy of covered ground rather than coverage.
 
@@ -73,11 +78,23 @@ reachable from a fixture; each now has a test that fails if it returns.
   old to publish it, which are the drivers whose `nvidia-smi` reports the old
   accounting anyway.
 - **The `profile` label on `prickle_gpu_mig_info` differed between the two
-  sources.** NVML has no entry point returning the profile name, and the label
-  was derived from the instance's memory alone: `10gb` where `nvidia-smi -L`
-  spells it `1g.10gb`. The leading slice count now comes from
-  `nvmlDeviceGetAttributes_v2`. **Operator impact:** a dashboard or recording
-  rule filtering on `profile` matched only one of the two artifacts.
+  sources**, and every attempt to derive it from what NVML reports about an
+  instance was wrong on some card. It now comes from the driver: the *compute*
+  instance's profile name, which is the same string `nvidia-smi -L` prints.
+  **Operator impact:** a dashboard or recording rule filtering on `profile`
+  matched only one of the two artifacts. Four rounds on hardware to get there,
+  each ruling out a plausible rule:
+    - memory alone gave `10gb` against `-L`'s `1g.10gb`;
+    - memory plus the GPU-instance slice count was right on an H100 and would
+      have reported **`1g.16gb` on an H200**, whose `1g.18gb` profile has a
+      16.00 GiB framebuffer — the name is not a function of the memory;
+    - the GPU instance's own profile name gave `1g.10gb+me` where `-L` says
+      `1g.10gb`, because `-L` names the compute instance, not the GPU instance;
+    - the compute instance's profile name matches `-L` in every configuration
+      tested: plain, media-engine, and a `3g.40gb` subdivided into `1c`.
+
+  A memory-derived fallback remains for a driver that declines the lookup, and
+  the hardware test fails on any card where it disagrees with `nvidia-smi`.
 - **`prickle diagnose` reported `NVML source is closed` on hosts where NVML
   worked.** The library handle is process-global; diagnose builds a GPU
   collector to describe the live source, closes it, and then builds the real

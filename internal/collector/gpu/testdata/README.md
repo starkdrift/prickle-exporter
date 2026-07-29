@@ -9,6 +9,7 @@ later, with MIG switched on:
 | `h200-mig-20260726/` | H200 141 GB, driver 580.173.02 | **MIG on**, two `1g.18gb` instances, a compute process on one | What a partitioned card reports, and both limitations of the `nvidia-smi` source |
 | `h100-default-20260729/` | H100 80 GB, driver 580.173.02 | **MIG off**, a CUDA kernel holding the card at 100% | What an unpartitioned card reports, and that a real utilization reading survives the parser |
 | `h100-mig-20260729/` | the same H100, 40 minutes later | **MIG on**, two `1g.10gb` instances | That the mode and not the host is what changes the output, and a profile string the parser has not seen |
+| `h100-mig-mixed-20260729/` | the same H100 again | **MIG on**, three instances of two profiles, one of them subdivided; three processes, two sharing a command, one with its binary deleted | A compute-instance profile spelling, profiles staying with their own UUIDs, per-command summing, and a deleted binary |
 
 All three hosts have since been destroyed. Each tree is the NVIDIA half of a
 [scripts/capture-fixtures.sh](../../../../scripts/capture-fixtures.sh) run; the
@@ -32,7 +33,13 @@ exists in the host collector — and the tests replay these files through a fake
 | Driver | 580.173.02, CUDA 13.0 | 580.173.02, CUDA 13.0 | 580.173.02, CUDA 13.0 |
 | Load at capture | context-only spinner, `utilization.gpu` = `[N/A]` under MIG | `nvcc`-built kernel, `utilization.gpu` = `100` | the same kernel pinned to one instance, `[N/A]` under MIG |
 
-Everything in all three is **captured, unmodified** `nvidia-smi` output.
+`h100-mig-mixed-20260729` is the same card once more, in the state the last
+hour of the rental was spent in: a `3g.40gb` GPU instance subdivided into a
+single `1c` compute instance, two whole `1g.10gb` instances, and three compute
+processes. What each part of it pins is in
+[smi_mixed_mig_test.go](../smi_mixed_mig_test.go).
+
+Everything in all four is **captured, unmodified** `nvidia-smi` output.
 
 ## What the H200 MIG tree exercises
 
@@ -165,6 +172,38 @@ thing a fixture cannot express. It found three disagreements on its first run:
 | NVML's `used` memory included the 480 MiB the driver reserves; `nvidia-smi` reports the `_v2` number that excludes it | Both numbers are internally consistent. Only reading the same card through both APIs in the same second shows the gap. |
 | NVML spelled a partition `10gb`, `nvidia-smi -L` spells it `1g.10gb` | NVML publishes no entry point returning that string; the slice count comes from `nvmlDeviceGetAttributes_v2` and had to be assembled. |
 | A second GPU collector in one process was handed an already-closed NVML handle | The library handle is process-global. `prickle diagnose` builds a collector, closes it, then builds the real one — a sequence no fixture test performs. |
+| The MIG `profile` label was *derived* rather than read, and three ways wrong | Only a second card class shows it. See below. |
+
+### The profile label, which took four hardware rounds
+
+`prickle_gpu_mig_info` carries the profile a MIG instance was cut from, and the
+`nvidia-smi` source reads it straight out of `nvidia-smi -L`. NVML has no
+equivalent one-call answer, so this source derived it — and every derivation
+was wrong in a way only hardware could show:
+
+1. **Memory alone** gave `10gb` where `-L` says `1g.10gb`.
+2. **Memory plus the GPU-instance slice count** gave `1g.10gb` and `3g.40gb`
+   correctly, and would give **`1g.16gb` on an H200**, whose `1g.18gb` profile
+   has a 16.00 GiB framebuffer — visible in `h200-mig-20260726/smi.txt`, which
+   is why that capture is worth keeping even though no test parses it. The name
+   is not a function of the memory, on any card.
+3. **The GPU instance's own profile name**, fetched from the driver, gave
+   `1g.10gb+me` for an instance created from the media-engine profile, where
+   `-L` says plain `1g.10gb`. `-L` names the *compute* instance, not the GPU
+   instance.
+4. **The compute instance's profile name** matches `-L` in every configuration
+   tested — plain, media-engine, and subdivided — because it is the same string
+   nvidia-smi prints.
+
+Two traps on the way there, both worth knowing before touching that code:
+
+- An instance's `profileId` is the driver's device-unique id (`9` for
+  `3g.40gb`, the number `mig -lgip` prints). The profile lookup's parameter is
+  an unrelated enum in which `9` means `1_SLICE_REV2`. Passing one as the other
+  returns a real profile with a plausible name for the *wrong* partition —
+  `1g.20gb` for a `3g.40gb` instance. The id is matched, never indexed.
+- The compute-instance name is already complete: `1c.3g.40gb`, not `3g.40gb`
+  wanting a prefix. Adding the slice counts on top produced `1c.1c.3g.40gb`.
 
 Both sources' MIG numbers were cross-checked against `nvidia-smi`'s own
 human-readable table on that host, and `h100-mig-20260729/` is that capture:
@@ -210,8 +249,8 @@ finding is recorded in [scripts/README.md](../../../../scripts/README.md)
 
 ## Golden output
 
-`golden/gpu.prom`, `golden/gpu-default-mode.prom` and `golden/gpu-h100-mig.prom`
-are what the three trees render to through the `nvidia-smi` source, with
+`golden/gpu.prom`, `golden/gpu-default-mode.prom`, `golden/gpu-h100-mig.prom`
+and `golden/gpu-h100-mig-mixed.prom` are what the four trees render to through the `nvidia-smi` source, with
 `node="fixture"` and per-process attribution on. One golden per tree, because
 the captures differ in what the driver will answer, not merely in their
 numbers. All are checked byte-for-byte and verified with `promtool check

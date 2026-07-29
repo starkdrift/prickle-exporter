@@ -110,6 +110,90 @@ typedef struct {
   unsigned long long memorySizeMB;
 } prickle_attributes_t;
 
+// nvmlGpuInstance_t, an opaque handle to one GPU instance. Distinct from
+// nvmlDevice_t in the API even though both are pointers.
+typedef void *nvmlGpuInstance_t;
+
+// nvmlGpuInstancePlacement_t and nvmlGpuInstanceInfo_t, as taken by
+// nvmlGpuInstanceGetInfo. Only profileId is read; the placement is here
+// because it is part of the layout, not because anything wants it.
+typedef struct {
+  unsigned int start;
+  unsigned int size;
+} prickle_gi_placement_t;
+
+typedef struct {
+  nvmlDevice_t device;
+  unsigned int id;
+  unsigned int profileId;
+  prickle_gi_placement_t placement;
+} prickle_gi_info_t;
+
+// nvmlGpuInstanceProfileInfo_v2_t, as taken by
+// nvmlDeviceGetGpuInstanceProfileInfoV. Its `name` is the driver's own
+// spelling of the profile — "1g.10gb" — and is the only trustworthy source of
+// it.
+//
+// Deriving the name from the instance's memory size instead is what this code
+// did until an H200 fixture disproved it: that card's `1g.18gb` profile has a
+// 16.00 GiB framebuffer, so no arithmetic over the framebuffer produces "18".
+// It happened to work on an H100, where 9.75 GiB rounds to the "10" in
+// "1g.10gb" and 39.50 GiB rounds to the "40" in "3g.40gb" — two coincidences
+// that would have shipped a `prickle_gpu_mig_info` label reading `1g.16gb`
+// from prickle-nvml and `1g.18gb` from prickle on the same H200.
+//
+// NVML_DEVICE_NAME_V2_BUFFER_SIZE is 96 (nvml.h, CUDA 13.1).
+typedef struct {
+  unsigned int version;
+  unsigned int id;
+  unsigned int isP2pSupported;
+  unsigned int sliceCount;
+  unsigned int instanceCount;
+  unsigned int multiprocessorCount;
+  unsigned int copyEngineCount;
+  unsigned int decoderCount;
+  unsigned int encoderCount;
+  unsigned int jpegCount;
+  unsigned int ofaCount;
+  unsigned long long memorySizeMB;
+  char name[96];
+} prickle_gi_profile_info_t;
+
+// nvmlComputeInstance_t, opaque, and nvmlComputeInstanceInfo_t as taken by
+// nvmlComputeInstanceGetInfo_v2. Only profileId is read.
+typedef void *nvmlComputeInstance_t;
+
+typedef struct {
+  unsigned int start;
+  unsigned int size;
+} prickle_ci_placement_t;
+
+typedef struct {
+  nvmlDevice_t device;
+  nvmlGpuInstance_t gpuInstance;
+  unsigned int id;
+  unsigned int profileId;
+  prickle_ci_placement_t placement;
+} prickle_ci_info_t;
+
+// nvmlComputeInstanceProfileInfo_v2_t, as taken by
+// nvmlGpuInstanceGetComputeInstanceProfileInfoV. Its `name` is what
+// `nvidia-smi -L` prints for a MIG device, which is the string this source has
+// to reproduce.
+typedef struct {
+  unsigned int version;
+  unsigned int id;
+  unsigned int sliceCount;
+  unsigned int instanceCount;
+  unsigned int multiprocessorCount;
+  unsigned int sharedCopyEngineCount;
+  unsigned int sharedDecoderCount;
+  unsigned int sharedEncoderCount;
+  unsigned int sharedJpegCount;
+  unsigned int sharedOfaCount;
+  char name[96];
+} prickle_ci_profile_info_t;
+
 // nvmlProcessInfo_t, as taken by nvmlDeviceGetComputeRunningProcesses_v3.
 // The _v3 suffix is what fixes these four fields in this order.
 typedef struct {
@@ -140,6 +224,15 @@ static nvmlReturn_t (*p_device_mig_mode)(nvmlDevice_t, unsigned int *, unsigned 
 static nvmlReturn_t (*p_device_max_mig_count)(nvmlDevice_t, unsigned int *);
 static nvmlReturn_t (*p_device_mig_by_index)(nvmlDevice_t, unsigned int, nvmlDevice_t *);
 static nvmlReturn_t (*p_device_attributes)(nvmlDevice_t, prickle_attributes_t *);
+static nvmlReturn_t (*p_device_gi_id)(nvmlDevice_t, unsigned int *);
+static nvmlReturn_t (*p_device_parent_of_mig)(nvmlDevice_t, nvmlDevice_t *);
+static nvmlReturn_t (*p_device_gi_by_id)(nvmlDevice_t, unsigned int, nvmlGpuInstance_t *);
+static nvmlReturn_t (*p_gi_info)(nvmlGpuInstance_t, prickle_gi_info_t *);
+static nvmlReturn_t (*p_device_gi_profile_info)(nvmlDevice_t, unsigned int, prickle_gi_profile_info_t *);
+static nvmlReturn_t (*p_device_ci_id)(nvmlDevice_t, unsigned int *);
+static nvmlReturn_t (*p_gi_ci_by_id)(nvmlGpuInstance_t, unsigned int, nvmlComputeInstance_t *);
+static nvmlReturn_t (*p_ci_info)(nvmlComputeInstance_t, prickle_ci_info_t *);
+static nvmlReturn_t (*p_gi_ci_profile_info)(nvmlGpuInstance_t, unsigned int, unsigned int, prickle_ci_profile_info_t *);
 static nvmlReturn_t (*p_device_compute_procs)(nvmlDevice_t, unsigned int *, prickle_process_t *);
 
 // prickle_sym resolves name, then name without its version suffix. Returns
@@ -175,6 +268,15 @@ static int prickle_open(void) {
   p_device_max_mig_count = prickle_sym("nvmlDeviceGetMaxMigDeviceCount", NULL);
   p_device_mig_by_index  = prickle_sym("nvmlDeviceGetMigDeviceHandleByIndex", NULL);
   p_device_attributes    = prickle_sym("nvmlDeviceGetAttributes_v2", NULL);
+  p_device_gi_id         = prickle_sym("nvmlDeviceGetGpuInstanceId", NULL);
+  p_device_parent_of_mig = prickle_sym("nvmlDeviceGetDeviceHandleFromMigDeviceHandle", NULL);
+  p_device_gi_by_id      = prickle_sym("nvmlDeviceGetGpuInstanceById", NULL);
+  p_gi_info              = prickle_sym("nvmlGpuInstanceGetInfo", NULL);
+  p_device_gi_profile_info = prickle_sym("nvmlDeviceGetGpuInstanceProfileInfoV", NULL);
+  p_device_ci_id         = prickle_sym("nvmlDeviceGetComputeInstanceId", NULL);
+  p_gi_ci_by_id          = prickle_sym("nvmlGpuInstanceGetComputeInstanceById", NULL);
+  p_ci_info              = prickle_sym("nvmlComputeInstanceGetInfo_v2", NULL);
+  p_gi_ci_profile_info   = prickle_sym("nvmlGpuInstanceGetComputeInstanceProfileInfoV", NULL);
   p_device_compute_procs = prickle_sym("nvmlDeviceGetComputeRunningProcesses_v3", NULL);
 
   // The minimum set without which there is nothing to report. The optional
@@ -297,16 +399,102 @@ static nvmlReturn_t prickle_device_mig_by_index(nvmlDevice_t d, unsigned int i, 
   return p_device_mig_by_index(d, i, m);
 }
 
-// Reports how many GPU slices a MIG instance holds — the "1g" of "1g.10gb".
-// Only meaningful on a MIG device handle; the parent card answers with its own
-// attributes, where the field is zero.
-static nvmlReturn_t prickle_device_gpu_instance_slices(nvmlDevice_t d, unsigned int *slices) {
+// Reports the two slice counts a MIG profile name is built from: the "3g" of
+// "3g.40gb", and the "1c" that appears in front of it when the GPU instance is
+// subdivided into smaller compute instances. Only meaningful on a MIG device
+// handle; the parent card answers with its own attributes, where both are zero.
+static nvmlReturn_t prickle_device_slice_counts(nvmlDevice_t d, unsigned int *gpu_slices,
+                                                unsigned int *compute_slices) {
   if (p_device_attributes == NULL) return -1;
   prickle_attributes_t a;
   memset(&a, 0, sizeof a);
   nvmlReturn_t r = p_device_attributes(d, &a);
-  if (r == 0) *slices = a.gpuInstanceSliceCount;
+  if (r == 0) {
+    *gpu_slices = a.gpuInstanceSliceCount;
+    *compute_slices = a.computeInstanceSliceCount;
+  }
   return r;
+}
+
+// Profile enum bounds from nvml.h (CUDA 13.1). Both lookups below are indexed
+// by an enum that is *not* the profile id an instance reports — see
+// prickle_mig_profile_name.
+#define PRICKLE_GI_PROFILE_COUNT 0x11
+#define PRICKLE_CI_PROFILE_COUNT 0x8
+#define PRICKLE_CI_ENGINE_PROFILE_COUNT 0x1
+
+// prickle_mig_profile_name copies the driver's own name for a MIG device into
+// buf — the string `nvidia-smi -L` prints for it. Returns 0 on success.
+//
+// NVML offers no call from a MIG device handle to that name, so this walks
+// there: the MIG device knows its GPU-instance and compute-instance ids and its
+// parent card; the parent turns the GPU-instance id into a handle; that handle
+// turns the compute-instance id into a handle; and the compute instance
+// carries a profile id whose name the GPU instance can describe.
+//
+// **The name belongs to the compute instance, not the GPU instance**, and
+// hardware is what settled that. A GPU instance created from the `1g.10gb+me`
+// profile — the one that carries the media engines — holds a compute instance
+// that `-L` calls plain `1g.10gb`; reporting the GPU instance's name put a
+// `+me` on a label the other source spelled without one. The compute-instance
+// name is also already `1c.3g.40gb` for a subdivided instance, so it needs no
+// slice-count arithmetic on top.
+//
+// The id matching is the other thing hardware sprang. An instance's profileId
+// is the driver's device-unique id — 9 for 3g.40gb on an H100, the number
+// `nvidia-smi mig -lgip` prints — while the lookup's `profile` parameter is an
+// unrelated enum in which 9 means 1_SLICE_REV2. Passing one as the other
+// returns a real profile with a plausible name for a different partition: it
+// reported "1g.20gb" for a 3g.40gb instance until the cross-source test
+// rejected it. So the id is matched, never indexed.
+static nvmlReturn_t prickle_mig_profile_name(nvmlDevice_t mig_device, char *buf,
+                                             unsigned int len) {
+  if (p_device_gi_id == NULL || p_device_ci_id == NULL ||
+      p_device_parent_of_mig == NULL || p_device_gi_by_id == NULL ||
+      p_gi_ci_by_id == NULL || p_ci_info == NULL || p_gi_ci_profile_info == NULL)
+    return -1;
+
+  unsigned int gi_id = 0, ci_id = 0;
+  nvmlReturn_t r = p_device_gi_id(mig_device, &gi_id);
+  if (r != 0) return r;
+  r = p_device_ci_id(mig_device, &ci_id);
+  if (r != 0) return r;
+
+  nvmlDevice_t parent = NULL;
+  r = p_device_parent_of_mig(mig_device, &parent);
+  if (r != 0) return r;
+
+  nvmlGpuInstance_t gi = NULL;
+  r = p_device_gi_by_id(parent, gi_id, &gi);
+  if (r != 0) return r;
+
+  nvmlComputeInstance_t ci = NULL;
+  r = p_gi_ci_by_id(gi, ci_id, &ci);
+  if (r != 0) return r;
+
+  prickle_ci_info_t info;
+  memset(&info, 0, sizeof info);
+  r = p_ci_info(ci, &info);
+  if (r != 0) return r;
+
+  for (unsigned int prof = 0; prof < PRICKLE_CI_PROFILE_COUNT; prof++) {
+    for (unsigned int eng = 0; eng < PRICKLE_CI_ENGINE_PROFILE_COUNT; eng++) {
+      prickle_ci_profile_info_t profile;
+      memset(&profile, 0, sizeof profile);
+      profile.version = (unsigned int)(sizeof profile | (2u << 24));
+
+      // A profile this GPU instance does not offer answers NOT_SUPPORTED.
+      // Skipping is correct: the enum spans every card NVML knows about.
+      if (p_gi_ci_profile_info(gi, prof, eng, &profile) != 0) continue;
+      if (profile.id != info.profileId) continue;
+
+      profile.name[sizeof profile.name - 1] = '\0';
+      strncpy(buf, profile.name, len - 1);
+      buf[len - 1] = '\0';
+      return 0;
+    }
+  }
+  return -1;
 }
 
 // Two-call convention: pass count=0 to learn the length, then call again with
@@ -621,9 +809,10 @@ func readMIG(parent C.nvmlDevice_t) []migDevice {
 			m.MemoryUsedBytes, m.MemoryTotalBytes = uint64(used), uint64(total)
 			m.HasMemory = true
 
-			var slices C.uint
-			C.prickle_device_gpu_instance_slices(handle, &slices)
-			m.Profile = migProfile(uint64(slices), uint64(total))
+			var gpuSlices, computeSlices C.uint
+			C.prickle_device_slice_counts(handle, &gpuSlices, &computeSlices)
+			m.Profile = migProfile(profileName(handle),
+				uint64(gpuSlices), uint64(computeSlices), uint64(total))
 		}
 		var util C.uint
 		if r := C.prickle_device_utilization(handle, &util); r == 0 {
@@ -634,27 +823,62 @@ func readMIG(parent C.nvmlDevice_t) []migDevice {
 	return instances
 }
 
-// migProfile renders a profile name from an instance's slice count and memory
-// size, matching the "1g.10gb" spelling nvidia-smi -L uses so both sources put
-// the same label value on prickle_gpu_mig_info.
+// profileName asks the driver what a MIG device's GPU-instance profile is
+// called. Empty when any step of the lookup declines.
 //
-// Memory alone is not enough: it gives "10gb", and hardware showed that
-// against the same card's nvidia-smi source reporting "1g.10gb". The slice
-// count comes from nvmlDeviceGetAttributes_v2, which is where the leading "1g"
-// lives.
+// NVML returns the name with a "MIG " prefix — "MIG 1g.10gb" — which is how
+// nvidia-smi's tables print it but not how `nvidia-smi -L` spells it, and the
+// label has to match `-L` because that is what the other source parses. The
+// prefix is dropped here, at the boundary where the driver's string arrives,
+// so nothing downstream has to know it was ever there.
+func profileName(handle C.nvmlDevice_t) string {
+	buf := (*C.char)(C.malloc(nameBufferSize))
+	defer C.free(unsafe.Pointer(buf))
+
+	if r := C.prickle_mig_profile_name(handle, buf, nameBufferSize); r != 0 {
+		return ""
+	}
+	return strings.TrimPrefix(C.GoString(buf), "MIG ")
+}
+
+// migProfile renders the profile label for one MIG instance, matching the
+// spelling nvidia-smi -L uses so both sources put the same value on
+// prickle_gpu_mig_info.
 //
-// A driver too old to publish that entry point leaves slices at zero, and the
-// coarse "10gb" spelling is what remains. That is a visible degradation rather
-// than a wrong value, and it is confined to a label on an _info gauge.
-func migProfile(slices, totalBytes uint64) string {
+// When the driver names the compute instance, that name is used whole. It is
+// already the complete spelling — `1c.3g.40gb` for a subdivided instance, not
+// `3g.40gb` needing a prefix — and adding anything to it produced the
+// `1c.1c.3g.40gb` that hardware rejected.
+//
+// It has to come from the driver, because the name is not a function of the
+// instance's memory. An H200's `1g.18gb` profile has a 16.00 GiB framebuffer,
+// so no arithmetic over that number yields "18": the committed
+// testdata/h200-mig-20260726 capture is the proof, and it is why deriving the
+// name was replaced with asking for it.
+//
+// The rest is the fallback, for a driver that declines the lookup: memory
+// rounded to GiB, with the GPU-instance slice count in front and the
+// compute-instance count in front of that when the two differ, which is how
+// nvidia-smi spells a subdivided instance. It is a last resort — known to be
+// coarse-to-wrong on cards whose profile name is not their framebuffer size —
+// and the hardware test fails on any card where it disagrees with nvidia-smi.
+func migProfile(driverName string, gpuSlices, computeSlices, totalBytes uint64) string {
+	if driverName != "" {
+		return driverName
+	}
 	if totalBytes == 0 {
 		return ""
 	}
-	gb := strconv.FormatUint((totalBytes+(1<<29))>>30, 10) + "gb" // nearest GiB
-	if slices == 0 {
-		return gb
+
+	name := strconv.FormatUint((totalBytes+(1<<29))>>30, 10) + "gb" // nearest GiB
+	if gpuSlices == 0 {
+		return name
 	}
-	return strconv.FormatUint(slices, 10) + "g." + gb
+	name = strconv.FormatUint(gpuSlices, 10) + "g." + name
+	if computeSlices != 0 && computeSlices != gpuSlices {
+		name = strconv.FormatUint(computeSlices, 10) + "c." + name
+	}
+	return name
 }
 
 // readProcesses lists the compute processes on a device.
