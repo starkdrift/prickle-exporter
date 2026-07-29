@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/license-Apache--2.0-2B3044" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/go-1.26-2B3044" alt="Go 1.26">
   <img src="https://img.shields.io/badge/dependencies-0-2B3044" alt="Zero dependencies">
-  <img src="https://img.shields.io/badge/status-phase%202-F0A202" alt="Phase 2">
+  <img src="https://img.shields.io/badge/status-phase%203-F0A202" alt="Phase 3">
 </p>
 
 ---
@@ -52,14 +52,15 @@ changing a decision means editing SPEC.md first, in its own commit.
 
 ## Status
 
-**Phase 2.** The host and container collectors are implemented and tested
-against a captured fixture tree. GPUs are specified but not yet written.
+**Phase 3, NVIDIA only.** Host, container and NVIDIA GPU collectors are
+implemented and tested against a captured fixture tree. AMD and Intel are
+specified but not written — no capture exists for either.
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
 | 2 | Containers — cgroup v2 walk, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
-| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo, Intel DRM fdinfo | planned |
+| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo, Intel DRM fdinfo | **NVIDIA shipped**; [AMD and Intel unimplemented](#coverage-gaps-1) |
 | 4 | Per-collector timeouts, cardinality caps, self-instrumentation | partial — self-metrics exist, caps do not |
 | 5 | Distribution — systemd units, Helm chart, Docker, four Grafana dashboards | planned |
 
@@ -148,12 +149,22 @@ Phase 2 containers
   Docker enrichment: off. Names and images are absent from
   prickle_container_info; -collector.container.docker-socket turns it on.
 
-GPU
-  NVIDIA source selection is Phase 3 and not implemented yet.
+Phase 3 GPU
+  this binary: prickle (static) — nvidia-smi only; a static binary cannot dlopen NVML
+  live source: smi
+  GPUs: 1, MIG instances: 2
+  per-process attribution: off (-collector.gpu.per-process turns it on).
+  AMD and Intel are SPEC.md §Collectors scope but unimplemented: no
+  capture exists for either, so neither reports anything.
 
 host collector: 278 series in 672µs
 container collector: 403 series in 1.4ms
+gpu collector: 12 series in 41ms
 ```
+
+On a host with no NVIDIA GPU the GPU section says so, and says why each source
+declined — "NVML failed to load" and "there is no GPU here" need different
+responses from you, and an empty section distinguishes neither.
 
 When it reports no containers on a host that is running some, the cause is
 almost always one of three things, and it says which to check: cgroup v1, a
@@ -261,6 +272,63 @@ prickle_container_memory_usage_bytes
   * on (node, container) group_left (name, image, runtime) prickle_container_info
 ```
 
+### GPUs — Phase 3 (NVIDIA only)
+
+About 12 series for one MIG-partitioned card. NVIDIA is served by two
+interchangeable implementations behind one interface; **AMD and Intel are
+specified but not implemented** — see [Coverage gaps](#coverage-gaps-1).
+
+| Source | Families |
+|---|---|
+| `--query-gpu` | `prickle_gpu_utilization_ratio`, `memory_used_bytes`, `memory_total_bytes`, `temperature_celsius`, `power_watts` |
+| `nvidia-smi -L` | `prickle_gpu_mig_enabled`, `mig_info` |
+| NVML only | `prickle_gpu_mig_memory_used_bytes`, `mig_memory_total_bytes`, `mig_utilization_ratio` |
+| `--query-compute-apps` | `prickle_gpu_process_memory_bytes{command}` — opt-in |
+| identity | `prickle_gpu_info`, `prickle_gpu_nvidia_source_info` |
+
+Four things worth knowing:
+
+- **An absent metric means the driver would not say.** `utilization_ratio`
+  disappears for the whole card once MIG is enabled — the driver reports `[N/A]`,
+  verified on H200 / driver 580. Emitting zero there would read as an idle GPU
+  and fire idle-capacity alerts across a MIG fleet. The same rule covers
+  `[Not Supported]` and `[Unknown Error]`.
+- **MIG instances live in their own families.** A MIG instance's memory is a
+  partition of its parent's, so one family holding both would double-count under
+  `sum()`. A card's total is `prickle_gpu_memory_used_bytes`; a partition's is
+  `prickle_gpu_mig_memory_used_bytes`.
+- **The `nvidia-smi` source cannot attribute a process to a MIG instance.**
+  `--query-compute-apps` reports the *parent* GPU's UUID for a MIG-resident
+  process, so those series carry `gpu_uuid` and no `mig_uuid`. That is coarse,
+  not wrong; NVML can do better.
+- **No PID, anywhere.** The CSV carries one and the parser discards it at the
+  boundary — there is no field in the data model for a PID to live in. Process
+  series are keyed on `command`, the basename of the executable path, never the
+  truncated and forgeable `comm`.
+
+```promql
+# GPU memory pressure per card, with the model name for display.
+prickle_gpu_memory_used_bytes / prickle_gpu_memory_total_bytes
+  * on (node, gpu_uuid) group_left (name) prickle_gpu_info
+
+# Which command is holding a card. Needs -collector.gpu.per-process.
+topk(5, prickle_gpu_process_memory_bytes)
+
+# Whether a scrape came from NVML or the nvidia-smi fallback.
+prickle_gpu_nvidia_source_info
+```
+
+#### Coverage gaps
+
+| Gap | Effect | What closes it |
+|---|---|---|
+| **AMD — sysfs + DRM fdinfo** | **No AMD metrics at all.** A third of what SPEC §Collectors assigns to Phase 3. | A capture from an AMD host with a ROCm workload running. `capture-fixtures.sh check` already reports whether one would produce usable `drm-*` fdinfo keys. |
+| **Intel — DRM fdinfo** | **No Intel metrics at all.** | A capture from an Intel GPU host. |
+| **NVML — the entire path** | Builds and is wired in, but **has never run**: it needs an NVIDIA driver, and no fixture can stand in for a C call (SPEC §Testing rules). Treat `prickle-nvml` as unverified until it runs on hardware. | One run on an NVIDIA host, checked against the captured `nvidia-smi` output. |
+| Per-MIG memory and utilization from `nvidia-smi` | Absent from that source. No CSV query publishes them, and the human-readable table is not parsed. | Nothing — this is a real limitation of the fallback. NVML supplies them. |
+| GPU-instance / compute-instance IDs | Not exposed by either source. Nothing captured joins a MIG UUID to a GI/CI ID, and pairing the two listings would assume they are in the same order. | A capture that joins them, or an NVML-only label — the latter would break the identical-output requirement. |
+| A multi-GPU host | Single card captured. Parsers key on UUID rather than position so a second card cannot attach its partitions to the first, but nothing proves it. | A capture from a multi-GPU host. |
+
 ### The label contract
 
 This is the part worth reading before you build dashboards on it.
@@ -345,13 +413,17 @@ All flags, with defaults:
 | `-collector.container` | `true` | Walk the cgroup v2 tree. Set false on a host where you only want node metrics. |
 | `-collector.container.docker-socket` | *(none)* | Path to the Docker socket, usually `/var/run/docker.sock`. Enables one GET request per pass for container names and images, which land on `prickle_container_info` and never on a hot series. Empty — the default — opens no socket at all. |
 | `-collector.container.docker-timeout` | `2s` | Deadline for that request. A wedged daemon costs the names, not the metrics. |
+| `-collector.gpu` | `true` | Expose GPU metrics. NVIDIA only today. |
+| `-collector.gpu.nvidia-source` | `auto` | `auto`, `nvml` or `smi`. `auto` tries NVML and falls back to `nvidia-smi`. A debugging flag, not a tuning knob. |
+| `-collector.gpu.per-process` | `false` | Also expose per-process GPU memory, keyed on `command` from the executable's basename — never a PID. Opt-in: one series per distinct command per GPU. |
+| `-collector.gpu.nvidia-smi-command` | `nvidia-smi` | The binary to spawn, for hosts that keep it outside PATH. |
 | `-log.level` | `info` | `debug`, `info`, `warn`, `error`. |
 | `-version` | | Print version and exit. |
 
 Regexps are compiled at startup, so a typo fails immediately rather than at the
 first scrape.
 
-## NVIDIA: two builds (Phase 3)
+## NVIDIA: two builds
 
 `dlopen` needs cgo *and* a dynamically linked binary — a fully static binary
 cannot `dlopen` at all. So NVIDIA support ships as two artifacts:
@@ -373,6 +445,19 @@ rule holds for both. Both sources sit behind one `nvidiaSource` interface and
 **must emit identical metric output for the same GPU** — a hardware test asserts
 it.
 
+> **The NVML path is unverified.** It compiles, `ci/check.sh` builds and vets it
+> on every run, and it is wired into selection — but it has never executed,
+> because that needs an NVIDIA driver and no fixture can stand in for a C call
+> (SPEC §Testing rules says as much). The static `prickle` binary is unaffected:
+> the build tag means it cannot contain any of that code. Treat `prickle-nvml`
+> as unreleased until someone runs it on a GPU and diffs its output against the
+> captured `nvidia-smi` reference.
+
+Both are read-only. Every NVML symbol bound is a `Get`, resolved by its
+versioned name (`nvmlDeviceGetComputeRunningProcesses_v3`) so the struct layouts
+are fixed by NVIDIA's own ABI contract rather than by hope. Nothing from the
+`nvmlDeviceSet*` or `nvmlDeviceClear*` families is resolved at all.
+
 ## Development
 
 One command is the whole pre-commit checklist, and CI runs the same script:
@@ -381,7 +466,8 @@ One command is the whole pre-commit checklist, and CI runs the same script:
 ./ci/check.sh
 ```
 
-It runs `gofmt -l`, `go vet`, `go test -race ./...`, then gates on: an empty
+It runs `gofmt -l`, `go vet`, `go test -race ./...`, compiles and vets the
+`-tags nvml` build (which no other step sees), then gates on: an empty
 `go.sum` and no `require` block, an SPDX header in every `.go` file, `promtool
 check metrics` on every golden file, and greps for denied names and abbreviated
 metric prefixes.

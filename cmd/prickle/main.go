@@ -57,6 +57,18 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	// The GPU collector holds an NVML handle in the prickle-nvml build and must
+	// shut it down. collector.Collector deliberately has no Close — most
+	// collectors hold nothing — so the ones that do opt in with this method.
+	defer func() {
+		for _, c := range collectors {
+			if closer, ok := c.(interface{ Close() error }); ok {
+				if err := closer.Close(); err != nil {
+					log.Warn("closing collector", "collector", c.Name(), "error", err)
+				}
+			}
+		}
+	}()
 
 	s := sampler.New(collectors, sampler.Options{
 		Interval:    cfg.interval,

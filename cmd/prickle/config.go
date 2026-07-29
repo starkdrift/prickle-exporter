@@ -12,6 +12,7 @@ import (
 
 	"github.com/starkdrift/prickle-exporter/internal/collector"
 	"github.com/starkdrift/prickle-exporter/internal/collector/container"
+	"github.com/starkdrift/prickle-exporter/internal/collector/gpu"
 	"github.com/starkdrift/prickle-exporter/internal/collector/host"
 	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
@@ -43,6 +44,11 @@ type config struct {
 	containers    bool
 	dockerSocket  string
 	dockerTimeout time.Duration
+
+	gpus          bool
+	nvidiaSource  string
+	gpuPerProcess bool
+	smiCommand    string
 
 	logLevel    string
 	showVersion bool
@@ -91,6 +97,19 @@ func (c *config) register(fs *flag.FlagSet) {
 	fs.DurationVar(&c.dockerTimeout, "collector.container.docker-timeout",
 		container.DefaultDockerTimeout,
 		"Deadline for that request. A wedged daemon costs the names, not the metrics.")
+
+	fs.BoolVar(&c.gpus, "collector.gpu", true,
+		"Expose GPU metrics. NVIDIA only; AMD and Intel are Phase 3 scope with no "+
+			"captured fixtures yet, so they report nothing.")
+	fs.StringVar(&c.nvidiaSource, "collector.gpu.nvidia-source", gpu.SourceAuto,
+		"Force an NVIDIA implementation: `auto`, nvml or smi. auto tries NVML and "+
+			"falls back to nvidia-smi. A debugging flag, not a tuning knob.")
+	fs.BoolVar(&c.gpuPerProcess, "collector.gpu.per-process", false,
+		"Also expose per-process GPU memory, keyed on the `command` label taken "+
+			"from the executable's basename. Never a PID. Opt-in: it is one series "+
+			"per distinct command per GPU.")
+	fs.StringVar(&c.smiCommand, "collector.gpu.nvidia-smi-command", gpu.DefaultSMICommand,
+		"The nvidia-smi binary to spawn, for hosts that keep it outside PATH.")
 
 	fs.StringVar(&c.logLevel, "log.level", "info", "One of debug, info, warn, error.")
 	fs.BoolVar(&c.showVersion, "version", false, "Print the version and exit.")
@@ -153,7 +172,20 @@ func (c *config) collectors() ([]collector.Collector, error) {
 	if c.containers {
 		collectors = append(collectors, container.New(c.containerOptions()))
 	}
+	if c.gpus {
+		collectors = append(collectors, gpu.New(c.gpuOptions()))
+	}
 	return collectors, nil
+}
+
+// gpuOptions builds the Phase 3 collector's configuration.
+func (c *config) gpuOptions() gpu.Options {
+	return gpu.Options{
+		Roots:        c.roots(),
+		NVIDIASource: c.nvidiaSource,
+		PerProcess:   c.gpuPerProcess,
+		SMICommand:   c.smiCommand,
+	}
 }
 
 // nodeName resolves the `node` identity label.

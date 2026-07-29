@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/starkdrift/prickle-exporter/internal/collector/container"
+	"github.com/starkdrift/prickle-exporter/internal/collector/gpu"
 	"github.com/starkdrift/prickle-exporter/internal/exposition"
 	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
@@ -64,8 +65,8 @@ func diagnose(args []string, w io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintln(w, "\nGPU")
-	fmt.Fprintln(w, "  NVIDIA source selection is Phase 3 and not implemented yet.")
+	fmt.Fprintln(w, "\nPhase 3 GPU")
+	describeGPUs(w, cfg)
 
 	collectors, err := cfg.collectors()
 	if err != nil {
@@ -162,6 +163,78 @@ func describeContainers(w io.Writer, cfg config) error {
 			cfg.dockerSocket, named, runtimes["docker"])
 	}
 	return nil
+}
+
+// describeGPUs reports which NVIDIA implementation is live and, when none is,
+// why — SPEC.md §Collectors requires exactly that of `prickle diagnose`.
+//
+// "NVML failed to load" and "there is no GPU here" need different responses
+// from an operator, and an empty GPU section distinguishes neither.
+func describeGPUs(w io.Writer, cfg config) {
+	if !cfg.gpus {
+		fmt.Fprintln(w, "  disabled with -collector.gpu=false.")
+		return
+	}
+
+	fmt.Fprintf(w, "  this binary: %s\n", gpuBuildDescription())
+
+	c := gpu.New(cfg.gpuOptions())
+	defer c.Close()
+
+	if name := c.SourceName(); name != "" {
+		fmt.Fprintf(w, "  live source: %s\n", name)
+	} else {
+		fmt.Fprintln(w, "  live source: none — no NVIDIA metrics will be exposed.")
+		if err := c.SelectionError(); err != nil {
+			for _, line := range strings.Split(err.Error(), "\n") {
+				fmt.Fprintf(w, "    %s\n", line)
+			}
+		}
+		fmt.Fprintln(w, "  On a host with no NVIDIA GPU this is expected and not an error.")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+	defer cancel()
+
+	set := exposition.NewSet()
+	if err := c.Collect(ctx, set); err != nil {
+		fmt.Fprintf(w, "  reported: %v\n", err)
+	}
+
+	rendered := set.String()
+	fmt.Fprintf(w, "  GPUs: %d, MIG instances: %d\n",
+		countMatching(rendered, "prickle_gpu_info{"),
+		countMatching(rendered, "prickle_gpu_mig_info{"))
+
+	if !cfg.gpuPerProcess {
+		fmt.Fprintln(w, "  per-process attribution: off (-collector.gpu.per-process turns it on).")
+	}
+	fmt.Fprintln(w, "  AMD and Intel are SPEC.md §Collectors scope but unimplemented: no")
+	fmt.Fprintln(w, "  capture exists for either, so neither reports anything. See")
+	fmt.Fprintln(w, "  internal/collector/gpu/testdata/README.md §Coverage gaps.")
+}
+
+// gpuBuildDescription names which of the two artifacts this is.
+//
+// SPEC.md §Distribution ships both, and "why is my source smi when I asked for
+// nvml" is answered here rather than by the operator comparing file sizes.
+func gpuBuildDescription() string {
+	if gpu.NVMLBuilt {
+		return "prickle-nvml — NVML available, nvidia-smi as fallback"
+	}
+	return "prickle (static) — nvidia-smi only; a static binary cannot dlopen NVML"
+}
+
+// countMatching counts sample lines starting with prefix.
+func countMatching(rendered, prefix string) int {
+	var n int
+	for _, line := range strings.Split(rendered, "\n") {
+		if strings.HasPrefix(line, prefix) {
+			n++
+		}
+	}
+	return n
 }
 
 // phase1Sources lists the files the host collector reads, in SPEC.md

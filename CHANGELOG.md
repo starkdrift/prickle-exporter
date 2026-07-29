@@ -13,6 +13,69 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+Phase 3: the GPU collector, **NVIDIA only**. Nothing in Phase 1 or 2 output
+changes. AMD and Intel are in SPEC.md §Collectors' Phase 3 scope and are *not*
+implemented — see Notes.
+
+### Added
+
+- **NVIDIA GPU collector** reporting per-card utilization, memory, temperature
+  and power; MIG topology; and optional per-process memory. Two interchangeable
+  implementations behind one `nvidiaSource` interface, selected once at startup:
+  NVML via `dlopen` where available, `nvidia-smi` otherwise. About 12 series for
+  one MIG-partitioned card.
+- `prickle_gpu_nvidia_source_info`, recording which implementation is live, so a
+  scrape says whether it came from NVML or the fallback.
+- **`-collector.gpu.per-process`**, adding `prickle_gpu_process_memory_bytes`
+  keyed on `command` — the basename of the executable path. Opt-in, because it
+  is one series per distinct command per GPU.
+- **`-collector.gpu.nvidia-source={auto,nvml,smi}`** to force one path for
+  debugging, plus `-collector.gpu` and `-collector.gpu.nvidia-smi-command`.
+- `prickle diagnose` gained a Phase 3 section: which of the two artifacts this
+  binary is, which source is live, how many GPUs and MIG instances were found,
+  and — when nothing loaded — why each candidate declined.
+- `ci/check.sh` now compiles, vets and tests the `-tags nvml` build. That source
+  is invisible to every other step, so an edit to shared GPU code could break
+  the second shipped artifact silently.
+
+### Notes
+
+- **AMD and Intel are not implemented.** They are Phase 3 scope, but the
+  captured host is NVIDIA-only: there is no `gpu_busy_percent`, no
+  `mem_info_vram_*`, no `hwmon` tree and no `drm-*` fdinfo to develop against,
+  and SPEC.md §Testing rules forbids inventing a sysfs layout. An AMD or Intel
+  host reports no GPU metrics at all. Closing this needs a capture from such a
+  host with a workload running.
+- **The NVML path has never executed.** It builds, it is gated in CI, and it is
+  wired into selection — but running it needs an NVIDIA driver, and SPEC.md
+  §Testing rules is explicit that a C call cannot be fixture-tested. The static
+  `prickle` binary is unaffected: the build tag means it cannot contain that
+  code, and it uses `nvidia-smi`. **`prickle-nvml` should not be released until
+  someone runs it on a GPU** and diffs its output against the captured
+  `nvidia-smi` reference — which is what SPEC.md §Testing rules means by the two
+  sources having to agree.
+- **An absent metric means the driver would not say.** `utilization_ratio`
+  vanishes for the whole card once MIG is enabled — the driver reports `[N/A]`,
+  verified on H200 / driver 580 and present in the fixture. Reporting zero there
+  would read as an idle GPU and fire idle-capacity alerts across a MIG fleet.
+- **MIG instances are their own families.** `prickle_gpu_mig_memory_used_bytes`
+  rather than a `mig_uuid` label on the card's family, because an instance's
+  memory is a partition of its parent's and one family holding both would
+  double-count under `sum()`.
+- **The `nvidia-smi` source cannot attribute a process to a MIG instance.**
+  `--query-compute-apps` returns the parent GPU's UUID for a MIG-resident
+  process, so those series carry `gpu_uuid` and no `mig_uuid`. Coarse, not
+  wrong. NVML can do better; nothing else can.
+- **No PID reaches the output.** The compute-apps CSV carries one, and it is
+  discarded at the parse boundary — the snapshot type has no field for it, so
+  the guarantee is structural rather than a promise. Process series key on
+  `command`, never on the truncated and forgeable `comm`.
+- Per-MIG memory and utilization are absent from the `nvidia-smi` source: no CSV
+  query publishes them, and the human-readable table is not parsed. GPU-instance
+  and compute-instance IDs are exposed by neither source, because nothing
+  captured joins a MIG UUID to those IDs and a label only NVML could fill would
+  break the identical-output requirement.
+
 ## [0.2.0] — 2026-07-28
 
 Phase 2: the container collector. Nothing in Phase 1's output changes — no

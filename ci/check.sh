@@ -47,6 +47,17 @@ if ! command -v "${CC:-gcc}" >/dev/null && ! command -v clang >/dev/null; then
 fi
 CGO_ENABLED=1 "$GO" test -race ./...
 
+step "nvml build (SPEC.md §Distribution)"
+# prickle-nvml is a shipped artifact built from source no other step compiles:
+# //go:build nvml is invisible to the default build, vet and test above, so an
+# edit to the gpu package's shared code can break it silently. This compiles
+# and vets it. It cannot be *run* here — that needs an NVIDIA driver — and
+# SPEC.md §Testing rules is explicit that the NVML path is verified on
+# hardware; this is the weaker check that it still builds.
+CGO_ENABLED=1 "$GO" vet -tags nvml ./...
+CGO_ENABLED=1 "$GO" build -tags nvml -o /dev/null ./cmd/prickle
+CGO_ENABLED=1 "$GO" test -tags nvml ./internal/collector/gpu/
+
 step "zero third-party dependencies (SPEC.md §Hard constraints #1)"
 if [ -s go.sum ]; then
   fail "go.sum is non-empty; the standard library is the only permitted dependency"
