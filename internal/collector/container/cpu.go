@@ -59,16 +59,19 @@ func (c *Collector) collectCPU(out *exposition.Set, cg cgroup, labels []expositi
 			"CPU time consumed, split by mode.").
 			Add(float64(v)/1e6, with(labels, exposition.L("mode", m.mode))...)
 	}
+	// divisor, not a multiplier by 1e-6: 1e6 is exactly representable in
+	// float64 and 1e-6 is not, so dividing gives the correctly rounded second
+	// count where multiplying can land a microsecond off the printed value.
 	for _, f := range []struct {
 		key, name, help string
-		scale           float64
+		divisor         float64
 	}{
 		{"nr_periods", "cpu_periods_total", "Bandwidth-enforcement periods elapsed. Zero until a CPU quota is set.", 1},
 		{"nr_throttled", "cpu_throttled_periods_total", "Periods in which the container exhausted its CPU quota and was throttled.", 1},
-		{"throttled_usec", "cpu_throttled_seconds_total", "Seconds the container spent throttled against its CPU quota.", 1e-6},
+		{"throttled_usec", "cpu_throttled_seconds_total", "Seconds the container spent throttled against its CPU quota.", 1e6},
 	} {
 		if v, ok := stat[f.key]; ok {
-			out.Counter(prefix+f.name, f.help).Add(float64(v)*f.scale, labels...)
+			out.Counter(prefix+f.name, f.help).Add(float64(v)/f.divisor, labels...)
 		}
 	}
 

@@ -61,7 +61,7 @@ is either unit-tested on the name parse alone, or not implemented at all.
 | `crio-<hex>.scope` (CRI-O) | Directory-name parse only, in `TestIdentify`. No CRI-O host was captured. |
 | Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component | Directory-name parse only, in `TestIdentify`. The rental ran no Guaranteed pod. |
 | `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
-| A container with a CPU quota (`cpu.max` = `<quota> <period>`) | Parsed, unit-tested, never seen. Every cgroup on the captured host reads `max 100000`, so `nr_periods` and `nr_throttled` are zero throughout the golden file. |
+| A container with a CPU quota (`cpu.max` = `<quota> <period>`) | Covered by hand-written trees in `cpu_test.go` — `TestCPULimitFromQuota` and `TestCPUThrottlingCounters` — because no capture can supply it here: every cgroup on the captured host reads `max 100000`, so `nr_periods` and `nr_throttled` are zero throughout the golden file. The arithmetic is what those tests pin; a real capture would add nothing they do not already assert. |
 | cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Not implemented.** `capture-fixtures.sh` looks for it, but the captured host used the systemd driver, so nothing confirms the shape. Docker on a cgroupfs-driver host reports no containers until a capture exists. |
 | Non-systemd kubelet — `kubepods/besteffort/pod<uid>/<hex>` | **Not implemented**, same reason. |
 

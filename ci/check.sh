@@ -28,8 +28,24 @@ unformatted=$("$GOFMT" -l .)
 step "go vet"
 "$GO" vet ./...
 
-step "go test"
-"$GO" test ./...
+step "go test -race (SPEC.md §Architecture)"
+# -race, not a plain run. The sampler renders into a buffer and swaps it under a
+# mutex while net/http serves the previous one from another goroutine — that
+# non-blocking swap is the architecture's load-bearing claim, and the race
+# detector is the only thing in this checklist that can falsify it. Running the
+# suite once, under the detector, costs a second and covers what the plain run
+# covered.
+#
+# The detector needs cgo and a C toolchain, which the release build deliberately
+# does not use (CGO_ENABLED=0, SPEC.md §Distribution). That is not a conflict:
+# this gate tests the source, the release builds the artifact. CGO_ENABLED is
+# forced on here so an exported CGO_ENABLED=0 — which the README's own build
+# line encourages — does not turn the gate into an error about cgo.
+if ! command -v "${CC:-gcc}" >/dev/null && ! command -v clang >/dev/null; then
+  fail "no C compiler for the race detector; it is a required gate, not an optional one.
+      Install gcc or clang (Fedora: sudo dnf install gcc)."
+fi
+CGO_ENABLED=1 "$GO" test -race ./...
 
 step "zero third-party dependencies (SPEC.md §Hard constraints #1)"
 if [ -s go.sum ]; then

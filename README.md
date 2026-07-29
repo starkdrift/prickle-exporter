@@ -231,7 +231,7 @@ first.
 | **Kubelet with the cgroupfs driver** — `kubepods/besteffort/pod<uid>/<hex>` | **No containers reported** on such a node. | A capture from a node with `cgroupDriver: cgroupfs`. |
 | CRI-O — `crio-<hex>.scope` | Directory-name parse is unit-tested; nothing beyond it is. | A capture from a CRI-O host. |
 | Guaranteed pods — `kubepods-pod<uid>.slice`, no QoS component | Same: name parse only. The rental ran none. | A pod with equal requests and limits during capture. |
-| A container with a CPU quota | `cpu_limit_cores` and the throttling counters are parsed and unit-tested but never seen with a non-zero value — every `cpu.max` in the capture is `max 100000`. | `docker run --cpus=2`, or a pod with a CPU limit, during capture. |
+| A container with a CPU quota | Fixtures show none — every `cpu.max` in the capture is `max 100000` — so `cpu_limit_cores` and the throttling counters are covered by hand-written trees in `cpu_test.go` instead. Their values are asserted; only their provenance is synthetic. | `docker run --cpus=2`, or a pod with a CPU limit, during capture. |
 | `cpu.pressure`, `io.pressure` | **Implemented and emitted.** The capture script collects only `memory.pressure`, but the format is byte-identical to it and to the `/proc/pressure/*` files Phase 1 does capture, so a hand-written tree covers them in `TestPerCgroupPressure`. | Adding the two files to `capture-fixtures.sh`. |
 
 If `prickle diagnose` reports no containers on a host that is running some, the
@@ -381,10 +381,18 @@ One command is the whole pre-commit checklist, and CI runs the same script:
 ./ci/check.sh
 ```
 
-It runs `gofmt -l`, `go vet`, `go test ./...`, then gates on: an empty `go.sum`
-and no `require` block, an SPDX header in every `.go` file, `promtool check
-metrics` on every golden file, and greps for denied names and abbreviated metric
-prefixes.
+It runs `gofmt -l`, `go vet`, `go test -race ./...`, then gates on: an empty
+`go.sum` and no `require` block, an SPDX header in every `.go` file, `promtool
+check metrics` on every golden file, and greps for denied names and abbreviated
+metric prefixes.
+
+The test run is under the race detector because the sampler swaps a fully
+rendered buffer under a mutex while `net/http` serves the previous one from
+another goroutine — that non-blocking swap is the architecture's load-bearing
+claim, and nothing else in the checklist can falsify it. The detector needs a C
+toolchain, which is the one thing `ci/check.sh` wants that the release build
+(`CGO_ENABLED=0`, static) deliberately does not: the gate tests the source, the
+release builds the artifact.
 
 `promtool` is required, not optional. Get the same pinned version CI uses:
 
