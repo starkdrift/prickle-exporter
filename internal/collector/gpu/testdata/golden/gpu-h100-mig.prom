@@ -1,0 +1,28 @@
+# HELP prickle_gpu_info GPU identity: constant 1, carrying the model name and the driver's device index.
+# TYPE prickle_gpu_info gauge
+prickle_gpu_info{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",name="NVIDIA H100 80GB HBM3",index="0"} 1
+# HELP prickle_gpu_memory_total_bytes GPU memory installed.
+# TYPE prickle_gpu_memory_total_bytes gauge
+prickle_gpu_memory_total_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 85520809984
+# HELP prickle_gpu_memory_used_bytes GPU memory in use.
+# TYPE prickle_gpu_memory_used_bytes gauge
+prickle_gpu_memory_used_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 4430233600
+# HELP prickle_gpu_mig_enabled 1 when the GPU is partitioned into MIG instances, 0 when it is in Default mode.
+# TYPE prickle_gpu_mig_enabled gauge
+prickle_gpu_mig_enabled{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 1
+# HELP prickle_gpu_mig_info MIG instance identity: constant 1, carrying the profile and the driver's MIG device index.
+# TYPE prickle_gpu_mig_info gauge
+prickle_gpu_mig_info{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",mig_uuid="MIG-8443519f-66f7-5962-8955-60dba0866f3a",profile="1g.10gb",device_index="0"} 1
+prickle_gpu_mig_info{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",mig_uuid="MIG-ee6996fb-86fb-5405-83f0-b20887da1bb3",profile="1g.10gb",device_index="1"} 1
+# HELP prickle_gpu_nvidia_source_info Which NVIDIA implementation is live: constant 1, labelled with the source that loaded.
+# TYPE prickle_gpu_nvidia_source_info gauge
+prickle_gpu_nvidia_source_info{node="fixture",source="smi"} 1
+# HELP prickle_gpu_power_watts Power the GPU is drawing.
+# TYPE prickle_gpu_power_watts gauge
+prickle_gpu_power_watts{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 171.29
+# HELP prickle_gpu_process_memory_bytes GPU memory held by processes running one command, summed. Opt-in behind -collector.gpu.per-process.
+# TYPE prickle_gpu_process_memory_bytes gauge
+prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",command="loadgen"} 4391436288
+# HELP prickle_gpu_temperature_celsius GPU core temperature.
+# TYPE prickle_gpu_temperature_celsius gauge
+prickle_gpu_temperature_celsius{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 58

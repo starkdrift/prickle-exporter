@@ -1,34 +1,40 @@
 # Phase 3 GPU fixtures
 
-Two captures, deliberately different in the one way that matters — whether the
-card is partitioned:
+Three captures. The first two differ in the one way that matters — whether the
+card is partitioned — and the third is the *same card* as the second, an hour
+later, with MIG switched on:
 
 | Tree | Host | State | What only it can answer |
 |---|---|---|---|
-| `h200-mig-20260726/` | H200 141 GB, driver 580.173.02, since destroyed | **MIG on**, two `1g.18gb` instances, a compute process on one | What a partitioned card reports, and both limitations of the `nvidia-smi` source |
-| `h100-default-20260729/` | H100 80 GB, driver 580.173.02, since destroyed | **MIG off**, a CUDA kernel holding the card at 100% | What an unpartitioned card reports, and that a real utilization reading survives the parser |
+| `h200-mig-20260726/` | H200 141 GB, driver 580.173.02 | **MIG on**, two `1g.18gb` instances, a compute process on one | What a partitioned card reports, and both limitations of the `nvidia-smi` source |
+| `h100-default-20260729/` | H100 80 GB, driver 580.173.02 | **MIG off**, a CUDA kernel holding the card at 100% | What an unpartitioned card reports, and that a real utilization reading survives the parser |
+| `h100-mig-20260729/` | the same H100, 40 minutes later | **MIG on**, two `1g.10gb` instances | That the mode and not the host is what changes the output, and a profile string the parser has not seen |
 
-Both are the NVIDIA half of a
+All three hosts have since been destroyed. Each tree is the NVIDIA half of a
 [scripts/capture-fixtures.sh](../../../../scripts/capture-fixtures.sh) run; the
-H200 capture is also where the Phase 1 and Phase 2 trees come from.
+H200 capture is also where the Phase 1 and Phase 2 trees come from. The H100's
+`/proc` was captured too and deliberately **not** kept: same Ubuntu image, same
+disk names, identical `meminfo` field set and fewer interfaces than the H200
+tree, so it would have been a second copy of covered ground rather than
+coverage.
 
-Unlike the other two phases, neither tree is a mirrored filesystem layout and
+Unlike the other two phases, none of these is a mirrored filesystem layout and
 `fsroot` does not point at them. `nvidia-smi` is a subprocess, not a file, so
 SPEC.md §Collectors puts it behind an interface — the same reason `Statfser`
 exists in the host collector — and the tests replay these files through a fake
 `commandRunner`. What the layout mirrors is the *capture*, not the host.
 
-| | `h200-mig-20260726` | `h100-default-20260729` |
-|---|---|---|
-| Captured | 2026-07-26T05:42:16Z | 2026-07-29T18:05:46Z |
-| Hardware | 1× NVIDIA H200 141 GB | 1× NVIDIA H100 80 GB HBM3 |
-| MIG | **enabled**, two `1g.18gb` instances | **disabled** (Default mode) |
-| Driver | 580.173.02, CUDA 13.0 | 580.173.02, CUDA 13.0 |
-| Load at capture | context-only spinner, `utilization.gpu` = `[N/A]` under MIG | `nvcc`-built kernel, `utilization.gpu` = `100` |
+| | `h200-mig-20260726` | `h100-default-20260729` | `h100-mig-20260729` |
+|---|---|---|---|
+| Captured | 2026-07-26T05:42:16Z | 2026-07-29T18:05:46Z | 2026-07-29T18:45:31Z |
+| Hardware | 1× NVIDIA H200 141 GB | 1× NVIDIA H100 80 GB HBM3 | the same card |
+| MIG | **enabled**, two `1g.18gb` instances | **disabled** (Default mode) | **enabled**, two `1g.10gb` instances |
+| Driver | 580.173.02, CUDA 13.0 | 580.173.02, CUDA 13.0 | 580.173.02, CUDA 13.0 |
+| Load at capture | context-only spinner, `utilization.gpu` = `[N/A]` under MIG | `nvcc`-built kernel, `utilization.gpu` = `100` | the same kernel pinned to one instance, `[N/A]` under MIG |
 
-Everything in both is **captured, unmodified** `nvidia-smi` output.
+Everything in all three is **captured, unmodified** `nvidia-smi` output.
 
-## What the MIG tree exercises
+## What the H200 MIG tree exercises
 
 The capture is unusually valuable because the rental was deliberately put into
 the awkward state: MIG on, with a real compute process resident on a MIG
@@ -83,6 +89,28 @@ proves only that the parser handles what the test author imagined.
 - **`query-compute-apps.csv`** — one process, `/tmp/loadgen`, attributed to the
   card itself. Its PID (4559) is parsed and discarded exactly as the H200's is;
   `TestDefaultModeHasNoPID` asserts that per capture, not per fixture.
+
+## What the second MIG tree exercises
+
+`h100-mig-20260729/` is the H100 forty minutes later, partitioned into two
+`1g.10gb` instances for the hardware verification run. Its value is not that it
+is a second MIG capture — it is that it is the *same card* as the Default-mode
+tree, with the same UUID, so anything that differs between the two is the mode
+and not the host. `TestSameCardBothModes` is that comparison, and it is the
+tightest available check that `mig_enabled` and the instance families follow
+the card's configuration rather than something incidental to a machine.
+
+- A **profile string the parser had not seen**: `1g.10gb`, against the H200's
+  `1g.18gb`. `TestSecondMIGProfileIsNotTheFirstCapturesProfile` also asserts
+  the H200's spelling does not appear, which is what would happen if the
+  profile were ever settled on rather than read.
+- **Both `nvidia-smi` limitations, on a second card and a second driver
+  install**: `utilization.gpu` is `[N/A]` again, and the process pinned to MIG
+  device 0 is again reported against the parent GPU's UUID. They are properties
+  of the tool, not of one rental.
+- The **numbers quoted in [Hardware verification](#hardware-verification)** are
+  read off this tree, so those claims can be rechecked. That matters: doing
+  exactly that is what caught the ordering claim this file originally made.
 
 ## Deliberately not parsed
 
@@ -139,12 +167,25 @@ thing a fixture cannot express. It found three disagreements on its first run:
 | A second GPU collector in one process was handed an already-closed NVML handle | The library handle is process-global. `prickle diagnose` builds a collector, closes it, then builds the real one — a sequence no fixture test performs. |
 
 Both sources' MIG numbers were cross-checked against `nvidia-smi`'s own
-human-readable table on that host: per-instance `4210MiB / 9984MiB` and
-`15MiB / 9984MiB` matched NVML's byte values exactly, and the instance whose
-`-L` device index is 0 is the one the table attributes the process to — the
-`-lgi` listing, meanwhile, was in the *other* order (GPU instance 13 before
-11). That is direct evidence for the decision recorded above not to pair the
-two listings positionally.
+human-readable table on that host, and `h100-mig-20260729/` is that capture:
+per-instance `4210MiB / 9984MiB` and `15MiB / 9984MiB` match NVML's byte values
+exactly, and the instance whose `-L` device index is 0 is the one the table
+attributes the process to.
+
+**What that capture says about the GI/CI ordering question is the opposite of
+what it first appeared to say, and it is worth stating plainly.** The two
+listings are in the *same* order there: `mig -lgi` reports GPU instance 11 then
+13, and `-L` device 0 then 1 map to exactly those. Pairing them positionally
+would have worked on this host. What ran in a different order was the
+*creation* — instance 13 was created first — so the listing order is not
+creation order but placement order (`Start:Size` 4:1 before 6:1), an emergent
+property of the driver that NVIDIA documents nowhere.
+
+So this capture is not evidence *against* positional pairing. It is the more
+uncomfortable thing: a sample of one where the guess holds, which is how a
+pairing that is right by coincidence gets committed. The decision above stands
+on its original ground — nothing captured joins a MIG UUID to a GI ID — and
+this tree is the reason that ground is stated rather than the ordering.
 
 What the two sources still differ in, by design and asserted as such:
 
@@ -169,12 +210,12 @@ finding is recorded in [scripts/README.md](../../../../scripts/README.md)
 
 ## Golden output
 
-`golden/gpu.prom` and `golden/gpu-default-mode.prom` are what the two trees
-render to through the `nvidia-smi` source, with `node="fixture"` and
-per-process attribution on. Two goldens rather than one because the captures
-differ in what the driver will answer, not merely in their numbers. Both are
-checked byte-for-byte and verified with `promtool check metrics`. Regenerate
-after an intentional change with:
+`golden/gpu.prom`, `golden/gpu-default-mode.prom` and `golden/gpu-h100-mig.prom`
+are what the three trees render to through the `nvidia-smi` source, with
+`node="fixture"` and per-process attribution on. One golden per tree, because
+the captures differ in what the driver will answer, not merely in their
+numbers. All are checked byte-for-byte and verified with `promtool check
+metrics`. Regenerate after an intentional change with:
 
 ```sh
 go test ./internal/collector/gpu/ -update-golden

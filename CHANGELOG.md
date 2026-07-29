@@ -43,13 +43,19 @@ Intel was dropped from that scope — see Notes.
   label values — so a divergence in a label shows up as a missing series rather
   than as a value that looks close enough. It skips wherever NVML does not
   load, so `go test -tags nvml` stays green off hardware.
-- A second fixture capture, `h100-default-20260729`: an H100 in **Default
-  mode** under a real CUDA kernel, with its own golden file. The first capture
-  was MIG-partitioned for its whole life, so "what does an unpartitioned card
-  report" was answered by a hand-written `nvidia-smi -L` line, and "does a real
-  utilization reading survive the parser" could not be answered at all — an
-  idle card reads `0`, which is indistinguishable from a parser wrongly turning
-  an absent `[N/A]` into a zero. This card was pinned at 100%.
+- Two more fixture captures, each with its own golden file. The first,
+  `h100-default-20260729`, is an H100 in **Default mode** under a real CUDA
+  kernel: the original capture was MIG-partitioned for its whole life, so "what
+  does an unpartitioned card report" was answered by a hand-written
+  `nvidia-smi -L` line, and "does a real utilization reading survive the
+  parser" could not be answered at all — an idle card reads `0`, which is
+  indistinguishable from a parser wrongly turning an absent `[N/A]` into a
+  zero. This card was pinned at 100%. The second, `h100-mig-20260729`, is **the
+  same card** forty minutes later with MIG on, which makes the mode the only
+  variable between them, and carries a profile string (`1g.10gb`) the parser
+  had not seen. The H100's `/proc` was captured too and deliberately not kept:
+  same image, same disks, identical `meminfo` fields, fewer interfaces than the
+  H200 tree — a second copy of covered ground rather than coverage.
 
 ### Fixed
 
@@ -81,6 +87,16 @@ reachable from a fixture; each now has a test that fails if it returns.
   startup" protects.
 
 Also fixed, in the same pass:
+
+- A claim in `internal/collector/gpu/testdata/README.md` that the `mig -lgi`
+  and `nvidia-smi -L` listings came back in *opposite* orders on the H100. They
+  did not: both list GPU instance 11 before 13. What ran in a different order
+  was the instance *creation*. The decision that claim was offered in support
+  of — never pair the two listings positionally — is unchanged and rests on its
+  original ground, that nothing captured joins a MIG UUID to a GI ID. The
+  capture is now committed as `h100-mig-20260729` so the corrected statement,
+  and the per-instance memory figures quoted beside it, can be rechecked
+  against the output they came from.
 
 - `prickle diagnose` no longer says "On a host with no NVIDIA GPU this is
   expected" after an operator *forced* an unavailable source with
