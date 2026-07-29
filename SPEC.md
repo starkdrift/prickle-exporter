@@ -91,7 +91,13 @@ mandatory from Phase 4.
   directory names: `docker-<hex>.scope`, `cri-containerd-<hex>.scope`,
   `crio-<hex>.scope`, `kubepods.slice/.../pod<uid>`. Docker socket is an
   optional enrichment path for human-readable names only.
-- **GPU (Phase 3):** AMD via sysfs + DRM fdinfo; Intel via DRM fdinfo.
+- **GPU (Phase 3):** AMD via sysfs + DRM fdinfo. **Intel is out of scope.** No
+  capture host is obtainable, and §Testing rules forbids developing a parser
+  against a layout nobody has captured — so listing it would be scope on paper
+  and an empty scrape in practice, which is the worse of the two failures. This
+  is a decision about what ships, not a door welded shut: Intel is read through
+  the same DRM fdinfo path AMD needs anyway, so a capture is all that stands
+  between this line and reopening it.
   NVIDIA is served by two interchangeable implementations behind one
   `nvidiaSource` interface, selected at runtime in this order:
   1. **NVML via `dlopen` of `libnvidia-ml.so.1` — the preferred path.** Richer
