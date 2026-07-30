@@ -1,8 +1,8 @@
 # Phase 3 GPU fixtures
 
-Three captures. The first two differ in the one way that matters — whether the
-card is partitioned — and the third is the *same card* as the second, an hour
-later, with MIG switched on:
+Four captures from two rentals. The first two differ in the one way that
+matters — whether the card is partitioned — and the last two are that same
+second card again, repartitioned:
 
 | Tree | Host | State | What only it can answer |
 |---|---|---|---|
@@ -11,7 +11,7 @@ later, with MIG switched on:
 | `h100-mig-20260729/` | the same H100, 40 minutes later | **MIG on**, two `1g.10gb` instances | That the mode and not the host is what changes the output, and a profile string the parser has not seen |
 | `h100-mig-mixed-20260729/` | the same H100 again | **MIG on**, three instances of two profiles, one of them subdivided; three processes, two sharing a command, one with its binary deleted | A compute-instance profile spelling, profiles staying with their own UUIDs, per-command summing, and a deleted binary |
 
-All three hosts have since been destroyed. Each tree is the NVIDIA half of a
+Both rentals have since been destroyed. Each tree is the NVIDIA half of a
 [scripts/capture-fixtures.sh](../../../../scripts/capture-fixtures.sh) run; the
 H200 capture is also where the Phase 1 and Phase 2 trees come from. The H100's
 `/proc` was captured too and deliberately **not** kept: same Ubuntu image, same
@@ -183,17 +183,30 @@ was wrong in a way only hardware could show:
 
 1. **Memory alone** gave `10gb` where `-L` says `1g.10gb`.
 2. **Memory plus the GPU-instance slice count** gave `1g.10gb` and `3g.40gb`
-   correctly, and would give **`1g.16gb` on an H200**, whose `1g.18gb` profile
-   has a 16.00 GiB framebuffer — visible in `h200-mig-20260726/smi.txt`, which
-   is why that capture is worth keeping even though no test parses it. The name
-   is not a function of the memory, on any card.
+   correctly on an H100 — and is wrong for **every profile an H200 offers**.
+   That was first inferred from `h200-mig-20260726/smi.txt`, which shows a
+   16.00 GiB framebuffer against a profile called `1g.18gb`, and then measured
+   on a live H200 (driver 580.173.02, 2026-07-30) by building with the name
+   lookup disabled and scraping the card:
+
+   | `-L` says | the derivation gave | framebuffer |
+   |---|---|---|
+   | `1g.18gb` | `1g.16gb` | 16.00 GiB |
+   | `1g.35gb` | `1g.33gb` | 32.50 GiB |
+   | `3g.71gb` | `3g.70gb` | 69.75 GiB |
+
+   NVIDIA names a profile after a share of the card's *advertised* 141 GB,
+   which NVML never reports. The name is not a function of the memory on any
+   card; the H100 simply hid that by coincidence.
 3. **The GPU instance's own profile name**, fetched from the driver, gave
    `1g.10gb+me` for an instance created from the media-engine profile, where
    `-L` says plain `1g.10gb`. `-L` names the *compute* instance, not the GPU
    instance.
 4. **The compute instance's profile name** matches `-L` in every configuration
-   tested — plain, media-engine, and subdivided — because it is the same string
-   nvidia-smi prints.
+   tested — because it is the same string nvidia-smi prints. Verified on an
+   H100 (plain, media-engine, `1c`- and `2c`-subdivided) and on an H200
+   (`1g.18gb`, `1g.35gb`, `3g.71gb` together on one card, and a single
+   `7g.141gb` instance spanning the whole GPU).
 
 Two traps on the way there, both worth knowing before touching that code:
 
@@ -205,8 +218,17 @@ Two traps on the way there, both worth knowing before touching that code:
 - The compute-instance name is already complete: `1c.3g.40gb`, not `3g.40gb`
   wanting a prefix. Adding the slice counts on top produced `1c.1c.3g.40gb`.
 
+The whole suite was re-run on a **second card class** — an H200, driver
+580.173.02, 2026-07-30 — which is what confirms the declared C struct layouts
+are not H100-shaped by accident. It also produced the sharpest demonstration
+of why MIG memory is a separate family: a single `7g.141gb` instance spanning
+the whole card reports `prickle_gpu_mig_memory_used_bytes` and
+`prickle_gpu_memory_used_bytes` as *the same 4846780416 bytes*. One family
+holding both would have doubled a card's usage on a `sum()`, at 100% overlap.
+
 Both sources' MIG numbers were cross-checked against `nvidia-smi`'s own
-human-readable table on that host, and `h100-mig-20260729/` is that capture:
+human-readable table on both hosts, and `h100-mig-20260729/` is one such
+capture:
 per-instance `4210MiB / 9984MiB` and `15MiB / 9984MiB` match NVML's byte values
 exactly, and the instance whose `-L` device index is 0 is the one the table
 attributes the process to.

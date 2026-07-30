@@ -448,17 +448,20 @@ it.
 The hardware test lives in
 [internal/collector/gpu/nvml_hardware_test.go](internal/collector/gpu/nvml_hardware_test.go)
 and skips itself wherever NVML does not load, so `go test -tags nvml` stays
-green on a laptop. It was run on an **H100 80GB, driver 580.173.02, in both
-Default and MIG mode** (2026-07-29), and it found three disagreements that no
-fixture could have:
+green on a laptop. It was run on an **H100 80GB** (2026-07-29) and an **H200 141GB**
+(2026-07-30), driver 580.173.02, in both Default and MIG mode, and it found
+three disagreements that no fixture could have:
 
 | Found | Effect had it shipped |
 |---|---|
 | NVML counted driver-reserved memory as used | `prickle_gpu_memory_used_bytes` 480 MiB higher per card from `prickle-nvml` than from `prickle` — every memory panel and capacity alert shifting with the artifact deployed |
-| NVML spelled a MIG profile `10gb` where `nvidia-smi -L` spells it `1g.10gb` | The `profile` label on `prickle_gpu_mig_info` differing between the two binaries for the same card |
+| NVML *derived* a MIG profile name instead of reading it — three plausible rules, each wrong on some card | The `profile` label on `prickle_gpu_mig_info` differing between the two binaries for the same card, for **every profile an H200 offers** |
 | A second GPU collector in one process got an already-closed NVML handle | `prickle diagnose` reporting `NVML source is closed` on a host where NVML worked perfectly |
 
-All three are fixed, and each has a test that fails if it comes back.
+All three are fixed, and each has a test that fails if it comes back. Two card
+classes is not redundancy: the C struct layouts the NVML build declares are
+only known not to be H100-shaped by coincidence because a second card agrees
+with them.
 
 Both are read-only. Every NVML symbol bound is a `Get`, resolved by its
 versioned name (`nvmlDeviceGetComputeRunningProcesses_v3`) so the struct layouts

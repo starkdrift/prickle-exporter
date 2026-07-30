@@ -64,9 +64,10 @@ Intel was dropped from that scope — see Notes.
 
 ### Fixed
 
-Three defects in the NVML path, all found by its **first execution on hardware**
-(H100 80GB, driver 580.173.02, Default and MIG mode, 2026-07-29). None was
-reachable from a fixture; each now has a test that fails if it returns.
+Three defects in the NVML path, all found by running it **on hardware** for the
+first time — an H100 80GB on 2026-07-29 and an H200 141GB on 2026-07-30, driver
+580.173.02, in Default and MIG mode. None was reachable from a fixture; each now
+has a test that fails if it returns.
 
 - **`prickle_gpu_memory_used_bytes` was 480 MiB too high from `prickle-nvml`.**
   It bound `nvmlDeviceGetMemoryInfo`, whose `used` is `total - free` and so
@@ -85,13 +86,17 @@ reachable from a fixture; each now has a test that fails if it returns.
   matched only one of the two artifacts. Four rounds on hardware to get there,
   each ruling out a plausible rule:
     - memory alone gave `10gb` against `-L`'s `1g.10gb`;
-    - memory plus the GPU-instance slice count was right on an H100 and would
-      have reported **`1g.16gb` on an H200**, whose `1g.18gb` profile has a
-      16.00 GiB framebuffer — the name is not a function of the memory;
+    - memory plus the GPU-instance slice count was right on an H100 and wrong
+      for **every profile an H200 offers** — measured on one, with the lookup
+      disabled: `1g.16gb` for `1g.18gb`, `1g.33gb` for `1g.35gb`, `3g.70gb`
+      for `3g.71gb`. NVIDIA names a profile after a share of the card's
+      advertised 141 GB, which NVML never reports;
     - the GPU instance's own profile name gave `1g.10gb+me` where `-L` says
       `1g.10gb`, because `-L` names the compute instance, not the GPU instance;
     - the compute instance's profile name matches `-L` in every configuration
-      tested: plain, media-engine, and a `3g.40gb` subdivided into `1c`.
+      tested: on an H100 plain, media-engine, and a `3g.40gb` subdivided into
+      `1c` and `2c`; on an H200 three profiles at once and a single
+      `7g.141gb` instance spanning the whole card.
 
   A memory-derived fallback remains for a driver that declines the lookup, and
   the hardware test fails on any card where it disagrees with `nvidia-smi`.
@@ -141,9 +146,11 @@ Also fixed, in the same pass:
   DRM fdinfo path the AMD collector needs anyway, and `capture-fixtures.sh`
   still captures it, so reopening the decision costs a fixture tree rather than
   a redesign.
-- **The NVML path has now run on hardware** — an H100 80GB, driver 580.173.02,
-  in Default and MIG mode — and its output was diffed against the same card's
-  `nvidia-smi` source. That is what SPEC.md §Testing rules means by the two
+- **The NVML path has now run on hardware** — an H100 80GB and an H200 141GB,
+  driver 580.173.02, in Default and MIG mode — and its output was diffed
+  against the same card's `nvidia-smi` source. Two card classes matter for more
+  than coverage: the C struct layouts this build declares are only known not to
+  be H100-shaped by accident because a second card agrees with them. That is what SPEC.md §Testing rules means by the two
   sources having to agree, and it took three fixes to be true (see Fixed). It
   remains un-fixture-testable: a C call is not a file read, so the assertion
   re-runs only where a GPU is present. What is still unproven for both sources
