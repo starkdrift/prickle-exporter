@@ -13,6 +13,23 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The systemd install instructions were wrong on SELinux hosts.** A unit file
+  copied into `/etc/systemd/system/` can keep the wrong SELinux label, and
+  systemd then reports `Unit prickle.service not found` for a file that is
+  plainly there in `ls` — no denial logged, SELinux never mentioned. The
+  documented sequence now runs `restorecon` after the install, guarded so it is
+  a no-op on distributions that do not have it.
+
+  Found by sweeping the **released** 0.5.0 binary across all fourteen
+  DigitalOcean base images, which is the point of sweeping released artifacts:
+  AlmaLinux 8 labelled the copy `default_t` while Rocky 8 — equally SELinux
+  Enforcing, same RHEL 8 base, same install command — labelled it
+  `systemd_unit_file_t` and worked. Why the two differ is not established, so
+  the guidance is to run `restorecon` rather than to reason about when it is
+  needed. Documentation only; no binary changed.
+
 ## [0.5.0] — 2026-08-01
 
 Phase 5: distribution. Also the release where the container collector stopped

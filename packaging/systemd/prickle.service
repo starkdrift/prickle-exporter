@@ -11,7 +11,18 @@
 # Install:
 #   install -m 0755 prickle /usr/local/bin/prickle
 #   install -m 0644 prickle.service /etc/systemd/system/
+#   command -v restorecon >/dev/null && restorecon /etc/systemd/system/prickle.service
 #   systemctl daemon-reload && systemctl enable --now prickle
+#
+# The restorecon line is not optional on an SELinux host, and its absence fails
+# in a way that names nothing useful. A unit file that keeps the wrong label is
+# invisible to systemd, which reports "Unit prickle.service not found" — no
+# denial, no mention of SELinux, and the file plainly sitting there in ls.
+# Observed on AlmaLinux 8, where the copy landed as default_t instead of
+# systemd_unit_file_t; Rocky 8, equally Enforcing, labelled the same copy
+# correctly, so this is worth doing rather than reasoning about. restorecon is
+# a no-op where the label is already right, and absent on Debian and Ubuntu,
+# hence the guard.
 #
 # For NVIDIA hosts use prickle-nvml.service instead; it needs the driver
 # devices this unit deliberately hides.

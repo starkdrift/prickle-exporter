@@ -10,8 +10,18 @@ against rather than assumed to work.
 ```sh
 install -m 0755 prickle /usr/local/bin/prickle
 install -m 0644 systemd/prickle.service /etc/systemd/system/
+command -v restorecon >/dev/null && restorecon /etc/systemd/system/prickle.service
 systemctl daemon-reload && systemctl enable --now prickle
 ```
+
+**The `restorecon` line matters on SELinux hosts**, and skipping it fails
+opaquely: a unit file that keeps the wrong label is invisible to systemd, which
+says `Unit prickle.service not found` while the file sits there in `ls`. No
+denial is logged and SELinux is never mentioned. Found by sweeping the released
+binary across every base image — AlmaLinux 8 labelled the copied file
+`default_t` instead of `systemd_unit_file_t`, while Rocky 8, equally Enforcing,
+labelled the identical copy correctly. `restorecon` is a no-op where the label
+is already right and does not exist on Debian or Ubuntu, hence the guard.
 
 Both run under `DynamicUser`, an empty `CapabilityBoundingSet`,
 `ProtectSystem=strict` and a syscall allow-list. Verified on live hosts: uid in

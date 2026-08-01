@@ -21,7 +21,11 @@
 # Install:
 #   install -m 0755 prickle-nvml /usr/local/bin/prickle-nvml
 #   install -m 0644 prickle-nvml.service /etc/systemd/system/
+#   command -v restorecon >/dev/null && restorecon /etc/systemd/system/prickle-nvml.service
 #   systemctl daemon-reload && systemctl enable --now prickle-nvml
+#
+# See prickle.service for why restorecon is there: without it an SELinux host
+# can report "Unit not found" for a file that is visibly present.
 
 [Unit]
 Description=prickle-exporter, NVML variant (host, container and GPU metrics)
