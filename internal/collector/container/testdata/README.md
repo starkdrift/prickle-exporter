@@ -59,7 +59,7 @@ is either unit-tested on the name parse alone, or not implemented at all.
 | Gap | Status |
 |---|---|
 | `crio-<hex>.scope` (CRI-O) | Directory-name parse only, in `TestIdentify`. No CRI-O host was captured. |
-| Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component | Directory-name parse only, in `TestIdentify`. The rental ran no Guaranteed pod. |
+| Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component | **Captured**, in `kubeadm-systemd-20260801/`. |
 | `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
 | A container with a CPU quota (`cpu.max` = `<quota> <period>`) | **Captured**, in `docker-cgroupfs-20260801/`. The hand-written trees in `cpu_test.go` stay — they pin the arithmetic in isolation — but the quota, the throttle counters and the conversion to cores are now also checked against values a kernel actually produced. |
 | cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Implemented and captured**, in `docker-cgroupfs-20260801/`. Unlike the kubepods layout, this one *does* name its runtime: the parent directory is literally `docker`. |
@@ -123,6 +123,37 @@ The capture came through an already-running pod — the node's `cilium-agent`
 bind-mounts the host cgroup2 root at `/run/cilium/cgroupv2` — so nothing was
 scheduled and no image was pulled to obtain it. The same thirteen per-cgroup
 files as the systemd tree, and `cgroup.procs` excluded for the same reason.
+
+## The Guaranteed-pod tree: `kubeadm-systemd-20260801/`
+
+A kubeadm node — Kubernetes 1.34.10, containerd 2.2.2, kernel 7.0.0, kubelet on
+the **systemd** cgroup driver — captured 2026-08-01 from a two-node cluster
+stood up for this purpose.
+
+It exists for one directory name. `kubepods-pod<uid>.slice`, the Guaranteed
+shape with no QoS component, had been parse-only since Phase 2 for a reason
+that never resolved itself: no cluster anyone captured was running a Guaranteed
+pod. Managed DigitalOcean had none, the original rental had none. So three pods
+were created deliberately, one per QoS class, and all three shapes now sit in
+one tree:
+
+| Pod | QoS | Slice |
+|---|---|---|
+| `qos-guaranteed` | Guaranteed | `kubepods.slice/kubepods-pod54af9685_6b23_4dc9_aaf3_85520df7a05e.slice` |
+| `qos-burstable` | Burstable | `kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod1e387c5f_…slice` |
+| `qos-besteffort` | BestEffort | `kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod59ae0a77_…slice` |
+
+`podSlicePattern` made the QoS component optional and defaulted the missing
+case to `guaranteed`, which was correct — the capture confirms the rule rather
+than correcting it. What it adds is that the rule has now been run against a
+kernel's output instead of against the systemd naming documentation, and that
+all three spellings coexist in one walk without one swallowing another.
+
+The Guaranteed pod's `cpu.max` reads `25000 100000`: for a Guaranteed pod the
+limit equals the request, which is why the quota exists at all.
+
+Ten container scopes, the same thirteen per-cgroup files as the other trees,
+and `cgroup.procs` stripped for the usual reason.
 
 ## The Docker cgroupfs tree: `docker-cgroupfs-20260801/`
 

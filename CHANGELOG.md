@@ -61,6 +61,13 @@ what to do about it, which no commit-log generator writes.
   explicitly instead of printing `docker 0, containerd 0, crio 0` under a
   non-zero total, which read as three failed identifications.
 
+- **A Guaranteed pod**, captured at last. `kubepods-pod<uid>.slice` — the
+  systemd shape with no QoS component — had been parse-only since Phase 2
+  because no cluster anyone captured ran one. A two-node kubeadm cluster was
+  stood up with three pods, one per QoS class, so all three spellings now sit
+  in one tree. The existing rule was **right**; this confirms it against a
+  kernel's output rather than against systemd's naming documentation. No
+  behaviour changed.
 - **A CPU quota that is actually being hit**, captured rather than hand-built.
   Every cgroup in every previous capture read `cpu.max` = `max 100000`, so
   `prickle_container_cpu_throttled_periods_total` was zero throughout the
