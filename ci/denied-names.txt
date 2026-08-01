@@ -9,7 +9,16 @@
 # Matching is case-insensitive and substring-based, so a short entry will catch
 # a lot: prefer the full discarded name.
 #
-# THIS LIST IS EMPTY AND NEEDS FILLING IN. The names discarded during the
-# naming pass are not recorded anywhere in the repository, so they could not be
-# recovered when this file was created. Until entries are added, ci/check.sh
-# reports the check as vacuous rather than as passing.
+# THIS LIST IS EMPTY, AND THAT NO LONGER MEANS THE TREE IS UNPROTECTED.
+#
+# The names discarded during the naming pass were never recorded anywhere in
+# the repository, so they could not be recovered when this file was created and
+# still cannot be. For as long as that is true this list can only ever be
+# filled from somebody's memory.
+#
+# So ci/check.sh does not depend on it. Its naming-discipline step asserts
+# positively that the only exporter-shaped identifiers in the tree are
+# prickle-exporter and the third-party exporters the docs name — which catches
+# a discarded candidate resurfacing without anyone having to remember what it
+# was, and catches a brand-new unagreed name too. Adding entries here layers a
+# second, narrower check on top; it does not switch the first one on.

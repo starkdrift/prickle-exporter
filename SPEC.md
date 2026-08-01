@@ -19,9 +19,18 @@ one, the change happens in this file first, in its own commit.
 
 The names above are the only ones used anywhere in the tree — code, comments,
 docs, fixtures, chart names, dashboard JSON. Earlier candidate names were
-discarded during naming and must not reappear; the deny-list lives in
-`ci/denied-names.txt` and is enforced by a CI grep that excludes itself and
-this file. Never abbreviate the metric prefix.
+discarded during naming and must not reappear.
+
+Two checks enforce this, because a deny-list alone could not. The names
+discarded during the naming pass were never written down anywhere in the
+repository, so `ci/denied-names.txt` has been empty since it was created and
+the gate reported itself vacuous on every run — reassurance standing where a
+check should be. The enforcing check is therefore **positive**: the only
+exporter-shaped identifiers permitted in the tree are `prickle-exporter` and
+the third-party exporters the documentation legitimately names, and anything
+else fails CI whether or not anyone remembers rejecting it. The deny-list
+remains and still runs, for names somebody does supply; the grep excludes
+itself, the list, and this file. Never abbreviate the metric prefix.
 
 ## Hard constraints
 

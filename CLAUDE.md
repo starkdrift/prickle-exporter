@@ -95,5 +95,10 @@ CI runs the same script:
 - `promtool check metrics` on every `testdata/golden/*.prom`
 - the denied-names and metric-prefix greps
 
-`ci/denied-names.txt` is currently **empty**, so that gate reports VACUOUS and
-protects nothing until the discarded candidate names are filled in.
+`ci/denied-names.txt` is **empty and will stay that way**: the names discarded
+during naming were never recorded in the repository. The naming gate no longer
+depends on it — it asserts positively that the only exporter-shaped identifiers
+in the tree are `prickle-exporter` and the third-party exporters the docs name,
+which catches a discarded candidate resurfacing without anyone remembering it.
+Adding entries to the list layers a second check on top; it does not switch the
+first one on.

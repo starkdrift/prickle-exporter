@@ -78,13 +78,38 @@ for golden in internal/collector/*/testdata/golden/*.prom; do
   promtool check metrics < "$golden" || fail "promtool rejected $golden"
 done
 
-step "denied names (SPEC.md §Identity)"
-# The grep excludes itself, the deny-list, and SPEC.md — the three places a
-# discarded name may legitimately appear.
+step "naming discipline (SPEC.md §Identity)"
+# Two checks, because the obvious one cannot be made to work on its own.
+#
+# The deny-list below can only catch a discarded name somebody still remembers,
+# and the names discarded during this project's naming pass were never written
+# down — ci/denied-names.txt has been empty since it was created, so the gate
+# reported VACUOUS on every run and protected nothing. A step that cannot fail
+# is worse than an absent one: it prints reassurance next to seven checks that
+# mean something.
+#
+# So this runs first, and needs no privileged knowledge. SPEC.md §Identity says
+# the names in the identity table are the only ones used anywhere in the tree.
+# A discarded candidate for *this* project would be an exporter name, so assert
+# that the only exporter-shaped identifiers present are the canonical one and
+# the third-party exporters the docs legitimately name. Anything else is either
+# a discarded name resurfacing or a new one nobody agreed to.
+allowed_exporters='prickle-exporter|dcgm-exporter|node_exporter'
+foreign=$(git grep -IohE '\b[a-z][a-z0-9]{2,}[-_]exporter\b' -- . \
+            ':(exclude)ci/check.sh' ':(exclude)ci/denied-names.txt' \
+          | sort -u | grep -vE "^($allowed_exporters)\$" || true)
+if [ -n "$foreign" ]; then
+  printf '  unexpected exporter names in the tree:\n%s\n' "$foreign" | sed 's/^/    /'
+  fail "an exporter name outside SPEC.md §Identity appears; if it is legitimate, add it to allowed_exporters"
+fi
+printf '  ok  only %s and known third-party exporters appear\n' "prickle-exporter"
+
+# The deny-list proper, for names somebody does supply. The grep excludes
+# itself, the deny-list, and SPEC.md — the three places a discarded name may
+# legitimately appear.
 mapfile -t denied < <(grep -vE '^\s*(#|$)' ci/denied-names.txt || true)
 if [ ${#denied[@]} -eq 0 ]; then
-  printf '  \033[1;33mVACUOUS\033[0m ci/denied-names.txt has no entries; nothing was checked.\n'
-  printf '  Add the names discarded during naming, or this gate protects nothing.\n'
+  printf '  note: ci/denied-names.txt is empty; the check above is what is protecting the tree.\n'
 else
   for name in "${denied[@]}"; do
     if git grep -In -i -- "$name" -- . \
