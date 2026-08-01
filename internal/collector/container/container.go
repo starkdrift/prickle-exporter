@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package container implements the Phase 2 container collector: a walk of the
-// cgroup v2 tree, with identity taken from the directory names the container
+// cgroup tree, with identity taken from the directory names the container
 // runtimes create (SPEC.md §Collectors).
+//
+// Both cgroup hierarchies are read. v2 is primary and v1 has its own reader in
+// v1.go behind the hierarchy interface, because the two are different data
+// models rather than spellings of one — see the comment there. What they are
+// not allowed to differ in is the output: the same metric names, units and
+// labels come out of either (SPEC.md §Hard constraints #4).
 //
 // Every parser here was developed against the captured cgroup tree in testdata/
 // (SPEC.md §Testing rules). Nothing guesses at a file format or a path shape;
@@ -76,19 +82,33 @@ func (c *Collector) Name() string { return "container" }
 //
 // The walk runs once and every source is then read per container, so a
 // container whose io.stat is unreadable still reports its CPU and memory. A
-// host with no cgroup v2 mount produces no samples and no error: SPEC.md §Hard
-// constraints #4 puts v1 out of scope, and `prickle diagnose` is where that is
-// said plainly rather than as a failed collection on every scrape.
+// host with no cgroup mount at all produces no samples and no error: that is a
+// fact about the machine, not a collection failure, and `prickle diagnose` is
+// where it is said plainly rather than by erroring on every scrape.
 func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
-	containers, err := c.discover(ctx)
-	if err != nil {
-		return err
+	var errs []error
+
+	// Both hierarchies are in scope (SPEC.md §Hard constraints #4). v2 is tried
+	// first and v1 only if it found nothing, which resolves a hybrid host
+	// without having to work out which layout its runtime chose.
+	var (
+		live       hierarchy
+		containers []cgroup
+	)
+	for _, h := range c.hierarchies() {
+		found, err := h.discover(ctx)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if len(found) > 0 {
+			live, containers = h, found
+			break
+		}
 	}
 	if len(containers) == 0 {
-		return nil
+		return errors.Join(errs...)
 	}
-
-	var errs []error
 
 	// Resolved once for the whole pass: both are per-host lookups, not
 	// per-container ones, and both are enrichment — a failure costs a label
@@ -102,6 +122,8 @@ func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
 		errs = append(errs, err)
 	}
 
+	sources := live.sources(devices)
+
 	for _, cg := range containers {
 		if err := ctx.Err(); err != nil {
 			errs = append(errs, err)
@@ -111,13 +133,7 @@ func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
 		labels := cg.labels()
 		c.collectInfo(out, cg, names[cg.id])
 
-		for _, collect := range []func(*exposition.Set, cgroup, []exposition.Label) error{
-			c.collectCPU,
-			c.collectMemory,
-			c.collectIO(devices),
-			c.collectPIDs,
-			c.collectPressure,
-		} {
+		for _, collect := range sources {
 			if err := collect(out, cg, labels); err != nil {
 				errs = append(errs, err)
 			}

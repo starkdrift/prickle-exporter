@@ -115,7 +115,8 @@ func describeContainers(w io.Writer, cfg config) error {
 	}
 
 	roots := cfg.roots()
-	fmt.Fprintf(w, "  cgroup root: %s — %s\n", roots.CgroupPath(), describeWalkable(roots.CgroupPath()))
+	_, v2, _ := cgroupVersions(roots)
+	fmt.Fprintf(w, "  cgroup root: %s — %s\n", roots.CgroupPath(), describeWalkable(roots.CgroupPath(), v2))
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
@@ -370,7 +371,7 @@ func describeReadable(path string) string {
 // one-byte read is the wrong question — it reports "is a directory" for a
 // perfectly good cgroup mount. What matters here is whether the walk can
 // enumerate entries and how many it finds at the top level.
-func describeWalkable(path string) string {
+func describeWalkable(path string, cgroup2 bool) string {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -384,22 +385,26 @@ func describeWalkable(path string) string {
 			dirs++
 		}
 	}
+	if !cgroup2 {
+		// On a v1 host /sys/fs/cgroup is a tmpfs holding one directory per
+		// controller — blkio, cpu,cpuacct, memory and the rest. Calling those
+		// "top-level cgroups" would misreport what they are, even though the
+		// walk now reads straight through them.
+		return fmt.Sprintf("ok, %d v1 controller hierarchies", dirs)
+	}
 	return fmt.Sprintf("ok, %d top-level cgroups", dirs)
 }
 
-// describeCgroup reports the cgroup hierarchy version.
+// cgroupVersions reports which cgroup hierarchies are mounted.
 //
-// SPEC.md §Hard constraints #4: v1 and hybrid hosts are out of scope, and this
-// is where that is said plainly rather than left to an empty Phase 2 scrape.
-// The answer comes from /proc/mounts rather than a statfs magic number so it
-// works against a fixture tree too.
-func describeCgroup(roots fsroot.Roots) string {
+// From /proc/mounts rather than a statfs magic number, so it works against a
+// captured fixture tree too — the same reason describeCgroup has always read
+// it that way. Both hierarchies can be present at once: that is a hybrid host.
+func cgroupVersions(roots fsroot.Roots) (v1, v2 bool, err error) {
 	b, err := os.ReadFile(roots.ProcPath("mounts"))
 	if err != nil {
-		return fmt.Sprintf("UNKNOWN: cannot read mounts (%v)", err)
+		return false, false, err
 	}
-
-	var v1, v2 bool
 	for _, line := range strings.Split(string(b), "\n") {
 		f := strings.Fields(line)
 		if len(f) < 3 {
@@ -412,16 +417,31 @@ func describeCgroup(roots fsroot.Roots) string {
 			v1 = true
 		}
 	}
+	return v1, v2, nil
+}
+
+// describeCgroup reports the cgroup hierarchy version.
+//
+// SPEC.md §Hard constraints #4: v1 and hybrid hosts are out of scope, and this
+// is where that is said plainly rather than left to an empty Phase 2 scrape.
+// The answer comes from /proc/mounts rather than a statfs magic number so it
+// works against a fixture tree too.
+func describeCgroup(roots fsroot.Roots) string {
+	v1, v2, err := cgroupVersions(roots)
+	if err != nil {
+		return fmt.Sprintf("UNKNOWN: cannot read mounts (%v)", err)
+	}
 
 	switch {
 	case v2 && v1:
-		return "HYBRID v1+v2 — out of scope. Phase 2 container metrics will be " +
-			"incomplete; boot with systemd.unified_cgroup_hierarchy=1."
+		return "hybrid v1+v2 — both supported. Containers are read from " +
+			"whichever hierarchy the runtime put them in, v2 first."
 	case v2:
 		return "v2 (unified) — supported."
 	case v1:
-		return "v1 — OUT OF SCOPE. prickle is cgroup v2 only; Phase 2 container " +
-			"metrics will be empty on this host."
+		return "v1 — supported. This hierarchy has no PSI, so " +
+			"prickle_container_pressure_stalled_seconds_total is absent here " +
+			"rather than zero; everything else is reported."
 	default:
 		return "no cgroup mount found."
 	}

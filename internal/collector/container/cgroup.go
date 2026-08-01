@@ -20,6 +20,33 @@ type cgroup struct {
 	pod     string // Kubernetes pod UID, empty outside kubepods
 	runtime string // docker, containerd or crio
 	qos     string // guaranteed, burstable or besteffort; empty outside kubepods
+
+	// root and rel are set only on cgroup v1, where one container's files are
+	// spread across a directory per controller — /sys/fs/cgroup/memory/…,
+	// /sys/fs/cgroup/cpu,cpuacct/… — rather than gathered in one leaf. rel is
+	// the path below a controller's root, which is identical across
+	// controllers, so the two together locate any of them. Unused on v2, where
+	// dir alone is the answer.
+	root string
+	rel  string
+}
+
+// ctrlPath builds the path to one file under one cgroup v1 controller.
+//
+// Callers pass the controller alternatives in preference order because the
+// kernel co-mounts some of them: on RHEL 8 `cpu` and `cpuacct` are symlinks to
+// a single `cpu,cpuacct` directory, while elsewhere they are separate mounts.
+// The first that exists wins; the last is returned unconditionally so a caller
+// that finds nothing reports a missing file rather than an empty path.
+func (c cgroup) ctrlPath(file string, controllers ...string) string {
+	var path string
+	for _, ctrl := range controllers {
+		path = filepath.Join(c.root, ctrl, c.rel, file)
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+	}
+	return path
 }
 
 // labels returns the identity labels for this container's hot series.
@@ -97,7 +124,8 @@ func (c *Collector) discover(ctx context.Context) ([]cgroup, error) {
 	root := c.opts.Roots.CgroupPath()
 	if _, err := os.Stat(root); err != nil {
 		if os.IsNotExist(err) {
-			// No cgroup v2 mount. SPEC.md §Hard constraints #4.
+			// No cgroup2 mount here. The v1 hierarchy is tried separately;
+			// see hierarchy.go.
 			return nil, nil
 		}
 		return nil, err

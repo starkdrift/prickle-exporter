@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/license-Apache--2.0-2B3044" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/go-1.26-2B3044" alt="Go 1.26">
   <img src="https://img.shields.io/badge/dependencies-0-2B3044" alt="Zero dependencies">
-  <img src="https://img.shields.io/badge/status-phase%203-F0A202" alt="Phase 3">
+  <img src="https://img.shields.io/badge/status-phase%204-F0A202" alt="Phase 4">
 </p>
 
 ---
@@ -62,12 +62,12 @@ hosts remain unverified.
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
-| 2 | Containers — cgroup v2 walk, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
+| 2 | Containers — cgroup v2 and v1, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
 | 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; [AMD unimplemented](#coverage-gaps-1), Intel out of scope |
 | 4 | Per-collector timeouts, cardinality caps, self-instrumentation | **shipped** |
 | 5 | Distribution — systemd units, Helm chart, Docker, four Grafana dashboards | planned |
 
-Linux only, and **cgroup v2 only** — v1 and hybrid hosts are out of scope, and
+Linux only. **cgroup v2 and v1** are both read — v2 is the primary hierarchy and
 `prickle diagnose` says so plainly rather than leaving you with an empty scrape.
 The package still builds on macOS so parser tests run there; `Statfs` is stubbed
 out and no shipped binary reaches it.
@@ -169,9 +169,10 @@ On a host with no NVIDIA GPU the GPU section says so, and says why each source
 declined — "NVML failed to load" and "there is no GPU here" need different
 responses from you, and an empty section distinguishes neither.
 
-When it reports no containers on a host that is running some, the cause is
-almost always one of three things, and it says which to check: cgroup v1, a
-tree this process cannot read, or a runtime layout Phase 2 does not cover.
+When it reports no containers on a host that is running some, it says which
+cause to check: a tree this process cannot read, or a runtime layout Phase 2
+does not cover. cgroup v1 used to head that list and no longer does — both
+hierarchies are read.
 
 It takes the same flags as the exporter, so it diagnoses exactly the
 configuration you would run with — including `-path.rootfs`.

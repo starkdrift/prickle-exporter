@@ -15,6 +15,33 @@ what to do about it, which no commit-log generator writes.
 
 ### Added
 
+- **cgroup v1 and hybrid hosts are now read.** SPEC.md §Hard constraints #4 said
+  "v2 only" and was reversed on 2026-08-01; the SPEC change is its own commit,
+  ahead of the code. What reversed it was running `prickle diagnose` on a real
+  v1 host — Rocky Linux 8.10, kernel 4.18 — and watching it correctly announce
+  that it would report nothing. RHEL 8 defaults to v1 and is supported into
+  2029, so "out of scope" was quietly deciding that an ordinary enterprise host
+  gets an empty scrape.
+
+  **The metrics contract does not fork.** The same names, units and labels come
+  out of either hierarchy; only the file a value is read from changes. Two
+  conversions exist to keep that true: v1 counts CPU time in nanoseconds and
+  USER_HZ where v2 uses microseconds, and `cpu.shares` (default 1024) is
+  rescaled onto `cpu.weight`'s 1–10000 range (default 100) so
+  `prickle_container_cpu_weight` does not mean two things depending on how a
+  host booted. v1's `memory.limit_in_bytes` sentinel of `9223372036854771712`
+  is treated as "unlimited" exactly as v2's `max` is, so no container reports a
+  nine-exabyte limit.
+
+  **On v1 there is no `prickle_container_pressure_stalled_seconds_total`** —
+  PSI arrived with the unified hierarchy, so the family is *absent* rather than
+  zero, for the same reason `prickle_gpu_utilization_ratio` vanishes under MIG.
+  A zero would read as "nothing is stalling" instead of "this kernel cannot
+  say". `prickle diagnose` states which hierarchy is live and names this cost.
+
+  A hybrid host needs no configuration: v2 is tried first and v1 only if it
+  found nothing.
+
 - **`prickle diagnose` now explains the `nvidia-smi` deadline overrun**, which
   is the failure most likely to be mistaken for a bug in this exporter. With
   NVIDIA **persistence mode disabled** the driver tears down its state whenever

@@ -191,6 +191,46 @@ is wrong — they are different statements about what a container is — but a
 dashboard counting `prickle_container_info` will show a step change if a node's
 runtime is switched underneath it.
 
+## The cgroup v1 tree: `docker-cgroupv1-20260801/`
+
+Rocky Linux 8.10, **kernel 4.18**, Docker 26.1.3 on the cgroupfs driver,
+captured 2026-08-01. A pure v1 host: twelve `cgroup` mounts in `/proc/mounts`
+and no `cgroup2` line at all.
+
+This is the tree that reversed SPEC.md §Hard constraints #4. Running `prickle
+diagnose` on it printed *"v1 — OUT OF SCOPE … container metrics will be empty on
+this host"* — working exactly as designed, and useless, because RHEL 8 defaults
+to v1 and is supported into 2029.
+
+Unlike every other tree here it includes `proc/mounts`, because that is how the
+hierarchy is detected, and `proc/diskstats`, because that is how a `device`
+label becomes `vda` instead of `252:0`.
+
+The same three containers as `docker-cgroupfs-20260801`, deliberately, so the
+two hierarchies can be diffed rather than merely each checked:
+
+| v2 file | v1 equivalent | Trap |
+|---|---|---|
+| `cpu.stat` `usage_usec` | `cpuacct.usage` | **nanoseconds**, not microseconds |
+| `cpu.stat` `throttled_usec` | `cpu.stat` `throttled_time` | **nanoseconds**, not microseconds |
+| `cpu.stat` `user_usec`/`system_usec` | `cpuacct.stat` `user`/`system` | **USER_HZ**, fixed at 100 for this file |
+| `cpu.max` = `<quota> <period>` | `cpu.cfs_quota_us` + `cpu.cfs_period_us` | two files; `-1` not `max` for unset |
+| `cpu.weight` (1–10000, default 100) | `cpu.shares` (default 1024) | **a different scale** |
+| `memory.current` | `memory.usage_in_bytes` | — |
+| `memory.max` = `max` | `memory.limit_in_bytes` = `9223372036854771712` | a sentinel integer, not a word |
+| `memory.stat` `anon`/`file` | `memory.stat` `rss`/`cache` | different names for the same idea |
+| `io.stat` (one line per device) | `blkio.throttle.io_*` (one line per device *per operation*) | plus a bare `Total` line to skip |
+| `memory.pressure` | **nothing** | PSI arrived with the unified hierarchy |
+
+Three of those would produce numbers wrong by a factor of 100 or 1000 that
+still look entirely plausible on a graph, which is why `TestV1UnitsAreConverted`
+checks them against the raw files rather than against remembered values.
+
+`cpu` and `cpuacct` are symlinks to a single `cpu,cpuacct` directory on this
+host. The capture dereferences them, so all three paths exist as real
+directories with identical contents — every path that is readable on the host is
+readable in the fixture, which is what the reader depends on.
+
 ## The Docker cgroupfs tree: `docker-cgroupfs-20260801/`
 
 Ubuntu 24.04, Docker 29.1.3 configured with

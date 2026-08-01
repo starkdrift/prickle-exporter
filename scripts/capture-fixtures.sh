@@ -465,6 +465,27 @@ cmd_capture() {
   df -B1 --output=target,fstype,size,used,avail 2>/dev/null \
     > "$OUT_DIR/meta/statfs-reference.txt" || true
 
+  # cgroup v1 controller hierarchies. A v1 host spreads one container across
+  # /sys/fs/cgroup/<controller>/, so the per-controller files are captured
+  # separately from the v2 walk below; on a v2-only host this finds nothing and
+  # costs a few stats. proc/mounts decides which hierarchy the reader uses, and
+  # is already captured above.
+  say "cgroup v1 controllers"
+  local v1=0 ctrl d
+  for ctrl in memory "cpu,cpuacct" cpu cpuacct blkio pids; do
+    [[ -d /sys/fs/cgroup/$ctrl ]] || continue
+    while IFS= read -r d; do
+      for f in memory.usage_in_bytes memory.limit_in_bytes memory.stat \
+               cpu.cfs_quota_us cpu.cfs_period_us cpu.shares cpu.stat \
+               cpuacct.usage cpuacct.stat \
+               blkio.throttle.io_service_bytes blkio.throttle.io_serviced \
+               pids.current pids.max; do
+        [[ -e $d/$f ]] && grab "$d/$f" && v1=$((v1+1))
+      done
+    done < <(find "/sys/fs/cgroup/$ctrl" -mindepth 1 -type d 2>/dev/null)
+  done
+  [[ $v1 -eq 0 ]] && note "no cgroup v1 controllers (fine on a v2 host)"
+
   say "Docker cgroup scopes"
   local found=0 d
   while IFS= read -r d; do grab_cgroup_dir "$d"; found=1; done \

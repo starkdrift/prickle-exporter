@@ -31,7 +31,11 @@ One Go binary, `prickle`. Read-only. Standard-library only. See
 3. **All fs access goes through `internal/fsroot` prefixes.** No collector may
    hardcode an absolute `/proc`, `/sys`, or `/sys/fs/cgroup` path — tests point
    these at fixture trees.
-4. **cgroup v2 only.** v1/hybrid is out of scope.
+4. **cgroup v2 and v1.** v2 is the primary hierarchy; v1 and hybrid hosts are
+   supported through a separate reader (`internal/collector/container/v1.go`),
+   never `if v1` branches in the v2 path. The metrics contract does not fork —
+   same names, units and labels on either. v1 has no PSI, so the pressure
+   family is absent there rather than zero.
 
 ## Metrics contract (full text in SPEC.md §Metrics contract)
 
