@@ -9,12 +9,18 @@
 # the trailing version comment.
 name: ci
 
-# main only. Work lands here by direct merge rather than through a pull
-# request, so a pull_request trigger fired for one contributor — dependabot —
-# and nothing else. workflow_dispatch stays so a branch can still be checked on
-# demand before it is merged.
 on:
   push:
+    branches: [main]
+  # pull_request, never pull_request_target. This one runs the PR's own code
+  # with a read-only GITHUB_TOKEN and no access to repository secrets;
+  # pull_request_target would run it with write permissions in the base repo's
+  # context, which is how most Actions compromises happen. Nothing in
+  # ci/check.sh needs a secret, so the safe trigger is also the sufficient one.
+  #
+  # Dependabot needs no special case for the token: GitHub already treats its
+  # pull_request events as untrusted and withholds write access and secrets.
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -29,6 +35,28 @@ concurrency:
 jobs:
   check:
     name: check (${{ matrix.arch }})
+    # Strictly the maintainer and Dependabot. Anything else — a fork PR, or a
+    # collaborator added later — is skipped rather than run, because
+    # ci/check.sh lives in this repository and an untrusted PR would run its
+    # own edited copy of it.
+    #
+    # OWNER rather than a literal username: GitHub usernames can be changed,
+    # and a stale name here would silently skip the maintainer's own PRs.
+    # pull_request.user.login is the PR author; github.actor is whoever pushed
+    # last, which on a synchronize event is not the same person.
+    #
+    # This is a condition in the file, not a reliance on Settings -> Actions ->
+    # "Require approval for outside collaborators". That setting is the right
+    # second layer but cannot be read back with a read-only token, so it cannot
+    # be verified from here. Note the two do different jobs: this stops the code
+    # running, and only branch protection requiring this check stops an
+    # unverified PR being merged — a skipped job reports no failure.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       (github.event.pull_request.author_association == 'OWNER' ||
+        github.event.pull_request.user.login == 'dependabot[bot]'))
+
     strategy:
       fail-fast: false
       matrix:

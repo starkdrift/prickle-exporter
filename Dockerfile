@@ -18,7 +18,17 @@
 # is what a Prometheus node discovery expects. --pid=host is needed only for
 # -collector.gpu.per-process; drop it otherwise.
 
-FROM golang:1.26-alpine AS build
+# Digest-pinned, not tag-pinned. This image compiles the binary that ships, so
+# it is in the trusted path exactly as an Action is — and the workflows already
+# pin Actions by SHA with a trailing version comment. A mutable tag here would
+# have been the loosest pin in the repository sitting at its most sensitive
+# point. Dependabot maintains it (.github/dependabot.yml, docker ecosystem).
+#
+# tag@digest rather than a bare digest: the digest is what Docker resolves, the
+# tag is what a human reads, and Dependabot updates the pair. A trailing
+# comment cannot carry the version the way it does in the workflows — Docker
+# parses it as arguments to FROM and refuses the file.
+FROM golang:1.26-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS build
 WORKDIR /src
 
 # No go.sum to copy and no modules to download: the dependency count is zero,

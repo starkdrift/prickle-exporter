@@ -19,3 +19,18 @@ updates:
       prefix: "ci"
     labels:
       - dependencies
+
+  # The Dockerfile's build stage and the quickstart's Prometheus and Grafana.
+  # Both are digest-pinned for the same reason the Actions are SHA-pinned, and
+  # a digest pin without something to advance it is just an old image, so
+  # Dependabot advances it.
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /packaging/compose
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies

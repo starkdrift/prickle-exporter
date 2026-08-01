@@ -8,10 +8,12 @@
 # net/http handler, and parsers fed by files the exporter does not control.
 name: codeql
 
-# main only, for the reason in ci.yml. The weekly schedule below is what keeps
-# this from becoming a merge-time-only check.
+# See ci.yml for why this is pull_request and not pull_request_target. The
+# weekly schedule keeps this from becoming a merge-time-only check.
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   schedule:
     # Weekly, so a newly published query still finds old code.
@@ -23,6 +25,28 @@ permissions:
 
 jobs:
   analyze:
+    # Strictly the maintainer and Dependabot. Anything else — a fork PR, or a
+    # collaborator added later — is skipped rather than run, because
+    # ci/check.sh lives in this repository and an untrusted PR would run its
+    # own edited copy of it.
+    #
+    # OWNER rather than a literal username: GitHub usernames can be changed,
+    # and a stale name here would silently skip the maintainer's own PRs.
+    # pull_request.user.login is the PR author; github.actor is whoever pushed
+    # last, which on a synchronize event is not the same person.
+    #
+    # This is a condition in the file, not a reliance on Settings -> Actions ->
+    # "Require approval for outside collaborators". That setting is the right
+    # second layer but cannot be read back with a read-only token, so it cannot
+    # be verified from here. Note the two do different jobs: this stops the code
+    # running, and only branch protection requiring this check stops an
+    # unverified PR being merged — a skipped job reports no failure.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       (github.event.pull_request.author_association == 'OWNER' ||
+        github.event.pull_request.user.login == 'dependabot[bot]'))
+
     name: analyze
     runs-on: ubuntu-24.04
     permissions:

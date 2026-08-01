@@ -68,3 +68,44 @@ API without anyone importing anything.
 
 It is a demonstration, not a deployment — Grafana runs with anonymous admin so
 the quickstart has no password step. Do not put it on a network you do not own.
+
+## CI trust model
+
+Workflows run for **the maintainer and Dependabot only**. The guard is in
+`ci.yml` and `codeql.yml` rather than in repository settings, because a
+condition in a file can be read back and a setting cannot:
+
+```yaml
+if: >-
+  github.event_name != 'pull_request' ||
+  (github.event.pull_request.head.repo.full_name == github.repository &&
+   (github.event.pull_request.author_association == 'OWNER' ||
+    github.event.pull_request.user.login == 'dependabot[bot]'))
+```
+
+`author_association == 'OWNER'` rather than a literal username, because
+usernames can change and a stale one would silently skip the maintainer's own
+PRs. `pull_request.user.login` is the author; `github.actor` is whoever pushed
+last, which on a `synchronize` event is somebody else.
+
+The trigger is `pull_request`, **never `pull_request_target`**. The former runs
+the PR's own code with a read-only token and no secrets; the latter would run it
+with write access in the base repo's context, which is how most Actions
+compromises happen. Nothing here needs a secret, so the safe trigger is also the
+sufficient one.
+
+**Two settings this cannot do, and a read-only token cannot verify:**
+
+1. *Settings → Actions → General → Fork pull request workflows* →
+   **"Require approval for all outside collaborators."** The repo is public with
+   forking enabled, so this is the second layer under the guard above.
+2. **Branch protection on `main` requiring the `check` status.** This one is
+   load-bearing: the guard *skips* the job for an untrusted PR, and a skipped
+   job reports no failure. The guard stops the code running; only branch
+   protection stops an unverified PR being merged.
+
+Dependabot PRs are verified but **not** auto-merged. They modify
+`.github/workflows/**`, the highest-privilege files here, and a green check
+proves the new action version builds — not that it is uncompromised. SHA pinning
+plus a human reading the diff is the control; auto-merge would remove exactly
+that.

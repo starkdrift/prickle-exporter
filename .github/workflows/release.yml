@@ -88,6 +88,22 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
 
+      # A tag can be pushed to any commit, and pushing one is what publishes a
+      # release with attested provenance. This is the only path in the repo
+      # where code that never touched main reaches a user, so the tag has to be
+      # on main. verify above proves the tree is green; this proves it is the
+      # tree that was reviewed.
+      - name: Assert the tag is on main
+        run: |
+          set -eu
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::$(git rev-parse HEAD) is not an ancestor of origin/main;"
+            echo "::error::a release must be tagged on a commit that has landed on main"
+            exit 1
+          fi
+          echo "tag commit $(git rev-parse --short HEAD) is on main"
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
