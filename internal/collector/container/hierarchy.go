@@ -71,11 +71,23 @@ func (c *Collector) hierarchies() []hierarchy {
 // From the mount table rather than a statfs magic number so it works against a
 // captured fixture tree, which is the same reason `prickle diagnose` reads it
 // that way.
+//
+// v2 is reported only when the cgroup2 mount **is** the configured cgroup root,
+// not merely when one exists somewhere. That distinction is the whole of this
+// function's difficulty, and getting it wrong is not a near miss: on a hybrid
+// host systemd mounts cgroup2 at /sys/fs/cgroup/unified while /sys/fs/cgroup
+// itself stays a tmpfs holding the v1 controllers. Answering "yes, v2" there
+// sends the v2 walker into the v1 tree, where it matches the same container
+// directory names and then reads v2 filenames that do not exist. Measured on a
+// hybrid Rocky 8 host, that produced 27 series where the v1 reader produces 54
+// — with no error, because the handful of fields v1 and v2 happen to spell
+// identically parsed successfully. Silent partial data that looks healthy.
 func (c *Collector) mountedVersions() (v1, v2 bool) {
 	b, err := os.ReadFile(c.opts.Roots.ProcPath("mounts"))
 	if err != nil {
 		return false, false
 	}
+	root := c.opts.Roots.CgroupPath()
 	for _, line := range strings.Split(string(b), "\n") {
 		f := strings.Fields(line)
 		if len(f) < 3 {
@@ -83,12 +95,33 @@ func (c *Collector) mountedVersions() (v1, v2 bool) {
 		}
 		switch f[2] {
 		case "cgroup2":
-			v2 = true
+			// Compared as a path suffix because a fixture tree is the same
+			// mount table rebased under a prefix: the file says
+			// /sys/fs/cgroup, the configured root is <fixture>/sys/fs/cgroup.
+			if pathHasSuffix(root, f[1]) {
+				v2 = true
+			}
 		case "cgroup":
 			v1 = true
 		}
 	}
 	return v1, v2
+}
+
+// pathHasSuffix reports whether a configured root is the mount point from
+// /proc/mounts, allowing for a fixture tree's prefix.
+//
+// A plain suffix test is the whole of it, and is already component-aligned: a
+// mount point is absolute, so it begins with a separator, and any match
+// therefore starts at one. There is no partial-component case to exclude.
+//
+// It cannot distinguish a root of /sys/fs/cgroup from a mount at /cgroup —
+// that would imply a fixture prefix of /sys/fs, which is a shape this model
+// permits. Nothing better is available without knowing the prefix, and a
+// cgroup2 mount at /cgroup on a host whose root is /sys/fs/cgroup is not a
+// configuration anyone has.
+func pathHasSuffix(path, suffix string) bool {
+	return path == suffix || strings.HasSuffix(path, suffix)
 }
 
 // v2Hierarchy is the unified hierarchy: one directory per container, holding

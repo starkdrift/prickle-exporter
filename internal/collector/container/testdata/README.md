@@ -231,6 +231,39 @@ host. The capture dereferences them, so all three paths exist as real
 directories with identical contents — every path that is readable on the host is
 readable in the fixture, which is what the reader depends on.
 
+## The hybrid tree: `docker-hybrid-20260801/`
+
+The same Rocky 8 box as `docker-cgroupv1-20260801`, the same three containers,
+put into **hybrid** mode: the twelve v1 controllers still under a tmpfs
+`/sys/fs/cgroup`, and a cgroup2 mount added at `/sys/fs/cgroup/unified`. Two
+captures of one host differing only in that one mount.
+
+It exists because the hybrid branch shipped without ever having been run, and
+was wrong.
+
+The mistake was treating "a cgroup2 mount exists" as "the cgroup root is
+cgroup2". On this host it is not — the root is a tmpfs and the cgroup2 mount is
+a directory inside it — so the v2 reader was selected, walked the **v1** tree,
+matched the same container directory names, and read v2 filenames that are not
+there. It did not fail. v1 and v2 spell a handful of fields identically —
+`nr_periods`, `nr_throttled`, `inactive_file`, `shmem`, `unevictable` — so those
+parsed and everything else silently vanished:
+
+| | series |
+|---|---|
+| Before the fix, v2 reader on a v1 tree | **27** |
+| After, v1 reader | **54** |
+
+Same three containers, no error either way, nothing missing from
+`prickle_container_info`. `cpu_usage_seconds_total`, `memory_usage_bytes` and
+`cpu_throttled_seconds_total` were simply absent — the kind of wrong that looks
+like a quiet host.
+
+`mountedVersions` now reports v2 only when the cgroup2 mount **is** the
+configured root, compared as a path suffix so a fixture's prefix still matches.
+`TestHybridMountDetection` pins the unit and
+`TestHybridPrefersTheHierarchyHoldingTheContainers` pins the outcome.
+
 ## The Docker cgroupfs tree: `docker-cgroupfs-20260801/`
 
 Ubuntu 24.04, Docker 29.1.3 configured with

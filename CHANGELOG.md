@@ -13,6 +13,23 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A hybrid host reported half its container metrics, silently.** Found by
+  putting a real host into hybrid mode — v1 controllers under a tmpfs
+  `/sys/fs/cgroup` with cgroup2 mounted at `/sys/fs/cgroup/unified` — which is
+  what systemd's hybrid mode does and what the code had never been run against.
+  Hierarchy selection treated "a cgroup2 mount exists" as "the cgroup root is
+  cgroup2", so the v2 reader was chosen, walked the **v1** tree, matched the
+  same container directory names, and read v2 filenames that are not there.
+
+  It did not error, and no container went missing. v1 and v2 spell a few fields
+  identically, so those parsed and the rest disappeared: **27 series where the
+  correct reader produces 54**, with `cpu_usage_seconds_total`,
+  `memory_usage_bytes` and `cpu_throttled_seconds_total` simply absent. A host
+  that looks quiet rather than broken. Shipped in this same unreleased cycle, so
+  no released version is affected.
+
 ### Added
 
 - **cgroup v1 and hybrid hosts are now read.** SPEC.md §Hard constraints #4 said

@@ -147,9 +147,10 @@ func describeContainers(w io.Writer, cfg config) error {
 
 	if total == 0 {
 		fmt.Fprintln(w, "  no containers found. On a host that is running some, this is")
-		fmt.Fprintln(w, "  either cgroup v1 (see above), a cgroup tree this process cannot")
-		fmt.Fprintln(w, "  read, or a runtime layout Phase 2 does not cover — see")
+		fmt.Fprintln(w, "  either a cgroup tree this process cannot read, or a runtime")
+		fmt.Fprintln(w, "  layout Phase 2 does not cover — see")
 		fmt.Fprintln(w, "  internal/collector/container/testdata/README.md §Coverage gaps.")
+		fmt.Fprintln(w, "  cgroup v1 is no longer a cause: both hierarchies are read.")
 		return nil
 	}
 
