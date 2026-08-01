@@ -1,0 +1,20 @@
+{{/* SPDX-License-Identifier: Apache-2.0 */}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prickle.fullname" . }}
+  labels: {{- include "prickle.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  # Headless. There is nothing to load-balance across: every pod reports about
+  # a different node, so a ClusterIP would hand a scraper one node at random
+  # and hide the rest. The ServiceMonitor discovers the endpoints instead.
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: {{ .Values.service.port }}
+      targetPort: metrics
+      protocol: TCP
+  selector: {{- include "prickle.selectorLabels" . | nindent 4 }}

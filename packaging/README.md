@@ -146,3 +146,49 @@ Three panels say something a blank graph would not:
   Stream ship PSI compiled in but disabled — it needs `psi=1` at boot.
 - **`runtime` is empty on a cgroupfs-driver Kubernetes node.** Those directory
   names do not encode a runtime, so it is left unknown rather than guessed.
+
+## Helm chart
+
+`helm/prickle-exporter` — a DaemonSet, a headless Service, and an optional
+ServiceMonitor.
+
+```sh
+helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace
+helm install prickle packaging/helm/prickle-exporter -n monitoring \
+  --set nvml.enabled=true --set serviceMonitor.enabled=true
+```
+
+**No ServiceAccount and no RBAC anywhere in the chart.** prickle reads the
+node's filesystem and never the Kubernetes API — pod identity comes out of
+cgroup directory names — so nothing needs a token and
+`automountServiceAccountToken: false`. A monitoring agent that cannot read the
+API is a smaller thing to trust.
+
+The container runs `runAsNonRoot`, `readOnlyRootFilesystem`, all capabilities
+dropped, `seccompProfile: RuntimeDefault`. Only `collectors.perProcess=true`
+relaxes that — it needs root and `hostPID` to read another process's `exe`
+symlink, which is why it is off by default.
+
+`nvml.enabled=true` selects the `-nvml` image and mounts the driver libraries
+read-only. The Service is **headless on purpose**: every pod reports about a
+different node, so a ClusterIP would hand a scraper one node at random and hide
+the rest.
+
+`serviceMonitor.enabled=true` **fails the install** with a clear message if the
+`monitoring.coreos.com/v1` CRD is absent, rather than silently rendering nothing
+and leaving you wondering why Prometheus never scraped.
+
+Two things learned by installing it on a real two-node cluster rather than
+`helm template`:
+
+- **hostNetwork means the pod binds the node's own `:10047`.** If that node also
+  runs prickle from the systemd unit, the pod CrashLoopBackOffs with `address
+  already in use`. Run one or the other. The chart's NOTES says so.
+- **`kubectl exec … -- /prickle diagnose` needs `-path.rootfs=/host`.** Exec
+  starts a fresh process that does not inherit the DaemonSet's args, so without
+  it the diagnostic reports on the container's own `/proc` and announces "no
+  containers found" on a node running eighteen.
+
+Verified: both pods Ready, each reporting its own node via the downward API
+(`node="cp1"` / `node="gpu1"`, 873 and 502 series), and the container collector
+finding 18 containerd containers through the host mount.

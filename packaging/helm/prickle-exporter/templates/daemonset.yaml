@@ -1,0 +1,126 @@
+{{/* SPDX-License-Identifier: Apache-2.0 */}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "prickle.fullname" . }}
+  labels: {{- include "prickle.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "prickle.selectorLabels" . | nindent 6 }}
+  updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prickle.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}{{- toYaml . | nindent 8 }}{{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      # No ServiceAccount and no RBAC anywhere in this chart. prickle reads the
+      # node's filesystem, never the Kubernetes API — pod identity comes from
+      # cgroup directory names. Nothing here needs a token, so nothing here
+      # gets one.
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      # hostNetwork so :10047 is the node's own port, which is what a node-level
+      # scrape config expects to find.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- if .Values.collectors.perProcess }}
+      # Only for per-process GPU attribution: the exe symlink of another
+      # process is not visible without the host PID namespace.
+      hostPID: true
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: prickle
+          image: {{ include "prickle.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - -path.rootfs=/host
+            - -web.listen-address=:{{ .Values.service.port }}
+            - -sample.interval={{ .Values.sampleInterval }}
+            - -collector.timeout={{ .Values.collectorTimeout }}
+            - -collector.max-series={{ .Values.collectors.maxSeries }}
+            - -log.level={{ .Values.logLevel }}
+            - -collector.container={{ .Values.collectors.container }}
+            - -collector.gpu={{ .Values.collectors.gpu }}
+            {{- if .Values.collectors.perProcess }}
+            - -collector.gpu.per-process=true
+            {{- end }}
+            {{- with .Values.collectors.dockerSocket }}
+            - -collector.container.docker-socket={{ . }}
+            {{- end }}
+            # The node's own name, not the pod's. A pod's view of the hostname
+            # is not the node's, so `node` would otherwise be a pod name.
+            - -node=$(NODE_NAME)
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.service.port }}
+              hostPort: {{ .Values.service.port }}
+          securityContext:
+            # Everything the exporter reads is world-readable, so it needs no
+            # privilege and is given none. SPEC.md §Hard constraints #2: it is
+            # strictly read-only, and this is where the kernel enforces that
+            # rather than the code promising it.
+            runAsNonRoot: {{ not .Values.collectors.perProcess }}
+            runAsUser: {{ if .Values.collectors.perProcess }}0{{ else }}65532{{ end }}
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          {{- with .Values.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet: {path: /metrics, port: metrics}
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            # /metrics answers 503 until the first sampling pass completes: an
+            # empty 200 would read as "this node has no metrics", which is a lie.
+            httpGet: {path: /metrics, port: metrics}
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          volumeMounts:
+            - {name: proc, mountPath: /host/proc, readOnly: true}
+            - {name: sys, mountPath: /host/sys, readOnly: true}
+            {{- with .Values.collectors.dockerSocket }}
+            - {name: docker-socket, mountPath: {{ . }}, readOnly: true}
+            {{- end }}
+            {{- if .Values.nvml.enabled }}
+            # The driver libraries dlopen needs. Read-only: NVML is queried,
+            # never asked to change device state.
+            - {name: nvidia-libs, mountPath: /usr/lib/x86_64-linux-gnu, readOnly: true}
+            {{- end }}
+      volumes:
+        - {name: proc, hostPath: {path: /proc}}
+        - {name: sys, hostPath: {path: /sys}}
+        {{- with .Values.collectors.dockerSocket }}
+        - {name: docker-socket, hostPath: {path: {{ . }}, type: Socket}}
+        {{- end }}
+        {{- if .Values.nvml.enabled }}
+        - {name: nvidia-libs, hostPath: {path: /usr/lib/x86_64-linux-gnu}}
+        {{- end }}

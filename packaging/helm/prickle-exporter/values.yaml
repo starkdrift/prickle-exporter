@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: Apache-2.0
+
+image:
+  repository: ghcr.io/starkdrift/prickle-exporter
+  # Empty means the chart's appVersion, so the chart and the binary move together.
+  tag: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# SPEC.md §Distribution ships two artifacts. The default `prickle` is static and
+# takes the nvidia-smi path; `prickle-nvml` is dynamically linked and dlopens
+# NVML, which is the preferred path on an NVIDIA host but cannot be a static
+# binary. Setting this to true selects the -nvml image tag and grants the driver
+# devices the NVML path needs.
+nvml:
+  enabled: false
+  tagSuffix: "-nvml"
+
+collectors:
+  container: true
+  gpu: true
+  # One series per distinct command per GPU, keyed on the exe basename and
+  # never a PID. Needs hostPID to see other processes' /proc entries, which is
+  # why it is off by default: it widens the pod's view of the node.
+  perProcess: false
+  # Optional enrichment for human-readable container names and images. Mounting
+  # the Docker socket into a pod is a real grant; off unless asked for.
+  dockerSocket: ""
+  # Per-collector series cap. 0 disables. The default is far above any real
+  # host — it is a backstop against runaway cardinality, not a budget.
+  maxSeries: 100000
+
+sampleInterval: 10s
+collectorTimeout: 5s
+logLevel: info
+
+service:
+  port: 10047
+  annotations: {}
+
+serviceMonitor:
+  # Requires the Prometheus operator's CRD. Left off so a plain cluster can
+  # install the chart without the CRD being present.
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  relabelings: []
+  metricRelabelings: []
+
+# A node exporter is useless on the nodes it cannot run on, so by default it
+# tolerates everything — control-plane taints and GPU taints alike.
+tolerations:
+  - operator: Exists
+nodeSelector: {}
+affinity: {}
+priorityClassName: system-node-critical
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+
+podAnnotations: {}
+podLabels: {}
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1

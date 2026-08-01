@@ -1,0 +1,31 @@
+prickle-exporter {{ .Chart.AppVersion }} is rolling out as a DaemonSet.
+
+NOTE: hostNetwork is on, so each pod binds the node's own :{{ .Values.service.port }}. If a
+node also runs prickle from the systemd unit, the two collide and the pod
+CrashLoopBackOffs with "address already in use". Run one or the other.
+
+  kubectl -n {{ .Release.Namespace }} rollout status ds/{{ include "prickle.fullname" . }}
+  kubectl -n {{ .Release.Namespace }} port-forward ds/{{ include "prickle.fullname" . }} {{ .Values.service.port }}
+  curl -s localhost:{{ .Values.service.port }}/metrics | head
+
+Run the diagnostic on any node to see what it can and cannot read there. The
+-path.rootfs is not optional: exec starts a fresh process that does not inherit
+the DaemonSet's args, so without it the diagnostic reports on the container's
+own /proc and /sys and says "no containers found" on a busy node.
+
+  kubectl -n {{ .Release.Namespace }} exec ds/{{ include "prickle.fullname" . }} -- /prickle diagnose -path.rootfs=/host
+
+{{ if .Values.serviceMonitor.enabled -}}
+A ServiceMonitor was created. Check your Prometheus picked it up:
+  kubectl -n {{ .Release.Namespace }} get servicemonitor {{ include "prickle.fullname" . }}
+{{- else -}}
+No ServiceMonitor was created (serviceMonitor.enabled=false). Either enable it
+if you run the Prometheus operator, or scrape the pods directly — they listen
+on the node's own :{{ .Values.service.port }}.
+{{- end }}
+{{ if not .Values.nvml.enabled -}}
+This is the static build, which reaches NVIDIA through nvidia-smi. On GPU nodes
+set nvml.enabled=true for the NVML path — and on any node using the nvidia-smi
+path, enable persistence mode (`nvidia-smi -pm 1`) or every scrape pays seconds
+of driver initialisation and overruns its deadline.
+{{- end }}

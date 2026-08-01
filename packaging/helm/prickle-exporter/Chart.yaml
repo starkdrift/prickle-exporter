@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: v2
+name: prickle-exporter
+description: Host, container and GPU metrics for Prometheus. One binary, no dependencies, strictly read-only.
+type: application
+version: 0.1.0
+appVersion: "0.4.0"
+home: https://github.com/starkdrift/prickle-exporter
+sources:
+  - https://github.com/starkdrift/prickle-exporter
+maintainers:
+  - name: Starkdrift
+keywords: [prometheus, exporter, gpu, nvidia, containers, cgroup]
