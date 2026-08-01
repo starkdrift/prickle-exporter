@@ -111,9 +111,13 @@ spec:
             - {name: docker-socket, mountPath: {{ . }}, readOnly: true}
             {{- end }}
             {{- if .Values.nvml.enabled }}
-            # The driver libraries dlopen needs. Read-only: NVML is queried,
-            # never asked to change device state.
-            - {name: nvidia-libs, mountPath: /usr/lib/x86_64-linux-gnu, readOnly: true}
+            # One file, not the directory it lives in. LD_LIBRARY_PATH in the
+            # image points at /nvidia. Verified on an H100 with driver 580:
+            # this plus the device nodes is enough for `live source: nvml`.
+            - {name: nvidia-ml, mountPath: /nvidia/libnvidia-ml.so.1, readOnly: true}
+            {{- range .Values.nvml.devices }}
+            - {name: dev-{{ base . }}, mountPath: {{ . }} }
+            {{- end }}
             {{- end }}
       volumes:
         - {name: proc, hostPath: {path: /proc}}
@@ -122,5 +126,8 @@ spec:
         - {name: docker-socket, hostPath: {path: {{ . }}, type: Socket}}
         {{- end }}
         {{- if .Values.nvml.enabled }}
-        - {name: nvidia-libs, hostPath: {path: /usr/lib/x86_64-linux-gnu}}
+        - {name: nvidia-ml, hostPath: {path: {{ .Values.nvml.libraryPath }}, type: File}}
+        {{- range .Values.nvml.devices }}
+        - {name: dev-{{ base . }}, hostPath: {path: {{ . }}, type: CharDevice}}
+        {{- end }}
         {{- end }}

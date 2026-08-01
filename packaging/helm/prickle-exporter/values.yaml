@@ -15,6 +15,17 @@ imagePullSecrets: []
 nvml:
   enabled: false
   tagSuffix: "-nvml"
+  # The host path of the driver's NVML library. It must match the running
+  # driver, so it is mounted from the host rather than baked into the image —
+  # and mounted as a SINGLE FILE, not as its directory. The directory holds 855
+  # files on a Debian host including libc.so.6, and mounting it would replace
+  # the container's own libc with the host's to solve a one-file problem.
+  # RHEL-family hosts put it under /usr/lib64.
+  libraryPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+  # Device nodes NVML opens. nvidia-uvm is not needed for queries.
+  devices:
+    - /dev/nvidiactl
+    - /dev/nvidia0
 
 collectors:
   container: true

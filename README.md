@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/license-Apache--2.0-2B3044" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/go-1.26-2B3044" alt="Go 1.26">
   <img src="https://img.shields.io/badge/dependencies-0-2B3044" alt="Zero dependencies">
-  <img src="https://img.shields.io/badge/status-phase%204-F0A202" alt="Phase 4">
+  <img src="https://img.shields.io/badge/status-phase%205-F0A202" alt="Phase 5">
 </p>
 
 ---
@@ -52,20 +52,33 @@ changing a decision means editing SPEC.md first, in its own commit.
 
 ## Status
 
-**Phase 4.** Host, container and NVIDIA GPU collectors are implemented and
-tested against captured fixture trees, with per-collector timeouts, cardinality
-caps and self-instrumentation. The container collector reads both cgroup
-drivers and all three CRI runtimes it names. AMD is specified but not written —
-no capture exists for it. Intel is out of scope (SPEC §Collectors). Multi-GPU
-hosts remain unverified.
+**Phase 5.** Host, container and NVIDIA GPU collectors, each tested against
+captured fixture trees; per-collector timeouts, cardinality caps and
+self-instrumentation; and the distribution artifacts — two binaries with
+hardened systemd units, multi-architecture container images, a compose
+quickstart, four Grafana dashboards and a Helm chart.
+
+The container collector reads **both cgroup hierarchies**, both cgroup drivers,
+and four runtimes: Docker, containerd (through the CRI and through nerdctl),
+CRI-O and podman.
+
+Two gaps remain, both for want of hardware rather than design. **AMD is
+specified but not written** — no capture exists for it, and SPEC §Testing rules
+forbids a parser written against a layout nobody has captured. **Multi-GPU hosts
+are unverified**; every card reached so far has been one per host. Intel is out
+of scope (SPEC §Collectors).
+
+This is `0.5.x`, and deliberately not `1.0`: `1.0.0` freezes the metrics
+contract, and the contract is still moving — cgroup v1, podman and standalone
+containerd all arrived after `0.4.0`.
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
-| 2 | Containers — cgroup v2 and v1, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
+| 2 | Containers — cgroup v2 and v1, Docker/containerd/CRI-O/podman/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
 | 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; [AMD unimplemented](#coverage-gaps-1), Intel out of scope |
 | 4 | Per-collector timeouts, cardinality caps, self-instrumentation | **shipped** |
-| 5 | Distribution — systemd units, Helm chart, Docker, four Grafana dashboards | planned |
+| 5 | Distribution — systemd units, container images, Helm chart, four Grafana dashboards | **shipped** — each verified on a live host, not only rendered |
 
 Linux only. **cgroup v2 and v1** are both read — v2 is the primary hierarchy and
 `prickle diagnose` says so plainly rather than leaving you with an empty scrape.

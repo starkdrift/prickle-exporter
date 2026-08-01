@@ -45,7 +45,24 @@ RUN CGO_ENABLED=0 go build -trimpath \
       -ldflags "-s -w -X main.version=${VERSION}" \
       -o /prickle ./cmd/prickle
 
-FROM scratch
+# cgo, dynamically linked, for the nvml target. Kept in its own stage so the
+# default build never pays for it: `docker build .` produces the static image
+# and never compiles this one.
+# A glibc builder, not the alpine one above. cgo on alpine links against musl,
+# and a musl binary does not run on the glibc distroless base the nvml target
+# uses — it would build cleanly and fail at exec with a missing loader.
+FROM golang:1.26-trixie@sha256:4ee9ffa999b4583ce281939cdff828763083610292f252279a0cee77473bd9a7 AS buildnvml
+WORKDIR /src
+COPY go.mod ./
+COPY cmd/ cmd/
+COPY internal/ internal/
+ARG VERSION=docker
+RUN CGO_ENABLED=1 go build -trimpath -tags nvml \
+      -ldflags "-s -w -X main.version=${VERSION}" \
+      -o /prickle-nvml ./cmd/prickle
+
+# --- Default target: the static binary on scratch ---------------------------
+FROM scratch AS static
 COPY --from=build /prickle /prickle
 
 # A fixed non-root UID rather than a name: scratch has no /etc/passwd for a
@@ -54,3 +71,23 @@ USER 65532:65532
 
 EXPOSE 10047
 ENTRYPOINT ["/prickle"]
+
+# --- NVML target ------------------------------------------------------------
+# Built with `--target nvml`. It cannot be scratch: NVML is reached by dlopen,
+# which needs cgo and therefore a dynamically linked binary, which needs a libc
+# to link against. distroless/base is that libc and nothing else — no shell, no
+# package manager.
+#
+# The driver's own library is NOT baked in. libnvidia-ml.so.1 belongs to the
+# host's driver and must match it, so it is mounted in at run time and found
+# through LD_LIBRARY_PATH. Verified on an H100 with driver 580: mounting only
+# that one file into this image, plus /dev/nvidiactl and /dev/nvidia0, gives
+# `live source: nvml`. Mounting the host's whole library directory would work
+# too and would also replace this image's libc with the host's — 855 files to
+# solve a one-file problem.
+FROM gcr.io/distroless/base-debian12:nonroot@sha256:63f52bd27b6aa6555f5d56500b70d7bb0afe51c654905be88a2c1cf967a77b1a AS nvml
+COPY --from=buildnvml /prickle-nvml /prickle-nvml
+ENV LD_LIBRARY_PATH=/nvidia
+USER 65532:65532
+EXPOSE 10047
+ENTRYPOINT ["/prickle-nvml"]

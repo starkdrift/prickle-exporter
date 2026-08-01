@@ -74,6 +74,9 @@ jobs:
     name: build (${{ matrix.arch }})
     needs: [version, verify]
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write   # push per-arch images; the manifest list is assembled in publish
     strategy:
       fail-fast: false
       matrix:
@@ -189,6 +192,37 @@ jobs:
           path: dist/
           retention-days: 7
 
+      # Container images, pushed per architecture and assembled into manifest
+      # lists by the publish job. Built on native runners rather than under
+      # QEMU: the nvml target needs cgo, and cross-compiling that would mean a
+      # foreign toolchain for no gain when the matrix already runs on both.
+      #
+      # SPEC.md §Distribution: a registry is often the only channel into an
+      # air-gapped environment, so these have to exist for the Helm chart to be
+      # installable at all.
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push images
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -eux
+          repo="ghcr.io/${{ github.repository }}"
+          repo=$(echo "$repo" | tr '[:upper:]' '[:lower:]')   # ghcr rejects uppercase
+          ver="${VERSION#v}"
+          for target in static nvml; do
+            case "$target" in
+              static) tag="$ver" ;;
+              nvml)   tag="$ver-nvml" ;;
+            esac
+            docker build --target "$target" \
+              --build-arg "VERSION=${VERSION}" \
+              -t "$repo:$tag-$ARCH" .
+            docker push "$repo:$tag-$ARCH"
+          done
+
   publish:
     name: publish
     needs: [version, build]
@@ -198,10 +232,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write      # create the release
+      packages: write      # assemble the manifest lists
       id-token: write      # OIDC, for keyless attestation
       attestations: write  # record the provenance
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
@@ -226,6 +264,38 @@ jobs:
       - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-path: dist/*.tar.gz
+
+      # One multi-architecture tag per artifact, pointing at the per-arch images
+      # the build jobs pushed. A digest-addressable manifest list is what makes
+      # `skopeo copy` or `crane copy` into an air-gapped registry work.
+      - name: Assemble multi-arch manifest lists
+        id: manifests
+        run: |
+          set -eux
+          repo=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          ver="${VERSION#v}"
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          for tag in "$ver" "$ver-nvml"; do
+            docker buildx imagetools create -t "$repo:$tag" \
+              "$repo:$tag-amd64" "$repo:$tag-arm64"
+          done
+          # `latest` only ever moves for the static image, and never for a
+          # prerelease — a hyphenated version is not something to hand a
+          # `latest` puller.
+          case "$VERSION" in
+            *-*) echo "skipping latest for prerelease $VERSION" ;;
+            *)   docker buildx imagetools create -t "$repo:latest" "$repo:$ver" ;;
+          esac
+          digest=$(docker buildx imagetools inspect "$repo:$ver" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        with:
+          subject-name: ${{ steps.manifests.outputs.repo }}
+          subject-digest: ${{ steps.manifests.outputs.digest }}
+          push-to-registry: true
 
       - name: Create the release
         env:

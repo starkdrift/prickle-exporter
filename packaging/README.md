@@ -192,3 +192,59 @@ Two things learned by installing it on a real two-node cluster rather than
 Verified: both pods Ready, each reporting its own node via the downward API
 (`node="cp1"` / `node="gpu1"`, 873 and 502 series), and the container collector
 finding 18 containerd containers through the host mount.
+
+## Container images and air-gapped installs
+
+Published to `ghcr.io/starkdrift/prickle-exporter` from `v0.5.0` on, as
+multi-architecture manifest lists over `linux/amd64` and `linux/arm64`:
+
+| Tag | Contents | Base |
+|---|---|---|
+| `X.Y.Z`, `latest` | `prickle`, static, nvidia-smi path | `scratch`, 3.0 MB |
+| `X.Y.Z-nvml` | `prickle-nvml`, NVML via `dlopen` | distroless/base, 10.8 MB |
+
+`latest` follows the static image only, and never moves for a prerelease.
+
+The nvml image **does not contain a driver library**, and cannot: `libnvidia-ml.so.1`
+belongs to the host's driver and has to match it. Mount that one file in and the
+image finds it through `LD_LIBRARY_PATH=/nvidia`, which is what `nvml.enabled=true`
+does. Mount the *file*, never its directory — the directory holds 855 files on a
+Debian host including `libc.so.6`, and mounting it replaces the container's own
+libc to solve a one-file problem. Verified on an H100 with driver 580: that file
+plus `/dev/nvidiactl` and `/dev/nvidia0` gives `live source: nvml`.
+
+### Mirroring into an air-gapped registry
+
+The images are digest-addressable manifest lists, so a plain copy works — no
+rebuild, and the digest you mirror is the digest you verify:
+
+```sh
+skopeo copy --all \
+  docker://ghcr.io/starkdrift/prickle-exporter:0.5.0 \
+  docker://registry.internal/prickle-exporter:0.5.0
+# or
+crane copy ghcr.io/starkdrift/prickle-exporter:0.5.0 registry.internal/prickle-exporter:0.5.0
+```
+
+`--all` matters: without it you copy one architecture and the manifest list is
+lost, so the mirror works on the machine you ran it from and fails on the other.
+
+Then point the chart at the mirror:
+
+```sh
+helm install prickle packaging/helm/prickle-exporter -n monitoring \
+  --set image.repository=registry.internal/prickle-exporter \
+  --set image.tag=0.5.0@sha256:<digest>
+```
+
+Pinning by digest is the point of a mirror: it survives a tag being re-pushed
+inside the perimeter, which is the failure an air-gapped deployment is usually
+trying to rule out.
+
+Provenance is attested to the manifest-list digest and pushed to the registry
+alongside the image, so it can be verified after mirroring:
+
+```sh
+gh attestation verify oci://registry.internal/prickle-exporter:0.5.0 \
+  --repo starkdrift/prickle-exporter
+```
