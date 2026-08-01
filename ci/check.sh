@@ -78,6 +78,19 @@ for golden in internal/collector/*/testdata/golden/*.prom; do
   promtool check metrics < "$golden" || fail "promtool rejected $golden"
 done
 
+step "grafana dashboards are in sync (SPEC.md §Distribution)"
+# The JSON is generated and checked in: Grafana loads JSON and a quickstart
+# should not need a build step, but four dashboards sharing eleven template
+# variables cannot be hand-maintained either. This fails if the tree and the
+# generator disagree.
+if command -v python3 >/dev/null 2>&1; then
+  python3 scripts/make-dashboards.py --check \
+    || fail "packaging/grafana/dashboards is stale; re-run scripts/make-dashboards.py"
+  printf '  ok  four dashboards match scripts/make-dashboards.py\n'
+else
+  printf '  \033[1;33mSKIP\033[0m python3 not found; dashboard sync unchecked\n'
+fi
+
 step "naming discipline (SPEC.md §Identity)"
 # Two checks, because the obvious one cannot be made to work on its own.
 #

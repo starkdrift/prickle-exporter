@@ -1,0 +1,825 @@
+{
+  "description": "Per-container CPU, memory, throttling and I/O. Starkdrift \u00b7 prickle-exporter.",
+  "editable": true,
+  "links": [
+    {
+      "icon": "external link",
+      "targetBlank": true,
+      "title": "prickle-exporter",
+      "tooltip": "Starkdrift \u00b7 prickle-exporter",
+      "type": "link",
+      "url": "https://github.com/starkdrift/prickle-exporter"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 1
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "count(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Containers",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 1
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum(prickle_container_memory_usage_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Memory used",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 1
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum(rate(prickle_container_cpu_usage_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CPU used",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "Containers throttled in the last 5 minutes. A container can be throttled while well under its average limit.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 15,
+        "y": 1
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "count(rate(prickle_container_cpu_throttled_periods_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]) > 0) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Throttled now",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "docker, containerd, crio or podman. EMPTY is correct on a cgroupfs-driver Kubernetes node: those directory names do not encode a runtime, so it is reported unknown rather than guessed.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 1
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "count by (runtime) (prickle_container_info)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Runtimes",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": [],
+      "title": "CPU",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 40,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container) (rate(prickle_container_cpu_usage_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "Throttled seconds is time the kernel withheld, not a ratio. A container hitting its quota every period shows periods and stalled time rising together.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 12,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container) (rate(prickle_container_cpu_throttled_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "legendFormat": "{{container}} stalled",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container) (rate(prickle_container_cpu_throttled_periods_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "legendFormat": "{{container}} periods",
+          "refId": "B"
+        }
+      ],
+      "title": "Throttling",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "panels": [],
+      "title": "Memory and I/O",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "The limit series is ABSENT for an unlimited container rather than a sentinel, on either cgroup hierarchy \u2014 so a missing limit line means unlimited, not unknown.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 12,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            }
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container) (prickle_container_memory_usage_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container) (prickle_container_memory_limit_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})",
+          "legendFormat": "{{container}} limit",
+          "refId": "B"
+        }
+      ],
+      "title": "Memory usage against limit",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 12,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            }
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container, device) (rate(prickle_container_io_read_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "legendFormat": "{{container}} {{device}} r",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "sum by (container, device) (rate(prickle_container_io_written_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "legendFormat": "{{container}} {{device}} w",
+          "refId": "B"
+        }
+      ],
+      "title": "Block I/O",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "panels": [],
+      "title": "Identity",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "The companion _info gauge. Descriptive attributes live here and never on a hot series \u2014 join with group_left. `pod` is the pod UID; the cgroup tree has no pod name to offer, and `namespace` is not derivable from it at all.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Containers",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "prickle",
+    "starkdrift"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "label": "Data source",
+        "name": "DS",
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Substring match on node. Wrapped as .*input.* \u2014 leave empty for all.",
+        "hide": 0,
+        "label": "node contains",
+        "name": "node_search",
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS}"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "node",
+        "multi": true,
+        "name": "node",
+        "query": {
+          "query": "label_values(prickle_collector_series, node)",
+          "refId": "node-values"
+        },
+        "refresh": 2,
+        "regex": "/.*$node_search.*/",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Substring match on namespace. Wrapped as .*input.* \u2014 leave empty for all.",
+        "hide": 0,
+        "label": "namespace contains",
+        "name": "namespace_search",
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS}"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "namespace",
+        "multi": true,
+        "name": "namespace",
+        "query": {
+          "query": "label_values(prickle_container_info{node=~\"$node\"}, namespace)",
+          "refId": "namespace-values"
+        },
+        "refresh": 2,
+        "regex": "/.*$namespace_search.*/",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Substring match on pod. Wrapped as .*input.* \u2014 leave empty for all.",
+        "hide": 0,
+        "label": "pod contains",
+        "name": "pod_search",
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS}"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "pod",
+        "multi": true,
+        "name": "pod",
+        "query": {
+          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\"}, pod)",
+          "refId": "pod-values"
+        },
+        "refresh": 2,
+        "regex": "/.*$pod_search.*/",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Substring match on container. Wrapped as .*input.* \u2014 leave empty for all.",
+        "hide": 0,
+        "label": "container contains",
+        "name": "container_search",
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS}"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "container",
+        "multi": true,
+        "name": "container",
+        "query": {
+          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\"}, container)",
+          "refId": "container-values"
+        },
+        "refresh": 2,
+        "regex": "/.*$container_search.*/",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Substring match on gpu_uuid. Wrapped as .*input.* \u2014 leave empty for all.",
+        "hide": 0,
+        "label": "gpu_uuid contains",
+        "name": "gpu_search",
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS}"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "gpu_uuid",
+        "multi": true,
+        "name": "gpu",
+        "query": {
+          "query": "label_values(prickle_gpu_info{node=~\"$node\"}, gpu_uuid)",
+          "refId": "gpu-values"
+        },
+        "refresh": 2,
+        "regex": "/.*$gpu_search.*/",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Substring match on mig_uuid. Wrapped as .*input.* \u2014 leave empty for all.",
+        "hide": 0,
+        "label": "mig_uuid contains",
+        "name": "mig_search",
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS}"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "mig_uuid",
+        "multi": true,
+        "name": "mig",
+        "query": {
+          "query": "label_values(prickle_gpu_mig_info{node=~\"$node\",gpu_uuid=~\"$gpu\"}, mig_uuid)",
+          "refId": "mig-values"
+        },
+        "refresh": 2,
+        "regex": "/.*$mig_search.*/",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Container Resources",
+  "uid": "prickle-container-resources"
+}

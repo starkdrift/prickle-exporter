@@ -1,0 +1,3 @@
+# Grafana logs an error for every provisioning directory it cannot open, and
+# the compose mount is read-only so it cannot create them itself. Empty is the
+# quietest correct answer; a quickstart's logs should be readable.
