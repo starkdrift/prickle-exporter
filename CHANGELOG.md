@@ -32,6 +32,17 @@ what to do about it, which no commit-log generator writes.
 
 ### Added
 
+- **Podman containers are now reported.** `libpod-<hex>.scope` under
+  `machine.slice` was in no runtime list, so a host running podman reported
+  nothing — and podman is the default container runtime on RHEL and Fedora, so
+  that is an ordinary host, not an edge case. `runtime="podman"` on
+  `prickle_container_info`; there is no pod or QoS identity under
+  `machine.slice`, so those stay empty as they do for plain Docker. Podman's
+  paired `libpod-conmon-<hex>.scope` monitors are not counted — stripping the
+  prefix leaves `conmon-<hex>`, which is not hex, so the existing ID test
+  rejects them. `prickle diagnose` now counts podman in its runtime breakdown
+  instead of reporting the containers as having no runtime at all.
+
 - **cgroup v1 and hybrid hosts are now read.** SPEC.md §Hard constraints #4 said
   "v2 only" and was reversed on 2026-08-01; the SPEC change is its own commit,
   ahead of the code. What reversed it was running `prickle diagnose` on a real

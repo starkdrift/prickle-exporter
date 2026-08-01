@@ -104,6 +104,12 @@ func diagnose(args []string, w io.Writer) error {
 	return nil
 }
 
+// knownRuntimes are the runtime label values a cgroup directory name can carry,
+// in the order diagnose reports them. It must track scopePrefixes in the
+// container package: a runtime missing here is counted as "unknown" and blamed
+// on a cgroupfs tree that names no runtime, which is a confident wrong answer.
+var knownRuntimes = []string{"docker", "containerd", "crio", "podman"}
+
 // describeContainers reports what the cgroup walk finds, broken down the way
 // the questions arrive: "why is my container missing" is almost always a
 // runtime whose directory shape is not covered, a walk that cannot read the
@@ -138,7 +144,7 @@ func describeContainers(w io.Writer, cfg config) error {
 		if !strings.Contains(line, `name=""`) {
 			named++
 		}
-		for _, r := range []string{"docker", "containerd", "crio"} {
+		for _, r := range knownRuntimes {
 			if strings.Contains(line, `runtime="`+r+`"`) {
 				runtimes[r]++
 			}
@@ -154,14 +160,21 @@ func describeContainers(w io.Writer, cfg config) error {
 		return nil
 	}
 
-	fmt.Fprintf(w, "  containers found: %d (docker %d, containerd %d, crio %d)\n",
-		total, runtimes["docker"], runtimes["containerd"], runtimes["crio"])
+	counts := make([]string, 0, len(knownRuntimes))
+	for _, r := range knownRuntimes {
+		counts = append(counts, fmt.Sprintf("%s %d", r, runtimes[r]))
+	}
+	fmt.Fprintf(w, "  containers found: %d (%s)\n", total, strings.Join(counts, ", "))
 
 	// Under the cgroupfs cgroup driver the directory names carry no runtime, so
 	// every count above is zero while containers are plainly being found.
 	// Without this line that reads as three failed identifications rather than
 	// one attribute the layout does not publish.
-	if unknown := total - runtimes["docker"] - runtimes["containerd"] - runtimes["crio"]; unknown > 0 {
+	attributed := 0
+	for _, r := range knownRuntimes {
+		attributed += runtimes[r]
+	}
+	if unknown := total - attributed; unknown > 0 {
 		fmt.Fprintf(w, "  %d of those sit in a cgroupfs-driver tree, whose directory names do\n", unknown)
 		fmt.Fprintln(w, "  not name a runtime; they carry an empty `runtime` on")
 		fmt.Fprintln(w, "  prickle_container_info. Not an error — the tree has nothing to read.")

@@ -72,13 +72,20 @@ func (c cgroup) labels() []exposition.Label {
 // scopePrefixes maps the directory-name prefix each runtime writes to the
 // runtime name reported on prickle_container_info.
 //
-// These are the shapes SPEC.md §Collectors lists. docker- and cri-containerd-
-// are both present in the captured tree; crio- is not, and testdata/README.md
-// records that gap rather than letting it pass unremarked.
+// These are the shapes SPEC.md §Collectors lists, and every one of them now has
+// a captured tree behind it — see testdata/README.md.
+//
+// Both crio- and libpod- pair each container with a monitor scope,
+// crio-conmon-<hex>.scope and libpod-conmon-<hex>.scope, which are not
+// containers and must not be counted. Nothing here excludes them explicitly:
+// stripping the prefix leaves "conmon-<hex>", and hexID rejects it because
+// `conmon-` is not hex. That is a happy accident of two independent rules, so
+// TestMonitorScopesAreNotContainers pins it rather than trusting it to hold.
 var scopePrefixes = []struct{ prefix, runtime string }{
 	{"docker-", "docker"},
 	{"cri-containerd-", "containerd"},
 	{"crio-", "crio"},
+	{"libpod-", "podman"},
 }
 
 // podSlicePattern matches a systemd pod slice under kubepods.slice.
