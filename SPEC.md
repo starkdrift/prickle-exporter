@@ -43,9 +43,10 @@ itself, the list, and this file. Never abbreviate the metric prefix.
    `libnvidia-ml.so.1` with query-only NVML calls, and spawning `nvidia-smi`
    as a fallback subprocess. No NVML call that mutates device state (MIG
    configuration, clocks, persistence mode, ECC) may ever be used.
-3. **Configurable filesystem roots.** All access to `/proc`, `/sys`, and
-   `/sys/fs/cgroup` goes through `internal/fsroot` prefixes so tests can point
-   at fixture trees. No collector may hardcode an absolute path.
+3. **Configurable filesystem roots.** All access to `/proc`, `/sys`,
+   `/sys/fs/cgroup` and `/var/log/pods` goes through `internal/fsroot` prefixes
+   so tests can point at fixture trees. No collector may hardcode an absolute
+   path.
 4. **cgroup v2 is the primary hierarchy; v1 and hybrid are supported.**
    Reversed on 2026-08-01, after `prickle diagnose` was run on a real v1 host
    (Rocky Linux 8.10, kernel 4.18) and correctly reported that it would produce
@@ -162,6 +163,29 @@ mandatory from Phase 4.
   not name the runtime — which is every cgroupfs kubepods tree — `runtime` on
   the `_info` gauge is **empty** rather than inferred. Docker socket is an
   optional enrichment path for human-readable names only.
+
+  **Pod names are opt-in, behind `-collector.container.pod-names`, and cost the
+  exporter's unprivileged default.** The cgroup tree carries a pod's UID and
+  never its name, but the kubelet does: it creates
+  `/var/log/pods/<namespace>_<pod>_<uid>/<container>/` on every CRI runtime, so
+  one directory listing maps the UID the cgroup walk already has to a namespace
+  and a name. No API call, no second exporter, no gRPC — which matters, because
+  the CRI socket would need protobuf and §Hard constraints #1 forbids the
+  dependency.
+
+  The price is that `/var/log/pods` is `root:root` `0750` and so are the two
+  alternatives (`/var/lib/kubelet/pods`, containerd's per-container state
+  directory). `CAP_DAC_READ_SEARCH` is enough and full root is not required,
+  but for a process whose only capability is reading files, "read any file" is
+  not meaningfully smaller than root — it is this program's entire risk
+  surface. So it is **off by default**, the shipped units and chart stay
+  unprivileged, and enabling it is a deliberate trade an operator makes.
+
+  When enabled: `namespace` joins the hot series, which the closed identity set
+  already permits and which is what makes filtering by namespace work at all;
+  and `pod_name` joins the `_info` gauge as a descriptive attribute. `pod`
+  continues to hold the **UID**, unchanged, so existing joins keep working —
+  renaming what that label means would break every rule built on it.
 - **GPU (Phase 3):** AMD via sysfs + DRM fdinfo. **Intel is out of scope.** No
   capture host is obtainable, and §Testing rules forbids developing a parser
   against a layout nobody has captured — so listing it would be scope on paper
