@@ -448,6 +448,26 @@ rule holds for both. Both sources sit behind one `nvidiaSource` interface and
 **must emit identical metric output for the same GPU** — a hardware test asserts
 it.
 
+### Enable persistence mode if you deploy the `nvidia-smi` path
+
+Measured on an idle H100, driver 580.173.02, with **persistence mode disabled**:
+a single `nvidia-smi` query costs **2.7–3.5 s**, because the driver tears down
+its state when the last client exits and rebuilds it for the next one. This
+source spawns several queries per pass, so it overruns the default 5 s
+`-collector.timeout` and reports a killed subprocess **on every scrape**.
+
+Turning persistence mode on took the same pass from **5.4 s to 61 ms**:
+
+```sh
+nvidia-smi -pm 1          # or run nvidia-persistenced
+```
+
+`prickle diagnose` says this when it sees the overrun rather than leaving you to
+find it. `prickle-nvml` is not affected — it holds NVML open across passes,
+which keeps the driver initialised for the same reason persistence mode does.
+Raising `-collector.timeout` also stops the errors, but hides the latency
+instead of removing it.
+
 Both are published per architecture from `v0.3.0` on. Dynamic linking costs
 `prickle-nvml` a glibc floor — it is built on glibc 2.39 and needs at least that
 on the host — which is the one reason to prefer `prickle` on a machine that does

@@ -219,6 +219,7 @@ func describeGPUs(w io.Writer, cfg config) {
 	set := exposition.NewSet()
 	if err := c.Collect(ctx, set); err != nil {
 		fmt.Fprintf(w, "  reported: %v\n", err)
+		describeSMITimeout(w, cfg, c.SourceName(), err)
 	}
 
 	rendered := set.String()
@@ -233,6 +234,41 @@ func describeGPUs(w io.Writer, cfg config) {
 	fmt.Fprintln(w, "  exists for it, so an AMD host reports nothing. Intel is out of")
 	fmt.Fprintln(w, "  scope. See")
 	fmt.Fprintln(w, "  internal/collector/gpu/testdata/README.md §Coverage gaps.")
+}
+
+// describeSMITimeout explains the one nvidia-smi failure that looks like a bug
+// in this exporter and is not.
+//
+// With NVIDIA persistence mode disabled and nothing else holding the device
+// open, the driver tears down its state whenever the last client exits — so
+// every nvidia-smi this collector spawns pays the initialisation cost afresh.
+// Measured on an idle H100 (driver 580.173.02): ~2.7-3.5 s per invocation, and
+// the source makes three per pass, which overruns the default 5 s deadline and
+// reports a killed subprocess on every scrape. Enabling persistence mode took
+// the same pass from 5.4 s to 61 ms.
+//
+// The NVML path does not have this problem: it holds the library open across
+// passes, which keeps the driver initialised for the same reason persistence
+// mode does.
+func describeSMITimeout(w io.Writer, cfg config, source string, err error) {
+	if source != gpu.SourceSMI {
+		return
+	}
+	// A deadline overrun surfaces either as the context error or as the signal
+	// that killed the subprocess, depending on which side noticed first.
+	msg := err.Error()
+	if !strings.Contains(msg, context.DeadlineExceeded.Error()) &&
+		!strings.Contains(msg, "signal: killed") {
+		return
+	}
+
+	fmt.Fprintf(w, "  That is a deadline overrun, not a broken nvidia-smi. This source spawns\n")
+	fmt.Fprintf(w, "  several nvidia-smi calls per pass, and with NVIDIA persistence mode off\n")
+	fmt.Fprintf(w, "  each one re-initialises the driver — seconds apiece on an idle card,\n")
+	fmt.Fprintf(w, "  against a %s deadline. Any one of these fixes it:\n", cfg.timeout)
+	fmt.Fprintln(w, "    - enable persistence mode: `nvidia-smi -pm 1`, or run nvidia-persistenced")
+	fmt.Fprintln(w, "    - deploy prickle-nvml, which holds NVML open and never spawns anything")
+	fmt.Fprintln(w, "    - raise -collector.timeout, which hides the latency rather than removing it")
 }
 
 // describeNVIDIAPresence says whether the host has an NVIDIA card at all.

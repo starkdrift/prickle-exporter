@@ -13,6 +13,25 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Added
+
+- **`prickle diagnose` now explains the `nvidia-smi` deadline overrun**, which
+  is the failure most likely to be mistaken for a bug in this exporter. With
+  NVIDIA **persistence mode disabled** the driver tears down its state whenever
+  the last client exits, so every `nvidia-smi` the fallback source spawns pays
+  the initialisation cost again — measured at **2.7–3.5 s per invocation** on an
+  idle H100, driver 580.173.02. The source makes several per pass, so it
+  overruns the default 5 s `-collector.timeout` and reports a killed subprocess
+  on **every scrape**, while still returning partial data.
+
+  Enabling persistence mode took the same pass from **5.4 s to 61 ms** — an 88×
+  difference between "errors constantly" and "fine". `diagnose` now names the
+  three fixes (`nvidia-smi -pm 1`, deploy `prickle-nvml`, or raise the timeout)
+  and says which of them hides the problem rather than removing it.
+  `prickle-nvml` never had this failure: holding NVML open keeps the driver
+  initialised for the same reason persistence mode does. Found by running the
+  released artifacts on a GPU node rather than by reading the code.
+
 ## [0.4.0] — 2026-08-01
 
 Phase 4: caps and timeouts. Also the release where the container collector
