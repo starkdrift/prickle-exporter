@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# prickle-nvml — the NVML variant, for hosts with an NVIDIA driver.
+#
+# Identical to prickle.service except where NVML forces a hand. It differs in
+# exactly two ways, and both are consequences of `dlopen` rather than choices:
+#
+#   1. PrivateDevices cannot be used. NVML talks to /dev/nvidiactl and
+#      /dev/nvidia<N> directly, so the devices are allowed back — read-write,
+#      because the driver's ioctl interface is not usable read-only, and
+#      individually rather than by wildcard.
+#   2. ProtectSystem stays strict, but the driver's shared libraries live under
+#      /usr and are read there. dlopen needs no extra permission for that; a
+#      read-only /usr is enough.
+#
+# SPEC.md §Hard constraints #2 still holds: no NVML call that mutates device
+# state is ever made. Write access to the device node is what the driver's
+# ioctl interface requires to answer a query, not permission this exporter uses
+# to change anything.
+#
+# Install:
+#   install -m 0755 prickle-nvml /usr/local/bin/prickle-nvml
+#   install -m 0644 prickle-nvml.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now prickle-nvml
+
+[Unit]
+Description=prickle-exporter, NVML variant (host, container and GPU metrics)
+Documentation=https://github.com/starkdrift/prickle-exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/prickle-nvml
+Restart=on-failure
+RestartSec=5s
+
+DynamicUser=yes
+SupplementaryGroups=video
+
+# --- Filesystem -----------------------------------------------------------
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+
+# --- Privilege ------------------------------------------------------------
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictSUIDSGID=yes
+# Nothing is created, but a default of 0022 is still flagged by
+# `systemd-analyze security` and costs nothing to close.
+UMask=0077
+
+# --- Kernel ---------------------------------------------------------------
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+RemoveIPC=yes
+
+# The NVIDIA driver maps writable-executable memory into its clients, so
+# MemoryDenyWriteExecute is the one hardening directive this unit gives up.
+# It is listed here rather than silently omitted.
+MemoryDenyWriteExecute=no
+
+# --- Devices --------------------------------------------------------------
+# Named individually. A host with more GPUs needs more lines, which is
+# deliberate: a wildcard would also match a card added later that nobody
+# intended this service to see.
+PrivateDevices=no
+DeviceAllow=/dev/nvidiactl rw
+DeviceAllow=/dev/nvidia-uvm rw
+DeviceAllow=/dev/nvidia0 rw
+DeviceAllow=/dev/nvidia1 rw
+DeviceAllow=/dev/nvidia2 rw
+DeviceAllow=/dev/nvidia3 rw
+DeviceAllow=/dev/nvidia4 rw
+DeviceAllow=/dev/nvidia5 rw
+DeviceAllow=/dev/nvidia6 rw
+DeviceAllow=/dev/nvidia7 rw
+
+# --- Syscalls and sockets -------------------------------------------------
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# The ~ prefix applies to the whole line: every set after it is denied.
+# Repeating ~ per set makes systemd read the rest as literal syscall names
+# and ignore them, which silently left only @privileged denied.
+SystemCallFilter=~@privileged @resources @obsolete @mount @reboot @swap
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

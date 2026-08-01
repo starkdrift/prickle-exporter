@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# prickle — host, container and GPU metrics for Prometheus.
+#
+# The sandbox below is not decoration. SPEC.md §Hard constraints #2 says this
+# exporter is strictly read-only and takes no corrective action, and a unit file
+# is where that claim stops being a promise and becomes something the kernel
+# enforces. Every directive here removes an ability the exporter does not need,
+# so a defect in it cannot become a defect in the host.
+#
+# Install:
+#   install -m 0755 prickle /usr/local/bin/prickle
+#   install -m 0644 prickle.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now prickle
+#
+# For NVIDIA hosts use prickle-nvml.service instead; it needs the driver
+# devices this unit deliberately hides.
+
+[Unit]
+Description=prickle-exporter (host, container and GPU metrics)
+Documentation=https://github.com/starkdrift/prickle-exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/prickle
+Restart=on-failure
+RestartSec=5s
+
+# No account to create, no home, no shell, nothing left behind on removal.
+# The exporter reads only world-readable files under /proc, /sys and the cgroup
+# tree, so it never needs to be root.
+DynamicUser=yes
+
+# --- Filesystem -----------------------------------------------------------
+# strict makes the entire hierarchy read-only except /dev, /proc and /sys, and
+# ReadWritePaths is deliberately empty: there is nothing this process may write.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+# The cgroup tree is read constantly and written never.
+ProtectControlGroups=yes
+
+# --- Privilege ------------------------------------------------------------
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictSUIDSGID=yes
+# Nothing is created, but a default of 0022 is still flagged by
+# `systemd-analyze security` and costs nothing to close.
+UMask=0077
+
+# --- Kernel ---------------------------------------------------------------
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+
+# No device nodes at all. The nvidia-smi fallback does not need them — it talks
+# to a subprocess, not to the driver — and this unit is the non-NVML artifact.
+PrivateDevices=yes
+
+# --- Syscalls and sockets -------------------------------------------------
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# The ~ prefix applies to the whole line: every set after it is denied.
+# Repeating ~ per set makes systemd read the rest as literal syscall names
+# and ignore them, which silently left only @privileged denied.
+SystemCallFilter=~@privileged @resources @obsolete @mount @reboot @swap
+# AF_INET/AF_INET6 serve /metrics; AF_UNIX is the optional Docker socket
+# enrichment; AF_NETLINK is what the Go runtime uses to enumerate interfaces.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target
