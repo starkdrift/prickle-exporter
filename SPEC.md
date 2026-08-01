@@ -195,7 +195,16 @@ that.
 
 Two release artifacts per platform: `prickle` (static, `CGO_ENABLED=0`,
 nvidia-smi path) and `prickle-nvml` (dynamically linked, `-tags nvml`,
-preferred on NVIDIA hosts). Both ship with a systemd unit using a strict
+preferred on NVIDIA hosts).
+
+**Container images are published to a registry alongside the tarballs**, and
+the Helm chart pulls from there. Added 2026-08-01: the chart already defaulted
+to a registry reference, but nothing published one, so a default `helm install`
+could only ever have failed. It also makes the exporter installable in an
+**air-gapped environment**, where a registry is often the single channel
+available and building from source is not an option — so the images must be
+multi-architecture, digest-addressable, and mirrorable with a plain
+`skopeo copy` or `crane copy`. Both ship with a systemd unit using a strict
 sandbox (`ProtectSystem=strict`, read-only binds, no capabilities beyond what
 reading requires) — the NVML unit additionally needs read access to the driver
 library path and `/dev/nvidiactl`. Docker one-liner; Helm chart
@@ -229,11 +238,22 @@ operators on `prickle_build_info`.
 
 Pre-1.0, the minor tracks the roadmap phase, so the version states what is
 implemented: `0.1.0` host, `0.2.0` containers, `0.3.0` GPU, `0.4.0` caps and
-timeouts. Until 1.0.0 a minor may break the contract — Phases 2 and 3 will
-teach the label set things Phase 1 cannot.
+timeouts, `0.5.0` distribution. Until 1.0.0 a minor may break the contract.
 
-**`1.0.0` means the metrics contract is frozen.** It is Phase 5, and a
-deliberate promise rather than something to drift into.
+**`1.0.0` means the metrics contract is frozen, and it is no longer tied to a
+phase.** It previously read "it is Phase 5", which would have made the freeze a
+consequence of finishing a roadmap row rather than a judgement that the
+contract is ready — the opposite of the "deliberate promise rather than
+something to drift into" the same sentence claimed. Decoupled on 2026-08-01,
+with Phase 5 shipping as `0.5.0`.
+
+The freeze happens when the contract has stopped moving, and it has not: this
+session alone brought cgroup v1 into scope, added podman and standalone
+containerd, and left `runtime` empty on layouts that do not encode one. Two
+collectors named in §Collectors are also still unbuilt or unproven — AMD is
+specified and unwritten, and no multi-GPU host has ever been read. Freezing
+around those would promise stability over a surface nobody has exercised.
+Continue at `0.5.x`, `0.6.x` and so on until that is no longer true.
 
 From 1.0.0 on, a metric that must change is emitted under both the old and new
 names for one full minor, with the old name marked deprecated in its `# HELP`
