@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The SPEC.md §Distribution quickstart: prickle, Prometheus and a Grafana that
+# already has both wired up. `docker compose up` and open :3000 — no datasource
+# to add, no dashboard to import.
+#
+#   cd packaging/compose && docker compose up -d
+#
+# This is a demonstration, not a deployment. Grafana runs with anonymous admin
+# so there is no password step in a quickstart; do not put it on a network you
+# do not own.
+
+name: prickle-quickstart
+
+services:
+  prickle:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: prickle-exporter:local
+    container_name: prickle
+    restart: unless-stopped
+    # The exporter reads the host it runs on, so the host is bind-mounted
+    # read-only and -path.rootfs points at it. Without this it would faithfully
+    # report the metrics of its own container, which is not what anyone wants.
+    command: ["-path.rootfs=/host", "-collector.container.docker-socket=/var/run/docker.sock"]
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "10047:10047"
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prickle-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=6h
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on: [prickle]
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    container_name: prickle-grafana
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ../grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on: [prometheus]

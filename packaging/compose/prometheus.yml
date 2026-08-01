@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # prickle serves the last completed render, so a scrape never waits on a
+  # collector. A 15s interval against a 10s sample interval means some scrapes
+  # see the same bytes twice, which is correct: the data has not changed.
+  - job_name: prickle
+    static_configs:
+      - targets: ["prickle:10047"]

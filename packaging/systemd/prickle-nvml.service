@@ -2,16 +2,16 @@
 #
 # prickle-nvml — the NVML variant, for hosts with an NVIDIA driver.
 #
-# Identical to prickle.service except where NVML forces a hand. It differs in
-# exactly two ways, and both are consequences of `dlopen` rather than choices:
+# Identical to prickle.service but for one directive, which is fewer than the
+# first draft assumed. PrivateDevices cannot be used: NVML talks to
+# /dev/nvidiactl and /dev/nvidia<N> directly, so those devices are allowed back
+# — read-write, because the driver's ioctl interface is not usable read-only,
+# and named individually rather than by wildcard.
 #
-#   1. PrivateDevices cannot be used. NVML talks to /dev/nvidiactl and
-#      /dev/nvidia<N> directly, so the devices are allowed back — read-write,
-#      because the driver's ioctl interface is not usable read-only, and
-#      individually rather than by wildcard.
-#   2. ProtectSystem stays strict, but the driver's shared libraries live under
-#      /usr and are read there. dlopen needs no extra permission for that; a
-#      read-only /usr is enough.
+# Everything else survives unchanged, including MemoryDenyWriteExecute, which
+# the first draft gave up on a guess that testing disproved. ProtectSystem
+# stays strict; the driver's shared libraries live under /usr and dlopen needs
+# no more than read access to find them.
 #
 # SPEC.md §Hard constraints #2 still holds: no NVML call that mutates device
 # state is ever made. Write access to the device node is what the driver's
@@ -64,10 +64,14 @@ RestrictRealtime=yes
 RestrictNamespaces=yes
 RemoveIPC=yes
 
-# The NVIDIA driver maps writable-executable memory into its clients, so
-# MemoryDenyWriteExecute is the one hardening directive this unit gives up.
-# It is listed here rather than silently omitted.
-MemoryDenyWriteExecute=no
+# Kept on. The first draft of this unit disabled it, on the reasoning that the
+# NVIDIA driver maps writable-executable memory into its clients — plausible,
+# widely repeated, and false for this binary: forcing it back on and restarting
+# on an H100 with driver 580 still yields source="nvml" and a full set of GPU
+# series. prickle makes query-only NVML calls and never JITs, which is the
+# difference. Tested rather than assumed, because the assumption would have
+# silently cost a hardening directive for nothing.
+MemoryDenyWriteExecute=yes
 
 # --- Devices --------------------------------------------------------------
 # Named individually. A host with more GPUs needs more lines, which is
