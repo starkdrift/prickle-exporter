@@ -1,6 +1,7 @@
 # Phase 3 GPU fixtures
 
-Four captures from two rentals. The first two differ in the one way that
+Four `nvidia-smi` captures from two rentals, plus one sysfs capture of a third
+host that has a card and no driver. The first two differ in the one way that
 matters — whether the card is partitioned — and the last two are that same
 second card again, repartitioned:
 
@@ -40,6 +41,35 @@ processes. What each part of it pins is in
 [smi_mixed_mig_test.go](../smi_mixed_mig_test.go).
 
 Everything in all four is **captured, unmodified** `nvidia-smi` output.
+
+## The driverless host: `h100-nodriver-20260801/`
+
+The one tree here that *is* a mirrored filesystem layout, and the only one
+`fsroot` points at. It holds `sys/bus/pci/devices/*/{vendor,device,class}`
+captured on 2026-08-01 from an Ubuntu 26.04 VM with an **H100 SXM5 80 GB on the
+bus and no NVIDIA driver installed** — no `libnvidia-ml.so.1`, no `nvidia-smi`,
+no `nvidia` kernel module.
+
+That host is not an edge case, it is the common one: a GPU instance before its
+driver is provisioned. Both artifacts behave correctly on it — each declines
+and says why — but `prickle diagnose` used to follow that with *"On a host with
+no NVIDIA GPU this is expected and not an error"*, which is the wrong answer
+and the one an operator is least equipped to doubt. `CountNVIDIAGPUs` reads
+this tree to tell the two cases apart; see [pci.go](../pci.go).
+
+Fourteen devices were captured, not one, because the negatives carry the
+weight:
+
+| Device | Vendor | Class | Why it is in the tree |
+|---|---|---|---|
+| `0000:00:09.0` | `0x10de` NVIDIA | `0x030200` 3D controller | The H100. Not VGA-class — a datacenter card drives no display |
+| `0000:00:02.0` | `0x1af4` Red Hat | `0x030000` VGA controller | The VM console. Display-class and **not** NVIDIA |
+| the other twelve | Intel, Red Hat | bridges, storage, network | Ordinary bus traffic to walk past |
+
+Matching on vendor alone or class alone gets a different answer on this tree
+than matching on both, which is what makes it a fixture rather than a sample.
+The `device` attribute is captured but unread: `0x2330` identifies the H100
+specifically, and nothing needs to know that yet.
 
 ## What the H200 MIG tree exercises
 

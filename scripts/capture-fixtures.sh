@@ -488,6 +488,21 @@ cmd_capture() {
       && gap "docker-api/containers.json is an empty list"
   else warn "no Docker socket or curl missing"; fi
 
+  # Captured on every host, not only GPU ones. The non-NVIDIA devices are what
+  # give the fixture its value: a vendor test and a class test disagree about a
+  # virtio VGA console, and only a tree containing one can show that. It is also
+  # the only GPU signal that survives a missing driver, which is what lets
+  # `prickle diagnose` tell "no NVIDIA card here" apart from "a card whose
+  # driver is not installed" — identical in every other signal the exporter has.
+  say "PCI bus"
+  local pci=0 dev f
+  for dev in /sys/bus/pci/devices/*/; do
+    [[ -d $dev ]] || continue
+    for f in vendor device class; do [[ -r "$dev$f" ]] && grab "$dev$f"; done
+    pci=$((pci+1))
+  done
+  [[ $pci -eq 0 ]] && gap "no PCI devices captured"
+
   say "NVIDIA"
   if nvidia_present; then
     mkdir -p "$OUT_DIR/nvidia"

@@ -195,7 +195,7 @@ func describeGPUs(w io.Writer, cfg config) {
 		// GPU" on a machine that has one — which is the opposite of the answer
 		// they came for.
 		if cfg.nvidiaSource == gpu.SourceAuto {
-			fmt.Fprintln(w, "  On a host with no NVIDIA GPU this is expected and not an error.")
+			describeNVIDIAPresence(w, cfg)
 		} else {
 			fmt.Fprintf(w, "  -collector.gpu.nvidia-source=%s forced this source; %s selects one automatically.\n",
 				cfg.nvidiaSource, gpu.SourceAuto)
@@ -223,6 +223,41 @@ func describeGPUs(w io.Writer, cfg config) {
 	fmt.Fprintln(w, "  exists for it, so an AMD host reports nothing. Intel is out of")
 	fmt.Fprintln(w, "  scope. See")
 	fmt.Fprintln(w, "  internal/collector/gpu/testdata/README.md §Coverage gaps.")
+}
+
+// describeNVIDIAPresence says whether the host has an NVIDIA card at all.
+//
+// Reached only when automatic selection found no source. Until this existed,
+// that printed "On a host with no NVIDIA GPU this is expected and not an
+// error" unconditionally — which on a machine with a card and no driver is
+// precisely the wrong answer, and the answer an operator is least equipped to
+// doubt. The PCI bus knows the difference even when nothing else does: it
+// advertises the card whether or not a driver is bound to it.
+func describeNVIDIAPresence(w io.Writer, cfg config) {
+	n, err := gpu.CountNVIDIAGPUs(cfg.roots())
+	switch {
+	case err != nil:
+		// Do not guess in either direction. An unreadable PCI bus is its own
+		// state, and the two confident answers below would both be inventions.
+		fmt.Fprintf(w, "  Whether this host has an NVIDIA card could not be determined: %v\n", err)
+	case n == 0:
+		fmt.Fprintln(w, "  The PCI bus advertises no NVIDIA display adapter either, so this")
+		fmt.Fprintln(w, "  host has no NVIDIA GPU and the absence of a source is expected,")
+		fmt.Fprintln(w, "  not an error.")
+	default:
+		fmt.Fprintf(w, "  The PCI bus advertises %s, so the hardware is\n",
+			plural(n, "NVIDIA display adapter"))
+		fmt.Fprintln(w, "  present and the driver is not. Install the NVIDIA driver; until")
+		fmt.Fprintln(w, "  then neither source can report on a card that is physically here.")
+	}
+}
+
+// plural renders "1 thing" or "3 things".
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
 }
 
 // gpuBuildDescription names which of the two artifacts this is.

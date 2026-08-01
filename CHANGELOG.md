@@ -13,6 +13,31 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`prickle diagnose` told hosts that have a GPU they have no GPU.** When
+  automatic selection found neither source, it closed with "On a host with no
+  NVIDIA GPU this is expected and not an error" — unconditionally. On a machine
+  whose driver simply is not installed yet, that is the wrong answer, and the
+  one an operator is least equipped to doubt: every other signal the exporter
+  has reads the same either way, because a `dlopen` that fails and an
+  `nvidia-smi` that is absent look identical whether or not a card is in the
+  slot. It now reads the PCI bus, which advertises the card with or without a
+  driver, and says which of the two situations this is — or, when the bus
+  itself cannot be read, says that instead of guessing. **No metric changes**;
+  this is `diagnose` output only. The forced-source case was already fixed in
+  0.3.0; this is the same defect on the path that is actually common — a GPU
+  instance before its driver is provisioned.
+- `scripts/capture-fixtures.sh` now captures
+  `/sys/bus/pci/devices/*/{vendor,device,class}` on every host, and the
+  `h100-nodriver-20260801` fixture is that capture from an Ubuntu 26.04 VM with
+  an H100 SXM5 on the bus and no driver at all. Fourteen devices, not one: the
+  VM's console is a virtio VGA adapter, so the tree holds a display-class
+  device that is not NVIDIA beside an NVIDIA device that is not VGA-class.
+  Matching on vendor alone, or on class alone, gets a different answer on that
+  tree than matching on both — which is what makes it a fixture rather than a
+  sample.
+
 ## [0.3.0] — 2026-08-01
 
 Phase 3: the GPU collector, **NVIDIA only**. Nothing in Phase 1 or 2 output
