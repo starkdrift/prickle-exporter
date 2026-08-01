@@ -13,6 +13,25 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Notes
+
+- **Swept across every DigitalOcean base image** on 2026-08-01 — fourteen of
+  them, kernels 4.18 to 7.0, both cgroup hierarchies, podman 3.4.4 to 6.0.2.
+  Each was rebuilt from stock, given podman from its own repository and one
+  container with a CPU quota and memory limit, then diagnosed and scraped.
+  **14 of 14 reported their container, with zero exposition problems.** The
+  matrix is in README.md §Verified platforms.
+- **PSI is absent on the entire RHEL family** — Alma, Rocky and CentOS Stream
+  at 8, 9 and 10. The kernels have it compiled in; RHEL ships it off unless the
+  host is booted with `psi=1`. So `prickle_host_pressure_*` and
+  `prickle_container_pressure_stalled_seconds_total` do not exist there and any
+  saturation panel is blank. A property of the distribution, not of this
+  exporter, which reports each file as `missing` rather than failing — but it
+  decides whether a dashboard is worth building, so it is written down.
+- The per-container series count follows from those two facts: 20 on cgroup v1,
+  24 on RHEL's v2 with PSI off, 28–30 elsewhere. A host reporting fewer series
+  than its neighbour is usually this rather than a fault.
+
 ### Fixed
 
 - **A hybrid host reported half its container metrics, silently.** Found by

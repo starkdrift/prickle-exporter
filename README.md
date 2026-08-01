@@ -72,6 +72,47 @@ Linux only. **cgroup v2 and v1** are both read — v2 is the primary hierarchy a
 The package still builds on macOS so parser tests run there; `Statfs` is stubbed
 out and no shipped binary reaches it.
 
+## Verified platforms
+
+Every DigitalOcean base image, swept on 2026-08-01: rebuilt from the stock
+image, podman installed from the distro's own repository, one container started
+with a CPU quota and a memory limit, then `prickle diagnose` and a real scrape.
+
+| Image | Kernel | cgroup | PSI | podman | Found | Host series | Container series |
+|---|---|---|---|---|---|---|---|
+| `almalinux-8` | 4.18.0-553 | **v1** | absent | 4.9.4 | 1 | 310 | 20 |
+| `almalinux-9` | 5.14.0-687 | v2 | absent | 5.8.2 | 1 | 328 | 24 |
+| `almalinux-10` | 6.12.0-211 | v2 | absent | 5.8.2 | 1 | 329 | 24 |
+| `centos-stream-9` | 5.14.0-710 | v2 | absent | 5.8.5 | 1 | 276 | 24 |
+| `centos-stream-10` | 6.12.0-233 | v2 | absent | 6.0.2 | 1 | 277 | 24 |
+| `debian-13` | 6.12.94 | v2 | present | 5.4.2 | 1 | 359 | 30 |
+| `fedora-43` | 7.0.12 | v2 | present | 5.8.2 | 1 | 414 | 30 |
+| `fedora-44` | 7.0.12 | v2 | present | 5.8.3 | 1 | 396 | 30 |
+| `rockylinux-8` | 4.18.0-553 | **v1** | absent | 4.9.4 | 1 | 326 | 20 |
+| `rockylinux-9` | 5.14.0-687 | v2 | absent | 5.8.2 | 1 | 336 | 24 |
+| `rockylinux-10` | 6.12.0-211 | v2 | absent | 5.8.2 | 1 | 366 | 24 |
+| `ubuntu-22-04` | 5.15.0-185 | v2 | present | 3.4.4 | 1 | 310 | 28 |
+| `ubuntu-24-04` | 6.8.0-124 | v2 | present | 4.9.3 | 1 | 340 | 30 |
+| `ubuntu-26-04` | 7.0.0-27 | v2 | present | 5.7.0 | 1 | 380 | 30 |
+
+**14 of 14 found their container, with zero exposition problems** across
+kernels 4.18 to 7.0, both cgroup hierarchies, and six years of podman versions
+(3.4.4 to 6.0.2).
+
+Two things in that table are worth reading before you deploy:
+
+- **PSI is absent on the entire RHEL family** — Alma, Rocky and CentOS Stream,
+  at 8, 9 and 10 alike. The kernels have it compiled in; RHEL ships it *off*
+  unless the host is booted with `psi=1`. So `prickle_host_pressure_*` and
+  `prickle_container_pressure_stalled_seconds_total` are simply not there, and
+  any dashboard panel or alert built on saturation will be blank. This is a
+  property of the distribution, not of the exporter, and `prickle diagnose`
+  reports each `/proc/pressure/*` file as `missing` rather than failing.
+- **The container series count is explained entirely by those two columns.**
+  20 on cgroup v1 (no PSI, and v1's `memory.stat` has no counterpart for four
+  of the v2 fields), 24 on RHEL v2 (PSI off), 28–30 elsewhere. A host reporting
+  fewer series than its neighbour is usually this, not a fault.
+
 ## Quick start
 
 Requires Go 1.26. There is nothing to fetch — the module has no dependencies.
