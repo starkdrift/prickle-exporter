@@ -445,6 +445,13 @@ rule holds for both. Both sources sit behind one `nvidiaSource` interface and
 **must emit identical metric output for the same GPU** — a hardware test asserts
 it.
 
+Both are published per architecture from `v0.3.0` on. Dynamic linking costs
+`prickle-nvml` a glibc floor — it is built on glibc 2.39 and needs at least that
+on the host — which is the one reason to prefer `prickle` on a machine that does
+have a GPU. Installing `prickle-nvml` where NVML cannot load is otherwise
+harmless: it falls back to the `nvidia-smi` path by itself, and `prickle
+diagnose` names the live source and why the other declined.
+
 The hardware test lives in
 [internal/collector/gpu/nvml_hardware_test.go](internal/collector/gpu/nvml_hardware_test.go)
 and skips itself wherever NVML does not load, so `go test -tags nvml` stays

@@ -13,12 +13,26 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-01
+
 Phase 3: the GPU collector, **NVIDIA only**. Nothing in Phase 1 or 2 output
 changes. AMD is in SPEC.md §Collectors' Phase 3 scope and is *not* implemented;
 Intel was dropped from that scope — see Notes.
 
 ### Added
 
+- **`prickle-nvml`, the second release artifact** SPEC.md §Distribution has
+  called for since 0.1.0. Every release until now shipped only the static
+  `prickle`, because no `//go:build nvml` source existed and the second artifact
+  would have been a byte-for-byte copy of the first under a name promising NVML
+  support. It is dynamically linked, because a static binary cannot `dlopen` at
+  all. **Which one to install:** `prickle-nvml` on NVIDIA hosts, for the richer
+  data and the only per-process MIG attribution there is; `prickle` anywhere
+  else, and anywhere a glibc floor is unwelcome — a scratch container, an older
+  distribution. Neither links an NVIDIA library at compile time, and
+  `prickle-nvml` falls back to the `nvidia-smi` path on its own when the driver
+  library will not load, so installing it on a host without a GPU is a
+  non-event rather than a startup failure.
 - **NVIDIA GPU collector** reporting per-card utilization, memory, temperature
   and power; MIG topology; and optional per-process memory. Two interchangeable
   implementations behind one `nvidiaSource` interface, selected once at startup:
@@ -295,7 +309,8 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/starkdrift/prickle-exporter/releases/tag/v0.1.0
