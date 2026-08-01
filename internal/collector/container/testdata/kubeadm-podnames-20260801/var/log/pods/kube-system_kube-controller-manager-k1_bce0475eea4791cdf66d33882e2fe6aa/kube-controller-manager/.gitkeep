@@ -1,0 +1,8 @@
+The pod name, namespace and UID are in the directory names above this file;
+nothing here is read. This marker exists only because git does not track empty
+directories, and a clean clone would otherwise drop the whole capture — which
+is exactly how CI caught it.
+
+The real directory holds the container's rotated log files (0.log and so on).
+They were deliberately not captured: they are workload output, and the reader
+never opens them.
