@@ -88,8 +88,20 @@ mandatory from Phase 4.
   large GPU nodes. `/proc/loadavg`'s fourth and fifth fields are not exposed:
   the fifth is a PID.
 - **Containers (Phase 2):** walk the cgroup v2 tree; identity extracted from
-  directory names: `docker-<hex>.scope`, `cri-containerd-<hex>.scope`,
-  `crio-<hex>.scope`, `kubepods.slice/.../pod<uid>`. Docker socket is an
+  directory names. The kubelet's and Docker's **cgroup driver** decides the
+  shape of the whole tree, and both drivers are in scope:
+  - *systemd driver* — `docker-<hex>.scope`, `cri-containerd-<hex>.scope`,
+    `crio-<hex>.scope`, under `kubepods.slice/.../kubepods-…pod<uid>.slice`
+    with the UID systemd-escaped. Guaranteed pods carry no QoS component.
+  - *cgroupfs driver* — `docker/<hex>` and `kubepods/<qos>/pod<uid>/<hex>`,
+    with no suffix, no runtime prefix, and the UID unescaped. This is the
+    default on managed Kubernetes, so treating it as exotic means an ordinary
+    node reports nothing.
+
+  A bare hex directory is a container only because of its parent; the parent is
+  what distinguishes one from any other hex-named cgroup. Where the layout does
+  not name the runtime — which is every cgroupfs kubepods tree — `runtime` on
+  the `_info` gauge is **empty** rather than inferred. Docker socket is an
   optional enrichment path for human-readable names only.
 - **GPU (Phase 3):** AMD via sysfs + DRM fdinfo. **Intel is out of scope.** No
   capture host is obtainable, and §Testing rules forbids developing a parser
