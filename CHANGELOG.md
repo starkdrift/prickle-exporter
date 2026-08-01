@@ -13,6 +13,24 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Container panels are legended `<pod>/<container>`**, truncated to 8 and 12
+  characters. A plain Docker container with no pod keeps a bare
+  `<container>` — the naive `{{pod}}/{{container}}` renders `/abc123` there,
+  which is half the fleet on a mixed estate.
+
+  Truncated because untruncated it is unreadable: a container ID is 64 hex
+  characters, and **`pod` is the pod's UID, not its name**. The cgroup tree has
+  no name to offer — the kernel only ever sees the UID — so joined in full the
+  legend runs to about a hundred characters. 12 characters of container ID is
+  Docker's own short-ID convention, so the value still matches what `docker ps`
+  prints. Real pod *names* need kube-state-metrics; this exporter cannot know
+  them.
+
+  Dashboard-only: `pod` is already on every container series that has one, and
+  a pre-joined label would put redundant bytes on every sample of every host.
+
 ### Added
 
 - **`-metrics.preset` chooses how much is exposed**: `minimal` (the new

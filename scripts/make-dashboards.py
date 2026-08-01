@@ -83,21 +83,33 @@ def variables():
 
 
 def pod_qualified(expr):
-    """Label a container series `<pod>/<container>`, or just `<container>`
-    when it is not in a pod.
+    """Label a container series `<pod>/<container>`, truncated for reading, or
+    just `<container>` when it is not in a pod.
 
     Presentation, so it lives here and not in the exporter: `pod` is already on
     every container series that has one, and adding a pre-joined label would put
     redundant bytes on every sample of every host to save a function call in
     four panels.
 
-    label_join alone would render `/abc123` for a plain Docker container, whose
-    pod label is empty. The outer label_replace strips that leading separator,
-    and leaves the label untouched when the regexp does not match — which is
-    exactly the Kubernetes case, where the value starts with the pod UID.
+    Both identifiers are truncated because untruncated they are unreadable: a
+    container ID is 64 hex characters, and `pod` is the pod's **UID**, not its
+    name — the cgroup tree has no name to offer, so the kernel only ever sees
+    the UID. Joined in full they make a ~100-character legend.
+
+    12 characters of container ID is Docker's own short-ID convention, so the
+    value still matches what `docker ps` prints and stays cross-referenceable.
+    8 of a UID is enough to tell pods apart by eye on one node.
+
+    The bounded repetitions are `{1,N}` rather than `{N}` for two reasons. A
+    quantifier requiring exactly N would fail to match a shorter ID and silently
+    leave the label unset, rendering an empty legend; and it is what preserves
+    the no-pod case, because an empty `pod` matches `{1,8}` not at all, so the
+    join produces a leading separator that the outer label_replace strips.
     """
-    return (f'label_replace(label_join({expr}, "display", "/", "pod", "container"), '
-            f'"display", "$1", "display", "^/(.+)$")')
+    inner = (f'label_replace({expr}, "cshort", "$1", "container", "^(.{{1,12}}).*$")')
+    inner = (f'label_replace({inner}, "pshort", "$1", "pod", "^(.{{1,8}}).*$")')
+    joined = f'label_join({inner}, "display", "/", "pshort", "cshort")'
+    return f'label_replace({joined}, "display", "$1", "display", "^/(.+)$")'
 
 
 def ts(title, exprs, gp, unit=None, desc=None, stack=False):
