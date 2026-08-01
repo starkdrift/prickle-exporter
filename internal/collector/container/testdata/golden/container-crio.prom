@@ -1,0 +1,195 @@
+# HELP prickle_container_cpu_limit_cores CPU quota in cores: the cgroup v2 cpu.max quota divided by its period. Absent when unlimited.
+# TYPE prickle_container_cpu_limit_cores gauge
+prickle_container_cpu_limit_cores{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0.5
+prickle_container_cpu_limit_cores{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 0.25
+# HELP prickle_container_cpu_periods_total Bandwidth-enforcement periods elapsed. Zero until a CPU quota is set.
+# TYPE prickle_container_cpu_periods_total counter
+prickle_container_cpu_periods_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0
+prickle_container_cpu_periods_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_cpu_periods_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 142
+prickle_container_cpu_periods_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 0
+prickle_container_cpu_periods_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 1141
+# HELP prickle_container_cpu_seconds_total CPU time consumed, split by mode.
+# TYPE prickle_container_cpu_seconds_total counter
+prickle_container_cpu_seconds_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",mode="user"} 0.102608
+prickle_container_cpu_seconds_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",mode="system"} 0.136091
+prickle_container_cpu_seconds_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",mode="user"} 0.026966
+prickle_container_cpu_seconds_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",mode="system"} 0.075904
+prickle_container_cpu_seconds_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",mode="user"} 0.023448
+prickle_container_cpu_seconds_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",mode="system"} 0.079612
+prickle_container_cpu_seconds_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",mode="user"} 0.194258
+prickle_container_cpu_seconds_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",mode="system"} 0.422867
+prickle_container_cpu_seconds_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",mode="user"} 28.517766
+prickle_container_cpu_seconds_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",mode="system"} 0.003878
+# HELP prickle_container_cpu_throttled_periods_total Periods in which the container exhausted its CPU quota and was throttled.
+# TYPE prickle_container_cpu_throttled_periods_total counter
+prickle_container_cpu_throttled_periods_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 1141
+# HELP prickle_container_cpu_throttled_seconds_total Seconds the container spent throttled against its CPU quota.
+# TYPE prickle_container_cpu_throttled_seconds_total counter
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 52.167825
+# HELP prickle_container_cpu_usage_seconds_total Total CPU time consumed. The sum of the user and system modes below, from the kernel's own accounting.
+# TYPE prickle_container_cpu_usage_seconds_total counter
+prickle_container_cpu_usage_seconds_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0.2387
+prickle_container_cpu_usage_seconds_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0.10287
+prickle_container_cpu_usage_seconds_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0.10306
+prickle_container_cpu_usage_seconds_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 0.617125
+prickle_container_cpu_usage_seconds_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 28.521644
+# HELP prickle_container_cpu_weight Relative share of CPU time under contention. The cgroup v2 cpu.weight, 1 to 10000, default 100.
+# TYPE prickle_container_cpu_weight gauge
+prickle_container_cpu_weight{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 1
+prickle_container_cpu_weight{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 1
+prickle_container_cpu_weight{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 2
+prickle_container_cpu_weight{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 4
+prickle_container_cpu_weight{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 10
+# HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
+# TYPE prickle_container_info gauge
+prickle_container_info{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",runtime="crio",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",runtime="crio",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",runtime="crio",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",runtime="crio",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",runtime="crio",qos="guaranteed",name="",image=""} 1
+# HELP prickle_container_io_discarded_bytes_total Bytes discarded.
+# TYPE prickle_container_io_discarded_bytes_total counter
+prickle_container_io_discarded_bytes_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 0
+prickle_container_io_discarded_bytes_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",device="253:0"} 0
+prickle_container_io_discarded_bytes_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",device="253:0"} 0
+# HELP prickle_container_io_discards_completed_total Discard operations completed.
+# TYPE prickle_container_io_discards_completed_total counter
+prickle_container_io_discards_completed_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 0
+prickle_container_io_discards_completed_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",device="253:0"} 0
+prickle_container_io_discards_completed_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",device="253:0"} 0
+# HELP prickle_container_io_read_bytes_total Bytes read from block devices.
+# TYPE prickle_container_io_read_bytes_total counter
+prickle_container_io_read_bytes_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 54259712
+prickle_container_io_read_bytes_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",device="253:0"} 4345856
+prickle_container_io_read_bytes_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",device="253:0"} 59367424
+# HELP prickle_container_io_reads_completed_total Read operations completed.
+# TYPE prickle_container_io_reads_completed_total counter
+prickle_container_io_reads_completed_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 108
+prickle_container_io_reads_completed_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",device="253:0"} 22
+prickle_container_io_reads_completed_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",device="253:0"} 153
+# HELP prickle_container_io_writes_completed_total Write operations completed.
+# TYPE prickle_container_io_writes_completed_total counter
+prickle_container_io_writes_completed_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 0
+prickle_container_io_writes_completed_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",device="253:0"} 0
+prickle_container_io_writes_completed_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",device="253:0"} 0
+# HELP prickle_container_io_written_bytes_total Bytes written to block devices.
+# TYPE prickle_container_io_written_bytes_total counter
+prickle_container_io_written_bytes_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 0
+prickle_container_io_written_bytes_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",device="253:0"} 0
+prickle_container_io_written_bytes_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",device="253:0"} 0
+# HELP prickle_container_memory_anon_bytes Anonymous memory: heap and stack, not backed by a file, reclaimable only to swap.
+# TYPE prickle_container_memory_anon_bytes gauge
+prickle_container_memory_anon_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 13643776
+prickle_container_memory_anon_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 270336
+prickle_container_memory_anon_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 278528
+prickle_container_memory_anon_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 11235328
+prickle_container_memory_anon_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 147456
+# HELP prickle_container_memory_file_bytes Page cache.
+# TYPE prickle_container_memory_file_bytes gauge
+prickle_container_memory_file_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 54296576
+prickle_container_memory_file_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 32768
+prickle_container_memory_file_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 4378624
+prickle_container_memory_file_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 59371520
+prickle_container_memory_file_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 32768
+# HELP prickle_container_memory_inactive_file_bytes Page cache on the inactive LRU list, the first thing reclaimed under pressure. Subtract it from memory_usage_bytes for the working set.
+# TYPE prickle_container_memory_inactive_file_bytes gauge
+prickle_container_memory_inactive_file_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 647168
+prickle_container_memory_inactive_file_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 32768
+prickle_container_memory_inactive_file_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 143360
+prickle_container_memory_inactive_file_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 348160
+prickle_container_memory_inactive_file_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 32768
+# HELP prickle_container_memory_kernel_stack_bytes Kernel stacks of the container's threads.
+# TYPE prickle_container_memory_kernel_stack_bytes gauge
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 311296
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 245760
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 0
+# HELP prickle_container_memory_limit_bytes Hard memory limit: the container is OOM-killed above it. Absent when unlimited.
+# TYPE prickle_container_memory_limit_bytes gauge
+prickle_container_memory_limit_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 134217728
+prickle_container_memory_limit_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 67108864
+# HELP prickle_container_memory_major_page_faults_total Page faults that required a disk read. A rising rate here is a container swapping or thrashing its page cache.
+# TYPE prickle_container_memory_major_page_faults_total counter
+prickle_container_memory_major_page_faults_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 44
+prickle_container_memory_major_page_faults_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 5
+prickle_container_memory_major_page_faults_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 26
+prickle_container_memory_major_page_faults_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 0
+# HELP prickle_container_memory_page_faults_total Page faults taken by the container, major and minor together.
+# TYPE prickle_container_memory_page_faults_total counter
+prickle_container_memory_page_faults_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 23224
+prickle_container_memory_page_faults_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 9407
+prickle_container_memory_page_faults_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 9625
+prickle_container_memory_page_faults_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 64523
+prickle_container_memory_page_faults_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 111
+# HELP prickle_container_memory_page_tables_bytes Page tables mapping the container's address spaces.
+# TYPE prickle_container_memory_page_tables_bytes gauge
+prickle_container_memory_page_tables_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 221184
+prickle_container_memory_page_tables_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 118784
+prickle_container_memory_page_tables_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 114688
+prickle_container_memory_page_tables_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 249856
+prickle_container_memory_page_tables_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 61440
+# HELP prickle_container_memory_shmem_bytes Shared memory and tmpfs, charged to the container that faulted it in.
+# TYPE prickle_container_memory_shmem_bytes gauge
+prickle_container_memory_shmem_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 4096
+prickle_container_memory_shmem_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 0
+# HELP prickle_container_memory_slab_bytes Kernel data structures allocated on the container's behalf.
+# TYPE prickle_container_memory_slab_bytes gauge
+prickle_container_memory_slab_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 1067256
+prickle_container_memory_slab_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 163304
+prickle_container_memory_slab_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 197688
+prickle_container_memory_slab_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 718536
+prickle_container_memory_slab_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 132000
+# HELP prickle_container_memory_socket_bytes Memory held in network socket buffers.
+# TYPE prickle_container_memory_socket_bytes gauge
+prickle_container_memory_socket_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 0
+# HELP prickle_container_memory_unevictable_bytes Memory that cannot be reclaimed at all, such as mlock'd pages.
+# TYPE prickle_container_memory_unevictable_bytes gauge
+prickle_container_memory_unevictable_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 0
+# HELP prickle_container_memory_usage_bytes Total memory charged to the container, including page cache.
+# TYPE prickle_container_memory_usage_bytes gauge
+prickle_container_memory_usage_bytes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 69885952
+prickle_container_memory_usage_bytes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 1163264
+prickle_container_memory_usage_bytes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 5689344
+prickle_container_memory_usage_bytes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 72151040
+prickle_container_memory_usage_bytes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 413696
+# HELP prickle_container_pressure_stalled_seconds_total Seconds of stall from resource pressure. kind=some: at least one task stalled; kind=full: every task stalled.
+# TYPE prickle_container_pressure_stalled_seconds_total counter
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",resource="memory",kind="full"} 0
+# HELP prickle_container_processes Processes and threads currently in the container's cgroup.
+# TYPE prickle_container_processes gauge
+prickle_container_processes{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6"} 20
+prickle_container_processes{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38"} 2
+prickle_container_processes{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2"} 2
+prickle_container_processes{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2"} 16
+prickle_container_processes{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 1

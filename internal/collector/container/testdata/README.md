@@ -58,7 +58,7 @@ is either unit-tested on the name parse alone, or not implemented at all.
 
 | Gap | Status |
 |---|---|
-| `crio-<hex>.scope` (CRI-O) | Directory-name parse only, in `TestIdentify`. No CRI-O host was captured. |
+| `crio-<hex>.scope` (CRI-O) | **Captured**, in `crio-systemd-20260801/`. |
 | Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component | **Captured**, in `kubeadm-systemd-20260801/`. |
 | `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
 | A container with a CPU quota (`cpu.max` = `<quota> <period>`) | **Captured**, in `docker-cgroupfs-20260801/`. The hand-written trees in `cpu_test.go` stay — they pin the arithmetic in isolation — but the quota, the throttle counters and the conversion to cores are now also checked against values a kernel actually produced. |
@@ -154,6 +154,42 @@ limit equals the request, which is why the quota exists at all.
 
 Ten container scopes, the same thirteen per-cgroup files as the other trees,
 and `cgroup.procs` stripped for the usual reason.
+
+## The CRI-O tree: `crio-systemd-20260801/`
+
+The same kubeadm cluster and the same three QoS pods as
+`kubeadm-systemd-20260801`, with the worker's runtime switched to **CRI-O
+1.32.1** and the node rebooted so nothing containerd wrote survives. Two
+captures differing in the runtime and nothing else, which is what makes them
+comparable.
+
+`crio-<hex>.scope` had been parse-only since Phase 2: SPEC.md §Collectors names
+CRI-O, but the prefix came from the runtime's documentation rather than from a
+host. It is right.
+
+**What the documentation did not say** is that CRI-O writes *two* directories
+per container:
+
+| Directory | Contents |
+|---|---|
+| `crio-<hex>.scope` | The container. Real processes and memory — 1 to 20 pids, 0.4 to 72 MB across this capture |
+| `crio-<hex>` (no suffix) | **Empty.** Zero processes, zero bytes, five of them |
+
+Nothing was written with that sibling in mind. It is skipped because
+`identifyScope` requires the `.scope` suffix and `identifyBareID` requires a
+bare hex name, and `crio-<hex>` is neither — the right outcome reached by
+accident. `TestCrioSuffixlessSiblingsAreSkipped` pins it, and asserts the
+siblings are empty rather than assuming it: skipping them is free only while
+they hold nothing, and counting them would double this node's container count
+with five containers reading zero everywhere, which looks like five idle
+containers rather than an artefact.
+
+**One cross-runtime difference worth knowing before comparing counts.** On this
+node containerd produced two scopes per pod and CRI-O produces one, so the same
+five pods yield ten containers under containerd and five under CRI-O. Neither
+is wrong — they are different statements about what a container is — but a
+dashboard counting `prickle_container_info` will show a step change if a node's
+runtime is switched underneath it.
 
 ## The Docker cgroupfs tree: `docker-cgroupfs-20260801/`
 

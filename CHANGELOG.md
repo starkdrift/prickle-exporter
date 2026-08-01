@@ -61,6 +61,17 @@ what to do about it, which no commit-log generator writes.
   explicitly instead of printing `docker 0, containerd 0, crio 0` under a
   non-zero total, which read as three failed identifications.
 
+- **A CRI-O host**, captured at last. `crio-<hex>.scope` had been parse-only
+  since Phase 2 — SPEC.md §Collectors names CRI-O, but the prefix came from the
+  runtime's documentation rather than from a host. It is right. What the
+  documentation did not mention is that CRI-O writes a second, **empty**
+  directory per container, `crio-<hex>` with no suffix; it is skipped, and there
+  is now a test saying so on purpose rather than by accident. **Worth knowing
+  before comparing container counts across runtimes:** on the same five pods,
+  containerd produces ten container cgroups and CRI-O five, so a node whose
+  runtime is switched underneath a dashboard shows a step change in
+  `prickle_container_info`. Neither count is wrong; they are different
+  statements about what a container is.
 - **A Guaranteed pod**, captured at last. `kubepods-pod<uid>.slice` — the
   systemd shape with no QoS component — had been parse-only since Phase 2
   because no cluster anyone captured ran one. A two-node kubeadm cluster was
