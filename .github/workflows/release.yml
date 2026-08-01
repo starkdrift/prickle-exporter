@@ -6,7 +6,7 @@
 # binary with -ldflags and surfaces on prickle_build_info. Nothing here reads a
 # VERSION file, because there isn't one to fall out of sync.
 #
-# Deliberately hand-rolled rather than GoReleaser. Two artifacts and a checksum
+# Deliberately hand-rolled rather than GoReleaser. Four artifacts and a checksum
 # file is less shell than a GoReleaser config is YAML, and it keeps a project
 # whose whole identity is "zero dependencies" from acquiring one in its release
 # path. Revisit if the artifact matrix outgrows roughly eight entries.
@@ -25,6 +25,28 @@ permissions:
   contents: read
 
 jobs:
+  # Resolved once, in its own job. The build below is a matrix, and a matrix
+  # job's outputs are whichever leg finished last — fine while every leg agrees,
+  # silently wrong the day one does not.
+  version:
+    name: version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve version from the tag
+        id: version
+        env:
+          VERSION: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -eu
+          case "$VERSION" in
+            v[0-9]*) ;;
+            *) echo "::error::'$VERSION' is not a vX.Y.Z tag"; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building $VERSION"
+
   # Never publish something that would not have passed the gate. This is the
   # same script ci.yml runs; a tag can be pushed to a commit that never saw CI.
   verify:
@@ -43,12 +65,23 @@ jobs:
       - name: ci/check.sh
         run: ./ci/check.sh
 
+  # SPEC.md §Distribution: two artifacts per platform. prickle is static and
+  # cross-compiles from anywhere; prickle-nvml needs cgo *and* dynamic linking
+  # (a static binary cannot dlopen at all, SPEC.md §Collectors' build note), and
+  # cgo does not cross-compile without a foreign toolchain. So the matrix runs
+  # on native runners per architecture rather than one host cross-building both.
   build:
-    name: build
-    needs: verify
-    runs-on: ubuntu-24.04
-    outputs:
-      version: ${{ steps.version.outputs.version }}
+    name: build (${{ matrix.arch }})
+    needs: [version, verify]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -60,26 +93,10 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Resolve version from the tag
-        id: version
-        run: |
-          version="${{ inputs.tag || github.ref_name }}"
-          case "$version" in
-            v[0-9]*) ;;
-            *) echo "::error::'$version' is not a vX.Y.Z tag"; exit 1 ;;
-          esac
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Building $version"
-
-      # Only the static binary ships today. SPEC.md §Distribution also calls
-      # for prickle-nvml (-tags nvml, cgo, dynamically linked), but no
-      # //go:build nvml source exists until Phase 3 — releasing it now would
-      # ship a byte-for-byte copy of prickle under a name that promises NVML
-      # support. Add it here, on native per-architecture runners, with Phase 3.
       # build/ and dist/ MUST stay in .gitignore. Go records vcs.modified in
-      # every binary; an untracked staging directory would make every
-      # architecture after the first build as vX.Y.Z+dirty, which is both false
-      # and a provenance defect. See the note in .gitignore.
+      # every binary; an untracked staging directory would make every build
+      # after the first come out as vX.Y.Z+dirty, which is both false and a
+      # provenance defect. See the note in .gitignore.
       - name: Assert the tree is clean before building
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -90,47 +107,75 @@ jobs:
 
       - name: Build
         env:
-          CGO_ENABLED: "0"
+          VERSION: ${{ needs.version.outputs.version }}
+          GOARCH: ${{ matrix.arch }}
           GOOS: linux
         run: |
           set -eux
-          version="${{ steps.version.outputs.version }}"
-          mkdir -p dist
-          for arch in amd64 arm64; do
-            GOARCH="$arch" go build -trimpath \
-              -ldflags "-s -w -X main.version=${version}" \
-              -o "build/prickle" ./cmd/prickle
+          mkdir -p build dist
+          mtime="@$(git log -1 --format=%ct)"
 
-            file build/prickle | grep -q 'statically linked' \
-              || { echo "::error::prickle ($arch) is not statically linked"; exit 1; }
-
-            # The direct check, not a proxy for it. The pre-build cleanliness
-            # assertion cannot see a tree that goes dirty *during* the loop, so
-            # ask the binary what it recorded about the tree it came from.
-            go version -m build/prickle | grep -q 'vcs.modified=false' \
-              || { go version -m build/prickle
-                   echo "::error::prickle ($arch) was built from a dirty tree and is stamped +dirty"
+          # The direct check, not a proxy for it. The pre-build cleanliness
+          # assertion cannot see a tree that goes dirty *during* the build, so
+          # ask each binary what it recorded about the tree it came from.
+          assert_clean() {
+            go version -m "$1" | grep -q 'vcs.modified=false' \
+              || { go version -m "$1"
+                   echo "::error::$1 was built from a dirty tree and is stamped +dirty"
                    exit 1; }
+          }
 
+          # Reproducible tarball: fixed order, no uid/gid, tag date as mtime.
+          package() {
             install -m 0644 LICENSE README.md CHANGELOG.md build/
-            # Reproducible tarball: fixed order, no uid/gid, tag date as mtime.
-            tar --sort=name --owner=0 --group=0 --numeric-owner \
-                --mtime="@$(git log -1 --format=%ct)" \
-                -czf "dist/prickle_${version}_linux_${arch}.tar.gz" \
-                -C build prickle LICENSE README.md CHANGELOG.md
-            rm -f build/prickle
-          done
-          cd dist && sha256sum ./*.tar.gz > SHA256SUMS && cat SHA256SUMS
+            tar --sort=name --owner=0 --group=0 --numeric-owner --mtime="$mtime" \
+                -czf "dist/${1}_${VERSION}_linux_${GOARCH}.tar.gz" \
+                -C build "$1" LICENSE README.md CHANGELOG.md
+            rm -f "build/$1"
+          }
+
+          # 1. prickle — static, pure Go, nvidia-smi path.
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X main.version=${VERSION}" \
+            -o build/prickle ./cmd/prickle
+          file build/prickle | grep -q 'statically linked' \
+            || { file build/prickle
+                 echo "::error::prickle ($GOARCH) is not statically linked"; exit 1; }
+          assert_clean build/prickle
+          package prickle
+
+          # 2. prickle-nvml — cgo, dynamically linked, the preferred NVIDIA path.
+          # It links libc and nothing else: NVML arrives via dlopen at runtime,
+          # never at compile time, which is what keeps SPEC.md §Hard constraints
+          # #1's zero-dependency rule true of this artifact too. The tradeoff of
+          # dynamic linking is a glibc floor — built on the runner's glibc, it
+          # needs at least that version on the host. Stated in the release notes.
+          CGO_ENABLED=1 go build -trimpath -tags nvml \
+            -ldflags "-s -w -X main.version=${VERSION}" \
+            -o build/prickle-nvml ./cmd/prickle
+          file build/prickle-nvml | grep -q 'dynamically linked' \
+            || { file build/prickle-nvml
+                 echo "::error::prickle-nvml ($GOARCH) is not dynamically linked; it could not dlopen libnvidia-ml.so.1"
+                 exit 1; }
+          if ldd build/prickle-nvml | grep -qi 'nvidia'; then
+            ldd build/prickle-nvml
+            echo "::error::prickle-nvml ($GOARCH) links an NVIDIA library at compile time; NVML must arrive only via dlopen"
+            exit 1
+          fi
+          assert_clean build/prickle-nvml
+          package prickle-nvml
+
+          ls -l dist/
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: release-artifacts
+          name: release-artifacts-${{ matrix.arch }}
           path: dist/
           retention-days: 7
 
   publish:
     name: publish
-    needs: build
+    needs: [version, build]
     # A manual run is a dry run: it builds and attests nothing, so a mistake
     # cannot create a public release.
     if: github.event_name == 'push'
@@ -144,8 +189,19 @@ jobs:
 
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          name: release-artifacts
+          pattern: release-artifacts-*
+          merge-multiple: true
           path: dist
+
+      # One checksum file over every architecture, written after the merge
+      # rather than per-runner, so there is a single SHA256SUMS to verify
+      # against. The glob is shell-sorted, so the file's order is stable.
+      - name: Checksums
+        run: |
+          set -eu
+          cd dist
+          sha256sum ./*.tar.gz > SHA256SUMS
+          cat SHA256SUMS
 
       # SLSA build provenance, keyless via GitHub's OIDC. Verifiable with
       #   gh attestation verify prickle_vX.Y.Z_linux_amd64.tar.gz \
@@ -158,11 +214,27 @@ jobs:
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.build.outputs.version }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -eu
           cat > notes.md <<EOF
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${VERSION}/CHANGELOG.md) for what changed.
+
+          ### Which artifact
+
+          Two per architecture (SPEC.md §Distribution). They report the same
+          metrics; they differ in how they reach NVIDIA.
+
+          | Artifact | Build | NVIDIA source | Use it when |
+          |---|---|---|---|
+          | \`prickle\` | static, \`CGO_ENABLED=0\` | \`nvidia-smi\` subprocess | Anywhere. No glibc requirement, runs in a scratch container. |
+          | \`prickle-nvml\` | dynamically linked, \`-tags nvml\` | NVML via \`dlopen\` | On NVIDIA hosts — the preferred path. Richer data, no per-scrape process spawn, and the only source of per-process MIG attribution. |
+
+          \`prickle-nvml\` needs glibc 2.39 or newer and the driver's
+          \`libnvidia-ml.so.1\` present at runtime; it falls back to the
+          \`nvidia-smi\` path on its own if the library will not load, and
+          \`prickle diagnose\` says which source is live. Neither build links an
+          NVIDIA library at compile time.
 
           ### Verify
 
@@ -171,7 +243,7 @@ jobs:
           gh attestation verify prickle_${VERSION}_linux_amd64.tar.gz --repo ${{ github.repository }}
           \`\`\`
 
-          Linux only, cgroup v2 only. \`prickle-nvml\` (SPEC.md §Distribution) ships with Phase 3.
+          Linux only, cgroup v2 only.
           EOF
 
           # 0.x is a real release, not a prerelease. Only a hyphenated
