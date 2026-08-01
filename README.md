@@ -52,9 +52,12 @@ changing a decision means editing SPEC.md first, in its own commit.
 
 ## Status
 
-**Phase 3, NVIDIA only.** Host, container and NVIDIA GPU collectors are
-implemented and tested against a captured fixture tree. AMD is specified but
-not written — no capture exists for it. Intel is out of scope (SPEC §Collectors).
+**Phase 4.** Host, container and NVIDIA GPU collectors are implemented and
+tested against captured fixture trees, with per-collector timeouts, cardinality
+caps and self-instrumentation. The container collector reads both cgroup
+drivers and all three CRI runtimes it names. AMD is specified but not written —
+no capture exists for it. Intel is out of scope (SPEC §Collectors). Multi-GPU
+hosts remain unverified.
 
 | Phase | Scope | State |
 |---|---|---|

@@ -13,6 +13,20 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-01
+
+Phase 4: caps and timeouts. Also the release where the container collector
+stopped being silent on whole classes of host — three runtime layouts it could
+not read are now read, each against a captured tree rather than a guess.
+
+**Upgrading:** no metric was renamed and no label key was added to an existing
+series, so every recording rule and dashboard built on 0.3.x still holds. But a
+node running the cgroupfs cgroup driver, or cgroupfs-driver Docker, reported
+**no containers at all** before this and reports them now. If you scrape one,
+expect its series count to rise from nothing to roughly 25 per container —
+that is the fix arriving, not a leak. See the `runtime` label note below before
+you join on it.
+
 ### Added
 
 - **Per-collector cardinality caps**, the last item SPEC.md §Metrics contract
@@ -428,7 +442,8 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.0...v0.1.1
