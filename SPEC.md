@@ -94,6 +94,31 @@ itself, the list, and this file. Never abbreviate the metric prefix.
   and must pass `promtool check metrics` at all times.
 - Cardinality caps per collector (Phase 4): on breach, drop and count via
   self-instrumentation; never OOM the scrape.
+- **Metric selection.** `-metrics.preset` chooses how much is exposed:
+  `minimal` (the default), `full`, or `custom` with `-metrics.include` taking
+  regexes. A host emits 156 families with everything on and the shipped
+  dashboards use 35 of them, so the default withholds roughly three quarters of
+  what the collectors can produce — a decision about what most deployments
+  should pay for, not about what the exporter can measure.
+
+  Three rules keep it from becoming a way to lose data quietly:
+
+  1. **The minimal set is an explicit list in code, not "whatever the
+     dashboards happen to reference".** Deriving it from the dashboards would
+     let an edit to a panel silently change what every scrape returns. CI
+     asserts the dashboards are a **subset** of the minimal set, so the two
+     cannot drift apart without failing the build.
+  2. **Self-metrics are never filtered.** `prickle_collector_*`,
+     `prickle_build_info` and `prickle_render_timestamp_seconds` survive every
+     preset, for the same reason the cardinality cap does not apply to them: a
+     scrape that has been reduced must still be able to say so.
+  3. **`prickle diagnose` reports the active preset and how many families it is
+     withholding.** "My metric disappeared" has to have an answer that is not
+     reading the source.
+
+  Filtering happens at family creation, so a withheld family costs no
+  allocation and no render, and `prickle_collector_series` counts what is
+  actually served.
 
 ## Architecture
 
