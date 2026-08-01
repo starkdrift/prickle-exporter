@@ -9,10 +9,13 @@
 # the trailing version comment.
 name: ci
 
+# main only. Work lands here by direct merge rather than through a pull
+# request, so a pull_request trigger fired for one contributor — dependabot —
+# and nothing else. workflow_dispatch stays so a branch can still be checked on
+# demand before it is merged.
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
