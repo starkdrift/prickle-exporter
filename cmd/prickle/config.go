@@ -20,6 +20,17 @@ import (
 // version is overridden at build time with -ldflags "-X main.version=...".
 var version = "dev"
 
+// DefaultMaxSeries is the per-collector cardinality cap.
+//
+// SPEC.md §Metrics contract requires a cap that never OOMs the scrape. This is
+// sized as a backstop rather than a budget: the largest thing measured so far
+// is a Kubernetes node at a few thousand series, and a node would have to be
+// two orders of magnitude past that before the cap is what stops it. A default
+// low enough to bind on a real host would silently truncate one, which is a
+// worse failure than the one being prevented — a truncated scrape looks like a
+// healthy one.
+const DefaultMaxSeries = 100_000
+
 // config is the flag set shared by `prickle` and `prickle diagnose`, so the
 // diagnostic reports on exactly the configuration the exporter would run with.
 type config struct {
@@ -27,6 +38,7 @@ type config struct {
 	telemetryPath string
 	interval      time.Duration
 	timeout       time.Duration
+	maxSeries     int
 
 	node string
 
@@ -63,6 +75,12 @@ func (c *config) register(fs *flag.FlagSet) {
 		"How often to poll collectors. Scrapes are served from the last completed pass.")
 	fs.DurationVar(&c.timeout, "collector.timeout", 5*time.Second,
 		"Deadline for a single collector's pass.")
+	fs.IntVar(&c.maxSeries, "collector.max-series", DefaultMaxSeries,
+		"Cap on the series one collector may contribute in a single pass. Past "+
+			"it the extra samples are dropped and counted on "+
+			"prickle_collector_series_dropped_total. A backstop against a "+
+			"runaway cardinality source taking the process down, not a tuning "+
+			"knob: the default is far above any real host. 0 disables it.")
 
 	fs.StringVar(&c.node, "node", "",
 		"Value of the `node` identity label. Empty means the system hostname.")

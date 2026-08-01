@@ -56,6 +56,46 @@ type Set struct {
 	constLabels []Label
 	families    map[string]*Family
 	errs        []error
+
+	// scope bounds the current collector's contribution. Nil outside
+	// BeginScope/EndScope, which is how the sampler's own self-metrics stay
+	// uncapped — they are what report the breach, so capping them would be
+	// the one loss that hides all the others.
+	scope *scope
+}
+
+// scope is one collector's series budget for one pass.
+//
+// A single field on Set rather than a per-collector handle, because SampleOnce
+// runs collectors sequentially on one goroutine — the same property that makes
+// the whole package safe without a mutex. If that ever becomes parallel, this
+// becomes wrong, loudly and immediately, rather than subtly.
+type scope struct {
+	limit   int
+	added   int
+	dropped int
+}
+
+// BeginScope starts counting samples against a budget of limit series. A limit
+// of zero or less counts without bounding, so a caller can measure a collector
+// without capping it.
+//
+// SPEC.md §Metrics contract: caps are per collector, and on breach the extra
+// samples are dropped and counted. Dropping is the whole point — a collector
+// whose cardinality has run away must cost its own series and not the scrape.
+func (s *Set) BeginScope(limit int) {
+	s.scope = &scope{limit: limit}
+}
+
+// EndScope stops counting and reports what happened: how many samples were
+// kept, and how many were dropped for exceeding the budget.
+func (s *Set) EndScope() (added, dropped int) {
+	if s.scope == nil {
+		return 0, 0
+	}
+	added, dropped = s.scope.added, s.scope.dropped
+	s.scope = nil
+	return added, dropped
 }
 
 // Family is one metric name with its help text, type, and samples.
@@ -135,6 +175,12 @@ func (s *Set) family(name, help string, kind Kind) *Family {
 // Add appends a sample. A nil Family — which is what the constructors return
 // once a name has been rejected — silently drops the sample, so one bad family
 // costs its own series and not a panic in the middle of a scrape.
+//
+// Inside a scope the sample is also counted against that collector's budget,
+// and dropped once the budget is spent. The drop is deliberately silent here:
+// a breach is reported once per pass on the self-metrics, not once per sample,
+// because a runaway collector would otherwise turn its own cardinality problem
+// into a log-volume problem.
 func (f *Family) Add(value float64, labels ...Label) {
 	if f == nil {
 		return
@@ -144,6 +190,13 @@ func (f *Family) Add(value float64, labels ...Label) {
 			f.set.errf("metric %q: %w", f.name, err)
 			return
 		}
+	}
+	if sc := f.set.scope; sc != nil {
+		if sc.limit > 0 && sc.added >= sc.limit {
+			sc.dropped++
+			return
+		}
+		sc.added++
 	}
 	f.samples = append(f.samples, sample{labels: labels, value: value})
 }

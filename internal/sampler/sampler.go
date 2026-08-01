@@ -34,6 +34,12 @@ type Options struct {
 	// Timeout bounds a single collector's Collect call.
 	Timeout time.Duration
 
+	// MaxSeries caps how many series one collector may contribute in a single
+	// pass. On breach the extra samples are dropped and counted on
+	// prickle_collector_series_dropped_total (SPEC.md §Metrics contract).
+	// Zero or less disables the cap and only counts.
+	MaxSeries int
+
 	// ConstLabels are applied to every series — this is where the `node`
 	// identity label from SPEC.md §Metrics contract enters.
 	ConstLabels []exposition.Label
@@ -55,10 +61,11 @@ type Sampler struct {
 	log        *slog.Logger
 	now        func() time.Time
 
-	// errorTotals accumulates across passes. The Set is rebuilt from scratch
-	// every render, so a counter's monotonicity has to live here rather than
-	// in the exposition layer.
-	errorTotals map[string]uint64
+	// errorTotals and droppedTotals accumulate across passes. The Set is
+	// rebuilt from scratch every render, so a counter's monotonicity has to
+	// live here rather than in the exposition layer.
+	errorTotals   map[string]uint64
+	droppedTotals map[string]uint64
 
 	mu       sync.RWMutex
 	rendered []byte
@@ -80,11 +87,12 @@ func New(collectors []collector.Collector, opts Options) *Sampler {
 		opts.Now = time.Now
 	}
 	return &Sampler{
-		collectors:  collectors,
-		opts:        opts,
-		log:         opts.Logger,
-		now:         opts.Now,
-		errorTotals: make(map[string]uint64, len(collectors)),
+		collectors:    collectors,
+		opts:          opts,
+		log:           opts.Logger,
+		now:           opts.Now,
+		errorTotals:   make(map[string]uint64, len(collectors)),
+		droppedTotals: make(map[string]uint64, len(collectors)),
 	}
 }
 
@@ -121,13 +129,22 @@ func (s *Sampler) SampleOnce(ctx context.Context) {
 		"Collector failures since start.")
 	success := set.Gauge("prickle_collector_success",
 		"Whether the last sampling pass of this collector succeeded.")
+	series := set.Gauge("prickle_collector_series",
+		"Series this collector contributed to the last sampling pass.")
+	seriesDropped := set.Counter("prickle_collector_series_dropped_total",
+		"Series dropped for exceeding this collector's cardinality cap, since start.")
 
 	for _, c := range s.collectors {
 		name := exposition.L("collector", c.Name())
 
 		cctx, cancel := context.WithTimeout(ctx, s.opts.Timeout)
 		start := s.now()
+		// The scope wraps Collect and nothing else, so the self-metrics below
+		// are never charged to the collector they describe — and never dropped
+		// by the cap they report on.
+		set.BeginScope(s.opts.MaxSeries)
 		err := c.Collect(cctx, set)
+		added, dropped := set.EndScope()
 		elapsed := s.now().Sub(start)
 		cancel()
 
@@ -136,8 +153,18 @@ func (s *Sampler) SampleOnce(ctx context.Context) {
 			s.errorTotals[c.Name()]++
 			s.log.Warn("collector failed", "collector", c.Name(), "error", err)
 		}
+		if dropped > 0 {
+			s.droppedTotals[c.Name()] += uint64(dropped)
+			// Once per pass, not once per sample: a collector whose
+			// cardinality has run away should not turn that into a log flood.
+			s.log.Warn("collector exceeded its cardinality cap; series dropped",
+				"collector", c.Name(), "cap", s.opts.MaxSeries,
+				"kept", added, "dropped", dropped)
+		}
 		errorsTotal.Add(float64(s.errorTotals[c.Name()]), name)
 		success.Add(boolValue(err == nil), name)
+		series.Add(float64(added), name)
+		seriesDropped.Add(float64(s.droppedTotals[c.Name()]), name)
 	}
 
 	set.Gauge("prickle_build_info",

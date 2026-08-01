@@ -73,6 +73,7 @@ func run(args []string) error {
 	s := sampler.New(collectors, sampler.Options{
 		Interval:    cfg.interval,
 		Timeout:     cfg.timeout,
+		MaxSeries:   cfg.maxSeries,
 		ConstLabels: []exposition.Label{exposition.L("node", node)},
 		Version:     version,
 		Logger:      log,

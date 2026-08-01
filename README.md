@@ -61,7 +61,7 @@ not written — no capture exists for it. Intel is out of scope (SPEC §Collecto
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
 | 2 | Containers — cgroup v2 walk, Docker/containerd/CRI-O/Kubernetes identity | **shipped** — with [coverage gaps](#coverage-gaps) worth reading before you deploy it |
 | 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; [AMD unimplemented](#coverage-gaps-1), Intel out of scope |
-| 4 | Per-collector timeouts, cardinality caps, self-instrumentation | partial — self-metrics exist, caps do not |
+| 4 | Per-collector timeouts, cardinality caps, self-instrumentation | **shipped** |
 | 5 | Distribution — systemd units, Helm chart, Docker, four Grafana dashboards | planned |
 
 Linux only, and **cgroup v2 only** — v1 and hybrid hosts are out of scope, and

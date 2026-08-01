@@ -15,6 +15,24 @@ what to do about it, which no commit-log generator writes.
 
 ### Added
 
+- **Per-collector cardinality caps**, the last item SPEC.md §Metrics contract
+  assigns to Phase 4. Past `-collector.max-series` in one pass, a collector's
+  further samples are dropped and counted rather than allowed to grow the
+  render without bound. The budget is per collector and resets between them, so
+  a runaway source costs its own tail and not the collectors after it.
+- **`prickle_collector_series`** and **`prickle_collector_series_dropped_total`**,
+  the self-instrumentation the cap reports through. The first is a useful
+  cardinality gauge whether or not a cap is set; the second is the alert. Both
+  are emitted outside every collector's budget on purpose — a breach that
+  erased its own evidence would leave a truncated scrape looking like a healthy
+  smaller one, which is the failure this whole mechanism exists to avoid.
+- **`-collector.max-series`**, default 100000, `0` to disable. Sized as a
+  backstop, not a budget: the largest thing measured so far is a Kubernetes
+  node at a few thousand series, so a host would have to be two orders of
+  magnitude past that before the cap binds. A default low enough to bind on a
+  real host would silently truncate one, and a truncated scrape looks like a
+  healthy one — the worse of the two failures.
+
 - **Containers on a cgroupfs-driver node are now reported.** The kubelet's
   cgroup driver decides the shape of the whole tree, and only the systemd shape
   was read: `identify` tested for a `.scope` suffix before anything else, so on
