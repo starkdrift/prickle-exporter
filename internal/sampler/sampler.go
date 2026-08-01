@@ -47,6 +47,10 @@ type Options struct {
 	// Version is reported on prickle_build_info.
 	Version string
 
+	// Selector decides which metric families are exposed (SPEC.md §Metrics
+	// contract). Nil exposes everything.
+	Selector *exposition.Selector
+
 	// Logger receives collector errors. Nil means slog.Default().
 	Logger *slog.Logger
 
@@ -122,6 +126,7 @@ func (s *Sampler) Run(ctx context.Context) {
 // milliseconds and cost determinism.
 func (s *Sampler) SampleOnce(ctx context.Context) {
 	set := exposition.NewSet(s.opts.ConstLabels...)
+	set.Select(s.opts.Selector)
 
 	duration := set.Gauge("prickle_collector_duration_seconds",
 		"Seconds the last sampling pass spent in each collector.")

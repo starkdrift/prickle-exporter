@@ -13,6 +13,30 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Added
+
+- **`-metrics.preset` chooses how much is exposed**: `minimal` (the new
+  default), `full`, or `custom` with `-metrics.include` regexps. A host emits
+  about 156 families and the shipped dashboards query 35, so the default now
+  withholds roughly three quarters of what the collectors produce.
+
+  **This changes the default output, which SPEC.md §Versioning calls a major.**
+  Pre-1.0 a minor is allowed to, but read this before upgrading: if you query a
+  family the dashboards do not, it is gone until you set
+  `-metrics.preset=full`. `prickle diagnose` reports the active preset and the
+  number of families withheld, so the answer to "where did my metric go" is one
+  command rather than a source dive.
+
+  Self-metrics survive every preset — a scrape that has been reduced must still
+  be able to report that it was, which is the same exemption the cardinality cap
+  has. Misused flags fail at startup rather than at the first scrape, because a
+  silently ignored filter looks exactly like a metric the host does not have.
+
+  The minimal set is an explicit list in code and a test asserts the dashboards
+  are a *subset* of it. Defining it as "the metrics the dashboards use" would
+  have coupled every scrape in a fleet to whatever someone last edited in a
+  panel.
+
 ### Fixed
 
 - **The systemd install instructions were wrong on SELinux hosts.** A unit file

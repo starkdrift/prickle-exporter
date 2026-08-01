@@ -70,10 +70,16 @@ func run(args []string) error {
 		}
 	}()
 
+	selector, err := cfg.selector()
+	if err != nil {
+		return err
+	}
+
 	s := sampler.New(collectors, sampler.Options{
 		Interval:    cfg.interval,
 		Timeout:     cfg.timeout,
 		MaxSeries:   cfg.maxSeries,
+		Selector:    selector,
 		ConstLabels: []exposition.Label{exposition.L("node", node)},
 		Version:     version,
 		Logger:      log,

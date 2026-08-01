@@ -50,6 +50,36 @@ func diagnose(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "\nnode label: %s\n", node)
 	}
 
+	// "My metric disappeared" must have an answer that is not reading the
+	// source. Printed before the collectors so it frames everything below it.
+	fmt.Fprintln(w, "\nmetric selection")
+	if sel, err := cfg.selector(); err != nil {
+		fmt.Fprintf(w, "  INVALID: %v\n", err)
+	} else {
+		one := exposition.NewSet()
+		one.Select(sel)
+		if cs, err := cfg.collectors(); err == nil {
+			ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+			for _, c := range cs {
+				_ = c.Collect(ctx, one)
+			}
+			cancel()
+		}
+		switch cfg.metricsPreset {
+		case exposition.PresetFull:
+			fmt.Fprintln(w, "  -metrics.preset=full — every family the collectors produce.")
+		case exposition.PresetCustom:
+			fmt.Fprintf(w, "  -metrics.preset=custom — %s\n", cfg.metricsInclude)
+		default:
+			fmt.Fprintln(w, "  -metrics.preset=minimal (default) — what the shipped dashboards query.")
+		}
+		fmt.Fprintf(w, "  exposing %d families; %d withheld by the selection.\n",
+			countFamilies(one.String()), one.Withheld())
+		if one.Withheld() > 0 {
+			fmt.Fprintln(w, "  -metrics.preset=full exposes them. Self-metrics are never withheld.")
+		}
+	}
+
 	fmt.Fprintln(w, "\ncgroup")
 	fmt.Fprintf(w, "  %s\n", describeCgroup(roots))
 
@@ -466,6 +496,17 @@ func countSeries(rendered string) int {
 	var n int
 	for _, line := range strings.Split(rendered, "\n") {
 		if line != "" && !strings.HasPrefix(line, "#") {
+			n++
+		}
+	}
+	return n
+}
+
+// countFamilies counts HELP lines, which is one per exposed family.
+func countFamilies(rendered string) int {
+	var n int
+	for _, line := range strings.Split(rendered, "\n") {
+		if strings.HasPrefix(line, "# HELP ") {
 			n++
 		}
 	}

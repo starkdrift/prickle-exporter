@@ -235,6 +235,43 @@ configuration you would run with — including `-path.rootfs`.
 
 Every metric is prefixed `prickle_`, never abbreviated.
 
+### How much is exposed
+
+`-metrics.preset` controls the size of the payload. A host emits about **156
+families** with everything on, and the four shipped dashboards query **35** of
+them, so the default is not "everything the collectors can see":
+
+| Preset | What it exposes |
+|---|---|
+| `minimal` *(default)* | The families the shipped Grafana dashboards query |
+| `full` | Every family the collectors produce |
+| `custom` | Whatever `-metrics.include` matches — comma-separated regexps |
+
+```sh
+prickle                                     # minimal
+prickle -metrics.preset=full                # everything
+prickle -metrics.preset=custom \
+        -metrics.include='^prickle_gpu_,^prickle_host_load'
+```
+
+**Self-metrics are exposed under every preset** — `prickle_collector_*`,
+`prickle_build_info`, `prickle_render_timestamp_seconds`. A scrape that has been
+reduced must still be able to say so, which is the same reason the cardinality
+cap does not apply to them.
+
+Misusing the flags fails at **startup**, not at the first scrape: an unknown
+preset, `-metrics.include` without `custom`, `custom` without patterns, or a
+regexp that does not compile. An ignored filter would make you believe a metric
+was missing from the host rather than from the flag.
+
+`prickle diagnose` reports the active preset, how many families it is exposing
+and how many it is withholding — so "my metric disappeared" has an answer that
+is not reading the source.
+
+The minimal set is an **explicit list in the code**, not "whatever the
+dashboards reference". A test asserts the dashboards are a *subset* of it, so
+editing a panel can never silently change what a fleet records.
+
 ### Host — Phase 1
 
 ~280 series on a plain host, from these families:

@@ -8,12 +8,14 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/starkdrift/prickle-exporter/internal/collector"
 	"github.com/starkdrift/prickle-exporter/internal/collector/container"
 	"github.com/starkdrift/prickle-exporter/internal/collector/gpu"
 	"github.com/starkdrift/prickle-exporter/internal/collector/host"
+	"github.com/starkdrift/prickle-exporter/internal/exposition"
 	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
 
@@ -34,11 +36,13 @@ const DefaultMaxSeries = 100_000
 // config is the flag set shared by `prickle` and `prickle diagnose`, so the
 // diagnostic reports on exactly the configuration the exporter would run with.
 type config struct {
-	listenAddress string
-	telemetryPath string
-	interval      time.Duration
-	timeout       time.Duration
-	maxSeries     int
+	listenAddress  string
+	telemetryPath  string
+	interval       time.Duration
+	timeout        time.Duration
+	maxSeries      int
+	metricsPreset  string
+	metricsInclude string
 
 	node string
 
@@ -81,6 +85,18 @@ func (c *config) register(fs *flag.FlagSet) {
 			"prickle_collector_series_dropped_total. A backstop against a "+
 			"runaway cardinality source taking the process down, not a tuning "+
 			"knob: the default is far above any real host. 0 disables it.")
+
+	fs.StringVar(&c.metricsPreset, "metrics.preset", exposition.PresetMinimal,
+		"How much to expose: `minimal` (what the shipped Grafana dashboards "+
+			"query), full (every family the collectors produce), or custom "+
+			"(-metrics.include). A host emits about 156 families and the "+
+			"dashboards use 35, so the default withholds roughly three "+
+			"quarters — full is one flag away. Self-metrics are exposed under "+
+			"every preset.")
+	fs.StringVar(&c.metricsInclude, "metrics.include", "",
+		"Comma-separated regexps of metric families to expose, with "+
+			"-metrics.preset=custom. Anchor them (^…$) unless a substring "+
+			"match is what you want.")
 
 	fs.StringVar(&c.node, "node", "",
 		"Value of the `node` identity label. Empty means the system hostname.")
@@ -229,4 +245,17 @@ func (c *config) logger() *slog.Logger {
 		level = slog.LevelInfo
 	}
 	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
+}
+
+// selector builds the metric selection from the flags, failing at startup
+// rather than at the first scrape: a typo in a regexp should stop the process,
+// not quietly withhold everything it was meant to match.
+func (c *config) selector() (*exposition.Selector, error) {
+	var include []string
+	for _, p := range strings.Split(c.metricsInclude, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			include = append(include, p)
+		}
+	}
+	return exposition.NewSelector(c.metricsPreset, include)
 }

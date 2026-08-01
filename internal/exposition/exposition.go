@@ -62,7 +62,21 @@ type Set struct {
 	// uncapped — they are what report the breach, so capping them would be
 	// the one loss that hides all the others.
 	scope *scope
+
+	// selector decides which families are exposed at all (SPEC.md §Metrics
+	// contract). Nil exposes everything, which is what every collector unit
+	// test and `prickle diagnose` want.
+	selector *Selector
+	withheld map[string]struct{}
 }
+
+// Select applies a metric selection to the Set. Families outside it are never
+// created, so a withheld family costs no allocation and no render.
+func (s *Set) Select(sel *Selector) { s.selector = sel }
+
+// Withheld reports how many distinct families the selection suppressed, for
+// `prickle diagnose` to answer "where did my metric go".
+func (s *Set) Withheld() int { return len(s.withheld) }
 
 // scope is one collector's series budget for one pass.
 //
@@ -138,6 +152,17 @@ func (s *Set) Counter(name, help string) *Family { return s.family(name, help, C
 // how two collectors contribute samples to one family; a mismatched type or
 // help text between those calls is a bug and is recorded as an error.
 func (s *Set) family(name, help string, kind Kind) *Family {
+	// Checked before the cache and before validation: a family the selection
+	// excludes is not created, not validated and not rendered. Returning nil
+	// is the same contract a rejected name already has — Family.Add on nil is
+	// a no-op — so no collector needs to know selection exists.
+	if s.selector != nil && !s.selector.exposes(name) {
+		if s.withheld == nil {
+			s.withheld = make(map[string]struct{})
+		}
+		s.withheld[name] = struct{}{}
+		return nil
+	}
 	if f, ok := s.families[name]; ok {
 		if f.kind != kind {
 			s.errf("metric %q declared as both %s and %s", name, f.kind, kind)
