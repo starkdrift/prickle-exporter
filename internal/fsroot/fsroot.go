@@ -18,6 +18,11 @@ const (
 	DefaultProc   = "/proc"
 	DefaultSys    = "/sys"
 	DefaultCgroup = "/sys/fs/cgroup"
+
+	// DefaultPodLogs is where the kubelet — not the container runtime — creates
+	// one directory per pod, named <namespace>_<pod>_<uid>. It is the only
+	// place on a node that carries a pod's name without asking the API.
+	DefaultPodLogs = "/var/log/pods"
 )
 
 // Roots holds the three prefixes every collector reads through.
@@ -29,14 +34,19 @@ type Roots struct {
 	Proc   string
 	Sys    string
 	Cgroup string
+
+	// PodLogs is read only when -collector.container.pod-names is on. It is
+	// root-only on every node, which is why that flag defaults to off.
+	PodLogs string
 }
 
 // Default returns the prefixes for a live host.
 func Default() Roots {
 	return Roots{
-		Proc:   DefaultProc,
-		Sys:    DefaultSys,
-		Cgroup: DefaultCgroup,
+		Proc:    DefaultProc,
+		Sys:     DefaultSys,
+		Cgroup:  DefaultCgroup,
+		PodLogs: DefaultPodLogs,
 	}
 }
 
@@ -46,9 +56,10 @@ func Default() Roots {
 // unpacked capture.
 func At(dir string) Roots {
 	return Roots{
-		Proc:   filepath.Join(dir, "proc"),
-		Sys:    filepath.Join(dir, "sys"),
-		Cgroup: filepath.Join(dir, "sys", "fs", "cgroup"),
+		Proc:    filepath.Join(dir, "proc"),
+		Sys:     filepath.Join(dir, "sys"),
+		Cgroup:  filepath.Join(dir, "sys", "fs", "cgroup"),
+		PodLogs: filepath.Join(dir, "var", "log", "pods"),
 	}
 }
 
@@ -65,6 +76,11 @@ func (r Roots) SysPath(elem ...string) string {
 // CgroupPath joins elem onto the cgroup v2 prefix.
 func (r Roots) CgroupPath(elem ...string) string {
 	return join(r.Cgroup, DefaultCgroup, elem)
+}
+
+// PodLogsPath joins elem onto the kubelet pod-log prefix.
+func (r Roots) PodLogsPath(elem ...string) string {
+	return join(r.PodLogs, DefaultPodLogs, elem)
 }
 
 // join falls back to the live-host prefix when the field is empty, so a

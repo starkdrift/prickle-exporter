@@ -62,6 +62,9 @@ spec:
             {{- if .Values.collectors.perProcess }}
             - -collector.gpu.per-process=true
             {{- end }}
+            {{- if .Values.collectors.podNames.enabled }}
+            - -collector.container.pod-names=true
+            {{- end }}
             {{- with .Values.collectors.dockerSocket }}
             - -collector.container.docker-socket={{ . }}
             {{- end }}
@@ -89,6 +92,11 @@ spec:
             privileged: false
             capabilities:
               drop: ["ALL"]
+              {{- if .Values.collectors.podNames.enabled }}
+              # The one grant that buys pod names. Bypasses file-read checks
+              # host-wide; see values.yaml before enabling.
+              add: ["DAC_READ_SEARCH"]
+              {{- end }}
             seccompProfile:
               type: RuntimeDefault
           {{- with .Values.resources }}
@@ -107,6 +115,9 @@ spec:
           volumeMounts:
             - {name: proc, mountPath: /host/proc, readOnly: true}
             - {name: sys, mountPath: /host/sys, readOnly: true}
+            {{- if .Values.collectors.podNames.enabled }}
+            - {name: pod-logs, mountPath: /host/var/log/pods, readOnly: true}
+            {{- end }}
             {{- with .Values.collectors.dockerSocket }}
             - {name: docker-socket, mountPath: {{ . }}, readOnly: true}
             {{- end }}
@@ -122,6 +133,9 @@ spec:
       volumes:
         - {name: proc, hostPath: {path: /proc}}
         - {name: sys, hostPath: {path: /sys}}
+        {{- if .Values.collectors.podNames.enabled }}
+        - {name: pod-logs, hostPath: {path: {{ .Values.collectors.podNames.hostPath }}}}
+        {{- end }}
         {{- with .Values.collectors.dockerSocket }}
         - {name: docker-socket, hostPath: {path: {{ . }}, type: Socket}}
         {{- end }}

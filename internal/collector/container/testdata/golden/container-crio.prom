@@ -51,11 +51,11 @@ prickle_container_cpu_weight{node="fixture",container="9680e9389f5577ef74dd250f1
 prickle_container_cpu_weight{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e"} 10
 # HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
 # TYPE prickle_container_info gauge
-prickle_container_info{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",runtime="crio",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",runtime="crio",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",runtime="crio",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",runtime="crio",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",runtime="crio",qos="guaranteed",name="",image=""} 1
+prickle_container_info{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",pod_name="",runtime="crio",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="0e87aafaab9b7e0af102446cd91bcef5ba8fa3a628d5a5b6eae9a52e54c23081",pod="59ae0a77-5850-4cf4-9cd3-43df8caecf38",pod_name="",runtime="crio",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="3ab096a1f9f7c9a3230c3c13f70a8045097fd52f467ea225531c1c3f36d98983",pod="1e387c5f-7402-44de-b881-2fc0f8aeccf2",pod_name="",runtime="crio",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="9680e9389f5577ef74dd250f132bad2ba7bf1fe74f6e08314859791a93bae0f6",pod="b6bff30e-94bc-467d-970e-df0c75ba36e2",pod_name="",runtime="crio",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="8c7f575ec1eb12cd479885966e05d9b5775af25cd22ef2b52c2f19fc39102b32",pod="54af9685-6b23-4dc9-aaf3-85520df7a05e",pod_name="",runtime="crio",qos="guaranteed",name="",image=""} 1
 # HELP prickle_container_io_discarded_bytes_total Bytes discarded.
 # TYPE prickle_container_io_discarded_bytes_total counter
 prickle_container_io_discarded_bytes_total{node="fixture",container="bff56b990bc4aad719af8e4b74a31a483f9bd1d94c880ead49180ac4f581ce70",pod="5850d42c-3d49-401f-bf56-4a399bd2f1d6",device="253:0"} 0

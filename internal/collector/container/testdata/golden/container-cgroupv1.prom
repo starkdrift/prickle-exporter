@@ -37,9 +37,9 @@ prickle_container_cpu_weight{node="fixture",container="1b29d0fa910adb694a36d95c9
 prickle_container_cpu_weight{node="fixture",container="65e90cd097e14c43b8457fd5ef442b451e01e8f1a55b4ba1786e1759b2811445"} 100
 # HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
 # TYPE prickle_container_info gauge
-prickle_container_info{node="fixture",container="118a4f0b17290689be61e988d9789e4ec7bf40e7054a581882dbab33c33b794e",pod="",runtime="docker",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="1b29d0fa910adb694a36d95c990bf90814e1f9217c7fe8bb7b09318d56e6f175",pod="",runtime="docker",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="65e90cd097e14c43b8457fd5ef442b451e01e8f1a55b4ba1786e1759b2811445",pod="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="118a4f0b17290689be61e988d9789e4ec7bf40e7054a581882dbab33c33b794e",pod="",pod_name="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="1b29d0fa910adb694a36d95c990bf90814e1f9217c7fe8bb7b09318d56e6f175",pod="",pod_name="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="65e90cd097e14c43b8457fd5ef442b451e01e8f1a55b4ba1786e1759b2811445",pod="",pod_name="",runtime="docker",qos="",name="",image=""} 1
 # HELP prickle_container_io_discarded_bytes_total Bytes discarded.
 # TYPE prickle_container_io_discarded_bytes_total counter
 prickle_container_io_discarded_bytes_total{node="fixture",container="1b29d0fa910adb694a36d95c990bf90814e1f9217c7fe8bb7b09318d56e6f175",device="vda"} 0

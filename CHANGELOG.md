@@ -13,6 +13,40 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Added
+
+- **`-collector.container.pod-names` resolves a pod's UID to its namespace and
+  name**, off by default. The cgroup tree carries a pod's UID and never its
+  name, which is why `namespace` has been in the closed identity set since
+  Phase 1 and never populated. The kubelet does carry it:
+  `/var/log/pods/<namespace>_<pod>_<uid>/` exists on every CRI runtime, so one
+  directory listing supplies both. No API call, no second exporter, and nothing
+  inside those directories is read — the names are entirely in the directory
+  names, so workload log content stays out of reach.
+
+  **It is off by default because of what it costs.** `/var/log/pods` is
+  `root:root 0750`, as are the two alternatives. `CAP_DAC_READ_SEARCH` is
+  enough and full root is not needed — but that capability bypasses file-read
+  checks host-wide, and in the same test that proved it reads `/var/log/pods` it
+  also read `/etc/shadow`. For a process whose only power is reading files, that
+  is close to the whole of root. The shipped units and chart stay unprivileged;
+  enabling this is a deliberate trade, and both document the drop-in that makes
+  it.
+
+  Enabling it adds `pod_name` to `prickle_container_info` and `namespace` to
+  container hot series. **`pod` still carries the UID** — it is the key every
+  existing rule joins on, and repurposing a label silently breaks them.
+
+- `prickle_container_info` now always carries a **`pod_name`** label key, empty
+  unless the above is enabled. Adding a label key to an existing series is a
+  **major** under SPEC.md §Versioning; pre-1.0 a minor may do it. No value or
+  series changed — the golden diffs are the label key and nothing else.
+
+### Changed
+
+- Container dashboard legends prefer the pod **name** where it is available and
+  fall back to the truncated UID where it is not.
+
 ## [0.6.0] — 2026-08-01
 
 **Read this before upgrading: the default output is smaller.**

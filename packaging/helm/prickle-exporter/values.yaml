@@ -34,6 +34,16 @@ collectors:
   # never a PID. Needs hostPID to see other processes' /proc entries, which is
   # why it is off by default: it widens the pod's view of the node.
   perProcess: false
+  # Resolve a pod's UID to its namespace and name by listing the kubelet's
+  # /var/log/pods. That path is root:root 0750, so enabling this adds
+  # CAP_DAC_READ_SEARCH and mounts the directory read-only. The capability
+  # bypasses file-read permission checks host-wide, which for a read-only
+  # exporter is close to the whole of root — off unless the names are worth it.
+  # Without it every container is still reported, identified by pod UID.
+  podNames:
+    enabled: false
+    hostPath: /var/log/pods
+
   # Optional enrichment for human-readable container names and images. Mounting
   # the Docker socket into a pod is a real grant; off unless asked for.
   dockerSocket: ""

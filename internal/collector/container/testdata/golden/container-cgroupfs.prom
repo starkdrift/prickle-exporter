@@ -115,20 +115,20 @@ prickle_container_cpu_weight{node="fixture",container="73e31d20d28ecf87d75aef5b8
 prickle_container_cpu_weight{node="fixture",container="f5dfa7e5dad8cfa7cbbed8bcdd119a515280116506c7620a013808240fc3ffcc",pod="b3e47cc2-5076-4270-b881-6a55451c2f64"} 1
 # HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
 # TYPE prickle_container_info gauge
-prickle_container_info{node="fixture",container="1f062795c5693816d7afcbf7525afcc336a0a7372867bfd7eaec9bb479c11ab1",pod="1168c1cf-27d9-4a96-8ba5-4a58d4acb6e8",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="9a579b3e67c7551444db54bfb469ed4094ac0c7fff8dc3c89c7da8bbedafaa98",pod="1168c1cf-27d9-4a96-8ba5-4a58d4acb6e8",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="57411985ca9c30d8150c4d4ea440d7854a213ab2570b3d8176a25d706bc8c1da",pod="b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="79ca2e0a10a702fb495f97c35aae8dcdf49289d21641df523124152280d72c57",pod="b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="957b7c2757e23656d821aa31ab9e20062e518b068e6f67d999763c25f67be89b",pod="b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="2a438352ac7bc8486fce6465ebb7239449261f6884d76b7a9cd07a50e21528f6",pod="e7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="900424adababae61c825dee276f652958d2bbd8b633ca1eb44c6b9420fe8ad1f",pod="e7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd",runtime="",qos="besteffort",name="",image=""} 1
-prickle_container_info{node="fixture",container="4190ceab7f80e2559077ab24de7d6bcfaed7611246c5734c824b260a391e004f",pod="4d521664-aa00-4570-9841-ce67a3756762",runtime="",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="daccfa18c8ccb897de5e9e221ef5e37f2536823df758b3855542ba5e7d1212e0",pod="4d521664-aa00-4570-9841-ce67a3756762",runtime="",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="f3f17c4ce77e7d678725fa3ad405e5ba1a0b575298f415c8c0ced2c59c76c008",pod="4d521664-aa00-4570-9841-ce67a3756762",runtime="",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="4417ac6db5848a6eef409e080a4e4f3e236cb9c9fc8b63f2fe59dc81cd7842bd",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",runtime="",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="5497469a7156323d89fea818fc24f59acb00f9b3c9cdc43a27357b86fcc05be2",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",runtime="",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="73e31d20d28ecf87d75aef5b8051f368bb2d2d20a539fd3b029cf64c9544c868",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",runtime="",qos="burstable",name="",image=""} 1
-prickle_container_info{node="fixture",container="f5dfa7e5dad8cfa7cbbed8bcdd119a515280116506c7620a013808240fc3ffcc",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="1f062795c5693816d7afcbf7525afcc336a0a7372867bfd7eaec9bb479c11ab1",pod="1168c1cf-27d9-4a96-8ba5-4a58d4acb6e8",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="9a579b3e67c7551444db54bfb469ed4094ac0c7fff8dc3c89c7da8bbedafaa98",pod="1168c1cf-27d9-4a96-8ba5-4a58d4acb6e8",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="57411985ca9c30d8150c4d4ea440d7854a213ab2570b3d8176a25d706bc8c1da",pod="b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="79ca2e0a10a702fb495f97c35aae8dcdf49289d21641df523124152280d72c57",pod="b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="957b7c2757e23656d821aa31ab9e20062e518b068e6f67d999763c25f67be89b",pod="b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="2a438352ac7bc8486fce6465ebb7239449261f6884d76b7a9cd07a50e21528f6",pod="e7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="900424adababae61c825dee276f652958d2bbd8b633ca1eb44c6b9420fe8ad1f",pod="e7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd",pod_name="",runtime="",qos="besteffort",name="",image=""} 1
+prickle_container_info{node="fixture",container="4190ceab7f80e2559077ab24de7d6bcfaed7611246c5734c824b260a391e004f",pod="4d521664-aa00-4570-9841-ce67a3756762",pod_name="",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="daccfa18c8ccb897de5e9e221ef5e37f2536823df758b3855542ba5e7d1212e0",pod="4d521664-aa00-4570-9841-ce67a3756762",pod_name="",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="f3f17c4ce77e7d678725fa3ad405e5ba1a0b575298f415c8c0ced2c59c76c008",pod="4d521664-aa00-4570-9841-ce67a3756762",pod_name="",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="4417ac6db5848a6eef409e080a4e4f3e236cb9c9fc8b63f2fe59dc81cd7842bd",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",pod_name="",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="5497469a7156323d89fea818fc24f59acb00f9b3c9cdc43a27357b86fcc05be2",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",pod_name="",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="73e31d20d28ecf87d75aef5b8051f368bb2d2d20a539fd3b029cf64c9544c868",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",pod_name="",runtime="",qos="burstable",name="",image=""} 1
+prickle_container_info{node="fixture",container="f5dfa7e5dad8cfa7cbbed8bcdd119a515280116506c7620a013808240fc3ffcc",pod="b3e47cc2-5076-4270-b881-6a55451c2f64",pod_name="",runtime="",qos="burstable",name="",image=""} 1
 # HELP prickle_container_io_discarded_bytes_total Bytes discarded.
 # TYPE prickle_container_io_discarded_bytes_total counter
 prickle_container_io_discarded_bytes_total{node="fixture",container="1f062795c5693816d7afcbf7525afcc336a0a7372867bfd7eaec9bb479c11ab1",pod="1168c1cf-27d9-4a96-8ba5-4a58d4acb6e8",device="254:0"} 0

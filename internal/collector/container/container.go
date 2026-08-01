@@ -60,6 +60,11 @@ type Options struct {
 
 	// DockerTimeout bounds that request. Zero means DefaultDockerTimeout.
 	DockerTimeout time.Duration
+
+	// PodNames reads the kubelet's pod log directory to resolve a pod's UID to
+	// its namespace and name (SPEC.md §Collectors). Off by default: that path
+	// is root-only, so it costs the exporter's unprivileged posture.
+	PodNames bool
 }
 
 // Collector walks the cgroup v2 tree and reports per-container resource usage.
@@ -121,6 +126,10 @@ func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
 	if err != nil {
 		errs = append(errs, err)
 	}
+	pods, err := c.podNames()
+	if err != nil {
+		errs = append(errs, err)
+	}
 
 	sources := live.sources(devices)
 
@@ -130,8 +139,9 @@ func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
 			break
 		}
 
-		labels := cg.labels()
-		c.collectInfo(out, cg, names[cg.id])
+		meta := pods[cg.pod]
+		labels := cg.labels(meta.namespace)
+		c.collectInfo(out, cg, names[cg.id], meta)
 
 		for _, collect := range sources {
 			if err := collect(out, cg, labels); err != nil {
@@ -148,15 +158,22 @@ func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
 // hot series, joined in queries with group_left. The runtime and QoS class come
 // from the cgroup directory names; the name and image only exist when Docker
 // enrichment is configured and the container is a Docker one.
-func (c *Collector) collectInfo(out *exposition.Set, cg cgroup, meta dockerMeta) {
+//
+// pod_name and namespace are empty unless -collector.container.pod-names is on
+// and the kubelet's log directory was readable. `pod` continues to carry the
+// UID either way: it is the join key every existing rule was written against,
+// and changing what a label means is the one thing SPEC.md §Versioning calls a
+// major even when the new meaning is better.
+func (c *Collector) collectInfo(out *exposition.Set, cg cgroup, dm dockerMeta, pm podMeta) {
 	out.Gauge(prefix+"info",
 		"Container identity: constant 1, carrying the descriptive attributes to join on.").
 		Add(1,
 			exposition.L("container", cg.id),
 			exposition.L("pod", cg.pod),
+			exposition.L("pod_name", pm.name),
 			exposition.L("runtime", cg.runtime),
 			exposition.L("qos", cg.qos),
-			exposition.L("name", meta.name),
-			exposition.L("image", meta.image),
+			exposition.L("name", dm.name),
+			exposition.L("image", dm.image),
 		)
 }

@@ -37,9 +37,9 @@ prickle_container_cpu_weight{node="fixture",container="db66742d610a3fa3649a4db30
 prickle_container_cpu_weight{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 100
 # HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
 # TYPE prickle_container_info gauge
-prickle_container_info{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",pod="",runtime="docker",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",pod="",runtime="docker",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",pod="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",pod="",pod_name="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",pod="",pod_name="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",pod="",pod_name="",runtime="docker",qos="",name="",image=""} 1
 # HELP prickle_container_memory_anon_bytes Anonymous memory: heap and stack, not backed by a file, reclaimable only to swap.
 # TYPE prickle_container_memory_anon_bytes gauge
 prickle_container_memory_anon_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 143360

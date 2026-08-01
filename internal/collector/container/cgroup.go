@@ -51,22 +51,32 @@ func (c cgroup) ctrlPath(file string, controllers ...string) string {
 
 // labels returns the identity labels for this container's hot series.
 //
-// SPEC.md §Metrics contract fixes the closed set; `container` and `pod` are the
-// two members a cgroup walk can fill. `namespace` is not derivable from the
-// cgroup tree — the kernel only ever sees the pod's UID, never its name or
-// namespace — so it is left off rather than filled with a guess.
+// SPEC.md §Metrics contract fixes the closed set. `container` and `pod` are the
+// two members a cgroup walk can fill on its own: the kernel only ever sees the
+// pod's UID, never its name or namespace. `namespace` is passed in, resolved
+// from the kubelet's pod log directory when
+// -collector.container.pod-names is on, and omitted entirely when it is not —
+// an empty label key on every series would be worse than no label at all.
 //
 // A fresh slice per call: the io collector appends a device label to it, and
 // appending into a shared backing array would rewrite another container's
 // labels.
-func (c cgroup) labels() []exposition.Label {
+func (c cgroup) labels(namespace string) []exposition.Label {
 	if c.pod == "" {
 		return []exposition.Label{exposition.L("container", c.id)}
 	}
-	return []exposition.Label{
+	out := []exposition.Label{
 		exposition.L("container", c.id),
 		exposition.L("pod", c.pod),
 	}
+	// Only when it is actually known. Adding an always-empty label key to
+	// every container series would be a contract change that bought nothing,
+	// and SPEC.md §Versioning counts adding a key to an existing series as a
+	// major precisely because it breaks aggregations written without `by`.
+	if namespace != "" {
+		out = append(out, exposition.L("namespace", namespace))
+	}
+	return out
 }
 
 // scopePrefixes maps the directory-name prefix each runtime writes to the

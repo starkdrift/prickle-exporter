@@ -90,5 +90,23 @@ SystemCallFilter=~@privileged @resources @obsolete @mount @reboot @swap
 # enrichment; AF_NETLINK is what the Go runtime uses to enumerate interfaces.
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 
+# --- Pod names (optional) ---------------------------------------------------
+# -collector.container.pod-names reads /var/log/pods, which is root:root 0750
+# on every node. To enable it, add a drop-in rather than editing this file:
+#
+#   systemctl edit prickle
+#   [Service]
+#   ExecStart=
+#   ExecStart=/usr/local/bin/prickle -collector.container.pod-names
+#   AmbientCapabilities=CAP_DAC_READ_SEARCH
+#   CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+#
+# Understand what that grants before you do. CAP_DAC_READ_SEARCH bypasses file
+# read and directory search permission checks everywhere — it was verified to
+# read /etc/shadow in the same test that verified it reads /var/log/pods. For a
+# process whose only power is reading files, it is close to the whole of root.
+# Without it the exporter still reports every container; pods are identified by
+# UID rather than by name.
+
 [Install]
 WantedBy=multi-user.target

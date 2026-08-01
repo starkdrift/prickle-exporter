@@ -107,6 +107,11 @@ def pod_qualified(expr):
     join produces a leading separator that the outer label_replace strips.
     """
     inner = (f'label_replace({expr}, "cshort", "$1", "container", "^(.{{1,12}}).*$")')
+    # pod_name first: with -collector.container.pod-names it is a name somebody
+    # chose, and the UID truncated to 8 is only a fallback. label_replace leaves
+    # the destination untouched when the source is empty, so the second call
+    # only fills in what the first did not.
+    inner = (f'label_replace({inner}, "pshort", "$1", "pod_name", "^(.+)$")')
     inner = (f'label_replace({inner}, "pshort", "$1", "pod", "^(.{{1,8}}).*$")')
     joined = f'label_join({inner}, "display", "/", "pshort", "cshort")'
     return f'label_replace({joined}, "display", "$1", "display", "^/(.+)$")'
@@ -339,13 +344,13 @@ def container_resources():
 
         row("CPU", 5),
         ts("CPU usage",
-           [(pod_qualified(f"sum by (pod, container) (rate(prickle_container_cpu_usage_seconds_total{c}[5m]))"),
+           [(pod_qualified(f"sum by (pod, pod_name, container) (rate(prickle_container_cpu_usage_seconds_total{c}[5m]))"),
              "{{display}}")],
            {"h": 8, "w": 12, "x": 0, "y": 6}, unit="percentunit", stack=True),
         ts("Throttling",
-           [(pod_qualified(f"sum by (pod, container) (rate(prickle_container_cpu_throttled_seconds_total{c}[5m]))"),
+           [(pod_qualified(f"sum by (pod, pod_name, container) (rate(prickle_container_cpu_throttled_seconds_total{c}[5m]))"),
              "{{display}} stalled"),
-            (pod_qualified(f"sum by (pod, container) (rate(prickle_container_cpu_throttled_periods_total{c}[5m]))"),
+            (pod_qualified(f"sum by (pod, pod_name, container) (rate(prickle_container_cpu_throttled_periods_total{c}[5m]))"),
              "{{display}} periods")],
            {"h": 8, "w": 12, "x": 12, "y": 6},
            desc="Throttled seconds is time the kernel withheld, not a ratio. A "
@@ -354,18 +359,18 @@ def container_resources():
 
         row("Memory and I/O", 14),
         ts("Memory usage against limit",
-           [(pod_qualified(f"sum by (pod, container) (prickle_container_memory_usage_bytes{c})"),
+           [(pod_qualified(f"sum by (pod, pod_name, container) (prickle_container_memory_usage_bytes{c})"),
              "{{display}}"),
-            (pod_qualified(f"sum by (pod, container) (prickle_container_memory_limit_bytes{c})"),
+            (pod_qualified(f"sum by (pod, pod_name, container) (prickle_container_memory_limit_bytes{c})"),
              "{{display}} limit")],
            {"h": 8, "w": 12, "x": 0, "y": 15}, unit="bytes",
            desc="The limit series is ABSENT for an unlimited container rather "
                 "than a sentinel, on either cgroup hierarchy — so a missing "
                 "limit line means unlimited, not unknown."),
         ts("Block I/O",
-           [(pod_qualified(f"sum by (pod, container, device) (rate(prickle_container_io_read_bytes_total{c}[5m]))"),
+           [(pod_qualified(f"sum by (pod, pod_name, container, device) (rate(prickle_container_io_read_bytes_total{c}[5m]))"),
              "{{display}} {{device}} r"),
-            (pod_qualified(f"sum by (pod, container, device) (rate(prickle_container_io_written_bytes_total{c}[5m]))"),
+            (pod_qualified(f"sum by (pod, pod_name, container, device) (rate(prickle_container_io_written_bytes_total{c}[5m]))"),
              "{{display}} {{device}} w")],
            {"h": 8, "w": 12, "x": 12, "y": 15}, unit="Bps"),
 
