@@ -32,6 +32,14 @@ what to do about it, which no commit-log generator writes.
 
 ### Added
 
+- **Standalone containerd is now reported.** `cri-containerd-<hex>.scope` is
+  containerd reached through the CRI — the Kubernetes path — and was the only
+  spelling recognised. containerd driven directly writes
+  `nerdctl-<hex>.scope` under `system.slice`, so a plain containerd host
+  reported nothing. Both carry `runtime="containerd"`: they are one runtime
+  reached two ways, and the label names the runtime rather than the client, so
+  a query grouping by it need not know which tool started a container.
+
 - **Podman containers are now reported.** `libpod-<hex>.scope` under
   `machine.slice` was in no runtime list, so a host running podman reported
   nothing — and podman is the default container runtime on RHEL and Fedora, so

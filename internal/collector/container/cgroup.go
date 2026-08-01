@@ -81,9 +81,15 @@ func (c cgroup) labels() []exposition.Label {
 // stripping the prefix leaves "conmon-<hex>", and hexID rejects it because
 // `conmon-` is not hex. That is a happy accident of two independent rules, so
 // TestMonitorScopesAreNotContainers pins it rather than trusting it to hold.
+//
+// cri-containerd- and nerdctl- deliberately map to the same runtime name. They
+// are one runtime reached two ways — through the CRI on a Kubernetes node, and
+// through nerdctl on a plain host — and the label names the runtime, not the
+// client that started the container.
 var scopePrefixes = []struct{ prefix, runtime string }{
 	{"docker-", "docker"},
 	{"cri-containerd-", "containerd"},
+	{"nerdctl-", "containerd"},
 	{"crio-", "crio"},
 	{"libpod-", "podman"},
 }
