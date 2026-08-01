@@ -193,6 +193,20 @@ does not load, and it was run on the same H100 the Default-mode tree was
 captured from — driver 580.173.02, in **both** Default and MIG mode, on
 2026-07-29, with the MIG state created for the run and torn down afterwards.
 
+**Re-run on a third card and a new OS, 2026-08-01.** An H100 80GB on **Ubuntu
+26.04, kernel 7.0.0**, driver 580.173.02, acting as a Kubernetes worker.
+`TestSourcesAgreeOnHardware`, `TestNVMLSourceSurvivesAnEarlierClose` and
+`TestNVMLReadsNoReservedMemory` all pass, and the full suite passes under
+`-race` on both builds — the first time any of this has run on a 7.x kernel or
+on 26.04. The two sources' output differed in exactly one series,
+`prickle_gpu_nvidia_source_info{source=…}`, which is the one that is supposed
+to differ.
+
+That run is also the first time the **GPU and container collectors have
+sampled the same host in one pass**: 452 host series, 157 container series from
+five CRI-O containers, and 8 GPU series through NVML. Nothing in the fixtures
+can express that, because each fixture tree is one collector's world.
+
 It is not a substitute for these fixtures. They pin the parse of a captured
 format; it pins the agreement of two live implementations, which is the one
 thing a fixture cannot express. It found three disagreements on its first run:

@@ -89,6 +89,24 @@ what to do about it, which no commit-log generator writes.
   kernel wrote. No behaviour changed; this is the evidence that the existing
   behaviour is right.
 
+### Notes
+
+- **Verified on a third card class and a new platform.** An H100 80GB on
+  **Ubuntu 26.04, kernel 7.0.0**, driver 580.173.02, running as a Kubernetes
+  worker. Both artifacts build, the full suite passes under `-race`, and the
+  three NVML hardware assertions pass — including the two regression tests for
+  the reserved-memory and closed-handle defects found on the earlier cards. The
+  two NVIDIA sources differed in exactly one series,
+  `prickle_gpu_nvidia_source_info{source=…}`, which exists to differ. This is
+  the first run on a 7.x kernel.
+- **The GPU and container collectors have now sampled one host in one pass** —
+  452 host series, 157 container series across five CRI-O containers, and 8 GPU
+  series through NVML. Every fixture tree is a single collector's world, so no
+  fixture could have shown this; it needed a GPU node that was also running
+  containers.
+- **Multi-GPU is still unverified.** Every card reached so far has been a single
+  GPU per host.
+
 ### Fixed
 
 - **`prickle diagnose` told hosts that have a GPU they have no GPU.** When
