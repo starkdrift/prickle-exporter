@@ -70,6 +70,19 @@ var podSlicePattern = regexp.MustCompile(`^kubepods-(?:(besteffort|burstable)-)?
 // Long enough that a stray directory called "docker-shim.scope" cannot pass.
 var hexID = regexp.MustCompile(`^[0-9a-f]{12,}$`)
 
+// podDirPattern matches a pod directory under the **cgroupfs** cgroup driver,
+// where the kubelet writes plain directories instead of systemd slices:
+//
+//	kubepods/burstable/pod4d521664-aa00-4570-9841-ce67a3756762
+//	kubepods/besteffort/pode7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd
+//	kubepods/pod<uid>                                       (guaranteed)
+//
+// No `.slice` suffix and no systemd escaping — the UID is spelled the way
+// Kubernetes spells it. The character class matches podSlicePattern's so the
+// two drivers accept the same UIDs; an underscore cannot actually occur here,
+// but rejecting one would be a difference without a reason.
+var podDirPattern = regexp.MustCompile(`^pod([0-9a-fA-F_-]+)$`)
+
 // discover walks the cgroup v2 tree and returns every container leaf, in the
 // walk's lexical order so the rendered document is byte-stable.
 //
@@ -123,7 +136,22 @@ func (c *Collector) discover(ctx context.Context) ([]cgroup, error) {
 // The container ID comes from this directory's own name and the pod identity
 // from its parent's, which is the whole of what the cgroup tree knows: the
 // kernel stores no container name, no image, and no pod name or namespace.
+//
+// Two layouts, because the kubelet's cgroup driver decides the shape of the
+// whole tree and both are ordinary. See identifyScope and identifyPodChild.
 func identify(path, name string) (cgroup, bool) {
+	if cg, ok := identifyScope(path, name); ok {
+		return cg, true
+	}
+	return identifyPodChild(path, name)
+}
+
+// identifyScope reads the systemd-driver layout, where the directory name
+// carries the runtime and the container ID together:
+//
+//	kubepods.slice/kubepods-burstable-pod<uid>.slice/cri-containerd-<hex>.scope
+//	system.slice/docker-<hex>.scope
+func identifyScope(path, name string) (cgroup, bool) {
 	scope, ok := strings.CutSuffix(name, ".scope")
 	if !ok {
 		return cgroup{}, false
@@ -138,6 +166,61 @@ func identify(path, name string) (cgroup, bool) {
 		return cg, true
 	}
 	return cgroup{}, false
+}
+
+// identifyPodChild reads the **cgroupfs**-driver layout, where the container
+// directory is a bare ID under a pod directory:
+//
+//	kubepods/burstable/pod<uid>/<hex>
+//	kubepods/pod<uid>/<hex>        (guaranteed)
+//
+// This is what a managed Kubernetes cluster gives you by default, not an
+// exotic configuration — testdata/doks-cgroupfs-20260801 is a capture of one.
+// Until it was handled, such a node reported zero containers while running
+// nine, because the .scope test above rejected every directory in the tree.
+//
+// A bare hex name is not on its own enough to call something a container: the
+// parent must be a pod directory. That is what keeps this from matching some
+// unrelated hex-named cgroup elsewhere in the tree.
+//
+// The runtime is left empty, deliberately. These names do not encode it — that
+// is a property of the layout, not an oversight — so this tree cannot say
+// whether containerd or CRI-O is underneath. An empty attribute on the _info
+// gauge says "not known from here", which is true; naming a runtime would be a
+// guess, and the collector already declines the same way over `namespace`.
+func identifyPodChild(path, name string) (cgroup, bool) {
+	if !hexID.MatchString(name) {
+		return cgroup{}, false
+	}
+	parentPath := filepath.Dir(path)
+	m := podDirPattern.FindStringSubmatch(filepath.Base(parentPath))
+	if m == nil {
+		return cgroup{}, false
+	}
+	return cgroup{
+		dir: path,
+		id:  name,
+		pod: strings.ReplaceAll(m[1], "_", "-"),
+		qos: qosFromDir(filepath.Base(filepath.Dir(parentPath))),
+	}, true
+}
+
+// qosFromDir reads the QoS class from the level above a cgroupfs pod
+// directory. Guaranteed pods have no QoS level of their own and sit directly
+// under kubepods, exactly as they sit directly under kubepods.slice in the
+// systemd layout.
+//
+// An unrecognised parent yields an empty class rather than a wrong one: the
+// pod directory may have been reparented by a kubelet setting this does not
+// model, and "" reads as unknown where "guaranteed" would read as a fact.
+func qosFromDir(name string) string {
+	switch name {
+	case "burstable", "besteffort":
+		return name
+	case "kubepods":
+		return "guaranteed"
+	}
+	return ""
 }
 
 // podIdentity reads a pod UID and QoS class out of the parent slice's name.

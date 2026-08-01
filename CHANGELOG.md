@@ -13,6 +13,30 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+### Added
+
+- **Containers on a cgroupfs-driver node are now reported.** The kubelet's
+  cgroup driver decides the shape of the whole tree, and only the systemd shape
+  was read: `identify` tested for a `.scope` suffix before anything else, so on
+  a node using the **cgroupfs** driver — `kubepods/<qos>/pod<uid>/<hex>`, no
+  suffix, no runtime prefix, QoS as its own directory level, the UID unescaped
+  — it rejected every directory and the collector reported nothing at all.
+  **This is the default on a managed Kubernetes cluster**, not an exotic
+  setting, so the blast radius was "an entire class of node reports zero
+  containers", not "an edge case". A **minor**, not a patch: no existing series
+  changes, but hosts that reported nothing now emit the full
+  `prickle_container_*` namespace, and a Prometheus scraping one will see its
+  series count rise.
+- The `runtime` attribute on `prickle_container_info` is **empty** for
+  containers found this way. Those directory names do not encode the runtime —
+  a property of the layout, not a parse failure — so the tree cannot say
+  whether containerd or CRI-O is underneath. An empty attribute says "not known
+  from here"; naming one would be a guess, and the collector already declines
+  the same way over `namespace`. If you `group_left` on `runtime`, expect the
+  empty string rather than a missing series. `prickle diagnose` now says so
+  explicitly instead of printing `docker 0, containerd 0, crio 0` under a
+  non-zero total, which read as three failed identifications.
+
 ### Fixed
 
 - **`prickle diagnose` told hosts that have a GPU they have no GPU.** When

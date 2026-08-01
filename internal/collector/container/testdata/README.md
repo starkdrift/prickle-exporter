@@ -63,11 +63,12 @@ is either unit-tested on the name parse alone, or not implemented at all.
 | `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
 | A container with a CPU quota (`cpu.max` = `<quota> <period>`) | Covered by hand-written trees in `cpu_test.go` — `TestCPULimitFromQuota` and `TestCPUThrottlingCounters` — because no capture can supply it here: every cgroup on the captured host reads `max 100000`, so `nr_periods` and `nr_throttled` are zero throughout the golden file. The arithmetic is what those tests pin; a real capture would add nothing they do not already assert. |
 | cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Not implemented.** `capture-fixtures.sh` looks for it, but the captured host used the systemd driver, so nothing confirms the shape. Docker on a cgroupfs-driver host reports no containers until a capture exists. |
-| Non-systemd kubelet — `kubepods/besteffort/pod<uid>/<hex>` | **Not implemented — but no longer unconfirmed.** `doks-cgroupfs-20260801/` is a capture of exactly this shape; see below. |
+| Non-systemd kubelet — `kubepods/<qos>/pod<uid>/<hex>` | **Implemented and captured.** `doks-cgroupfs-20260801/` is that host, with its own golden file; see below. The runtime is not recoverable from it — that is a gap in the layout, not in the parser. |
+| Guaranteed pods under the cgroupfs driver — `kubepods/pod<uid>/<hex>` | Directory-name parse only, in `TestIdentify`. Neither cluster ran a Guaranteed pod, in either layout. |
 
 Closing cgroupfs-driver Docker needs a capture from a host configured that way;
-the first four need a CRI-O host, a Guaranteed pod, and a container with a CPU
-limit, which `capture-fixtures.sh prep` could arrange on a disposable rental.
+the rest need a CRI-O host, a Guaranteed pod, and a container with a CPU limit,
+which `capture-fixtures.sh prep` could arrange on a disposable rental.
 
 ## The cgroupfs-driver tree: `doks-cgroupfs-20260801/`
 
@@ -85,11 +86,16 @@ The difference is total, not cosmetic:
 | UID spelling | systemd-escaped, `_` for `-` | the UID as Kubernetes writes it |
 | QoS | in the slice name | a directory level of its own |
 
-`identify` in [cgroup.go](../cgroup.go) requires the `.scope` suffix before it
-looks at anything else, so on this tree it rejects every directory and the
-collector reports **zero containers on a node running nine**. Confirmed by
-pointing `prickle diagnose -path.rootfs` at this fixture: "no containers
-found", 0 series.
+`identify` in [cgroup.go](../cgroup.go) used to require the `.scope` suffix
+before looking at anything else, so on this tree it rejected every directory
+and the collector reported **zero containers where fourteen cgroups exist**.
+`identifyPodChild` now reads this shape: fourteen containers across five pods,
+353 series, pinned by `container-cgroupfs.prom`.
+
+A bare hex name is not by itself enough to call a directory a container — its
+parent has to be a pod directory. That is what stops the new branch matching
+some unrelated hex-named cgroup, and it is why the systemd tree still parses
+exactly as before.
 
 The five pods captured, so the tree can be read against what was running:
 

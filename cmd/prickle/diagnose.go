@@ -155,6 +155,16 @@ func describeContainers(w io.Writer, cfg config) error {
 	fmt.Fprintf(w, "  containers found: %d (docker %d, containerd %d, crio %d)\n",
 		total, runtimes["docker"], runtimes["containerd"], runtimes["crio"])
 
+	// Under the cgroupfs cgroup driver the directory names carry no runtime, so
+	// every count above is zero while containers are plainly being found.
+	// Without this line that reads as three failed identifications rather than
+	// one attribute the layout does not publish.
+	if unknown := total - runtimes["docker"] - runtimes["containerd"] - runtimes["crio"]; unknown > 0 {
+		fmt.Fprintf(w, "  %d of those sit in a cgroupfs-driver tree, whose directory names do\n", unknown)
+		fmt.Fprintln(w, "  not name a runtime; they carry an empty `runtime` on")
+		fmt.Fprintln(w, "  prickle_container_info. Not an error — the tree has nothing to read.")
+	}
+
 	if cfg.dockerSocket == "" {
 		fmt.Fprintln(w, "  Docker enrichment: off. Names and images are absent from")
 		fmt.Fprintln(w, "  prickle_container_info; -collector.container.docker-socket turns it on.")

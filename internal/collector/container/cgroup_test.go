@@ -45,6 +45,35 @@ func TestIdentify(t *testing.T) {
 		path: "/kubepods.slice/kubepods-pod6eb5044d_ef2e_49d1_a9cc_28f4e3fe88a3.slice/crio-" + id + ".scope",
 		want: cgroup{id: id, runtime: "crio", pod: "6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3", qos: "guaranteed"},
 	}, {
+		// The cgroupfs driver. No .scope suffix, no runtime prefix, QoS as its
+		// own directory level, and the UID unescaped. Covered end to end by
+		// testdata/doks-cgroupfs-20260801; these pin the name parse alone.
+		name: "cgroupfs burstable pod",
+		path: "/kubepods/burstable/pod4d521664-aa00-4570-9841-ce67a3756762/" + id,
+		want: cgroup{id: id, pod: "4d521664-aa00-4570-9841-ce67a3756762", qos: "burstable"},
+	}, {
+		name: "cgroupfs besteffort pod",
+		path: "/kubepods/besteffort/pode7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd/" + id,
+		want: cgroup{id: id, pod: "e7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd", qos: "besteffort"},
+	}, {
+		// Guaranteed has no QoS level under either driver. Uncaptured in both
+		// layouts — the clusters ran none — so this is parse-only, exactly as
+		// the systemd Guaranteed case above is.
+		name: "cgroupfs guaranteed pod",
+		path: "/kubepods/pod6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3/" + id,
+		want: cgroup{id: id, pod: "6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3", qos: "guaranteed"},
+	}, {
+		name:    "the cgroupfs pod directory itself is not a container",
+		path:    "/kubepods/burstable/pod4d521664-aa00-4570-9841-ce67a3756762",
+		wantNot: true,
+	}, {
+		// A bare hex directory is only a container because of where it sits.
+		// Without the pod parent this would match any hex-named cgroup a
+		// process happened to create.
+		name:    "a bare hex directory outside a pod",
+		path:    "/system.slice/" + id,
+		wantNot: true,
+	}, {
 		name:    "the pod slice itself is not a container",
 		path:    "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod6eb5044d_ef2e_49d1_a9cc_28f4e3fe88a3.slice",
 		wantNot: true,
