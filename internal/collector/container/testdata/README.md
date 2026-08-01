@@ -63,11 +63,60 @@ is either unit-tested on the name parse alone, or not implemented at all.
 | `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
 | A container with a CPU quota (`cpu.max` = `<quota> <period>`) | Covered by hand-written trees in `cpu_test.go` — `TestCPULimitFromQuota` and `TestCPUThrottlingCounters` — because no capture can supply it here: every cgroup on the captured host reads `max 100000`, so `nr_periods` and `nr_throttled` are zero throughout the golden file. The arithmetic is what those tests pin; a real capture would add nothing they do not already assert. |
 | cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Not implemented.** `capture-fixtures.sh` looks for it, but the captured host used the systemd driver, so nothing confirms the shape. Docker on a cgroupfs-driver host reports no containers until a capture exists. |
-| Non-systemd kubelet — `kubepods/besteffort/pod<uid>/<hex>` | **Not implemented**, same reason. |
+| Non-systemd kubelet — `kubepods/besteffort/pod<uid>/<hex>` | **Not implemented — but no longer unconfirmed.** `doks-cgroupfs-20260801/` is a capture of exactly this shape; see below. |
 
-Closing the last two needs a capture from a host configured that way; the first
-four need a CRI-O host, a Guaranteed pod, and a container with a CPU limit,
-which `capture-fixtures.sh prep` could arrange on a disposable rental.
+Closing cgroupfs-driver Docker needs a capture from a host configured that way;
+the first four need a CRI-O host, a Guaranteed pod, and a container with a CPU
+limit, which `capture-fixtures.sh prep` could arrange on a disposable rental.
+
+## The cgroupfs-driver tree: `doks-cgroupfs-20260801/`
+
+A second capture, from a DigitalOcean managed Kubernetes node — Debian 13,
+kernel 6.12.96, containerd 2.2.3, Kubernetes 1.36.3 — taken on 2026-08-01. It
+is the shape the table above calls "non-systemd kubelet", and it is what a
+managed cluster gives you by default rather than an exotic configuration.
+
+The difference is total, not cosmetic:
+
+| | systemd driver (`h200-ubuntu2204-20260726`) | cgroupfs driver (this tree) |
+|---|---|---|
+| Pod directory | `kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod4d52_1664_….slice` | `kubepods/burstable/pod4d521664-aa00-4570-9841-ce67a3756762` |
+| Container directory | `cri-containerd-<hex>.scope` | `<hex>` — bare, no prefix and **no `.scope` suffix** |
+| UID spelling | systemd-escaped, `_` for `-` | the UID as Kubernetes writes it |
+| QoS | in the slice name | a directory level of its own |
+
+`identify` in [cgroup.go](../cgroup.go) requires the `.scope` suffix before it
+looks at anything else, so on this tree it rejects every directory and the
+collector reports **zero containers on a node running nine**. Confirmed by
+pointing `prickle diagnose -path.rootfs` at this fixture: "no containers
+found", 0 series.
+
+The five pods captured, so the tree can be read against what was running:
+
+| Pod UID | Pod | QoS |
+|---|---|---|
+| `4d521664-aa00-4570-9841-ce67a3756762` | `kube-system/cilium-fc58t` | Burstable |
+| `b3e47cc2-5076-4270-b881-6a55451c2f64` | `kube-system/do-node-agent-nvidia-dcgm-exporter-s5j92` | Burstable |
+| `b023f31c-7dbb-42b5-919e-4fd7cb3ed9cc` | `kube-system/csi-do-node-h86ft` | BestEffort |
+| `e7aa4094-2f07-4a8a-b4b1-fb1f38d6c2dd` | `kube-system/doks-telemetry-config-reloader-gjwsv` | BestEffort |
+| `1168c1cf-27d9-4a96-8ba5-4a58d4acb6e8` | `kube-system/k8s-nvidia-device-plugin-5kddt` | BestEffort |
+
+Still no Guaranteed pod: the cluster ran none, in either QoS layout. Under this
+driver a Guaranteed pod sits at `kubepods/pod<uid>/` with no QoS level at all,
+which is a third shape and remains uncaptured.
+
+**The runtime is not in these names.** The systemd layout spells it —
+`cri-containerd-`, `docker-`, `crio-` — and this one does not, so a parser
+reading this tree can know a container is there and not what runs it. That is a
+gap in the source, not in the parser, and the honest reporting is an empty
+`runtime` on `prickle_container_info` rather than an inference from the node's
+`containerRuntime` field, which the cgroup walk cannot see and which SPEC.md
+§Metrics contract would not let onto a hot series anyway.
+
+The capture came through an already-running pod — the node's `cilium-agent`
+bind-mounts the host cgroup2 root at `/run/cilium/cgroupv2` — so nothing was
+scheduled and no image was pulled to obtain it. The same thirteen per-cgroup
+files as the systemd tree, and `cgroup.procs` excluded for the same reason.
 
 ## Not copied
 
