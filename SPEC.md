@@ -37,8 +37,25 @@ this file. Never abbreviate the metric prefix.
 3. **Configurable filesystem roots.** All access to `/proc`, `/sys`, and
    `/sys/fs/cgroup` goes through `internal/fsroot` prefixes so tests can point
    at fixture trees. No collector may hardcode an absolute path.
-4. **cgroup v2 only.** v1/hybrid hosts are out of scope; `prickle diagnose`
-   detects v1 and says so plainly.
+4. **cgroup v2 is the primary hierarchy; v1 and hybrid are supported.**
+   Reversed on 2026-08-01, after `prickle diagnose` was run on a real v1 host
+   (Rocky Linux 8.10, kernel 4.18) and correctly reported that it would produce
+   nothing. Correctly, and uselessly: RHEL 8 defaults to v1 and is supported
+   into 2029, so "out of scope" meant an ordinary enterprise host got an empty
+   scrape. The detection was working as designed; the design was the problem.
+
+   v1 is a different data model, not a spelling variant — one hierarchy per
+   controller (`/sys/fs/cgroup/memory/…`, `/sys/fs/cgroup/cpu,cpuacct/…`),
+   different file names, and different units. It therefore gets its own reader
+   behind the same interface, never a set of `if v1` branches in the v2 path.
+
+   **The metrics contract does not fork.** A container reports the same metric
+   names with the same units and the same label set on either hierarchy; the
+   hierarchy decides where a value is read from, never what it is called.
+   Where v1 genuinely cannot answer — it has no PSI, so there is no
+   `prickle_container_pressure_stalled_seconds_total` — the family is **absent**
+   rather than zero, for the same reason `utilization_ratio` vanishes under MIG.
+   `prickle diagnose` states which hierarchy is live and what it costs.
 
 ## Metrics contract
 
