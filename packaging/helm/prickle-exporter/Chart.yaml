@@ -4,7 +4,7 @@ name: prickle-exporter
 description: Host, container and GPU metrics for Prometheus. One binary, no dependencies, strictly read-only.
 type: application
 version: 0.1.0
-appVersion: "0.4.0"
+appVersion: "0.5.0"
 home: https://github.com/starkdrift/prickle-exporter
 sources:
   - https://github.com/starkdrift/prickle-exporter

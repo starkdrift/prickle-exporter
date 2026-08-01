@@ -13,6 +13,47 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-01
+
+Phase 5: distribution. Also the release where the container collector stopped
+being blind to whole runtimes and to an entire cgroup hierarchy.
+
+**Upgrading.** No metric was renamed and no label key was added to an existing
+series, so every recording rule and dashboard built on 0.4.x still holds. But
+several classes of host that reported *nothing* now report containers — a
+cgroup v1 host, a hybrid host, a podman host, a standalone containerd host. If
+you scrape one, expect its series count to rise from zero; that is the fix
+arriving, not a leak.
+
+**Not 1.0.** SPEC.md §Versioning used to say 1.0.0 *was* Phase 5, which made
+freezing the metrics contract a consequence of finishing a roadmap row rather
+than a judgement that it was ready. It is not ready: cgroup v1, podman and
+standalone containerd all arrived in this release, and AMD and multi-GPU are
+still unproven. Decoupled, and the line continues at 0.5.x.
+
+### Added
+
+- **Container images**, `ghcr.io/starkdrift/prickle-exporter`, as
+  multi-architecture manifest lists over amd64 and arm64. `X.Y.Z` is the static
+  binary on `scratch` (3.0 MB); `X.Y.Z-nvml` is the NVML build on distroless
+  (10.8 MB). The Helm chart has defaulted to this repository since it was
+  written and nothing published it, so a default `helm install` could only ever
+  have failed. Digest-addressable and mirrorable with `skopeo copy --all` for
+  air-gapped installs, with provenance attested to the manifest-list digest and
+  pushed to the registry so it survives the copy.
+- **A Helm chart**, `packaging/helm/prickle-exporter`: a DaemonSet, a headless
+  Service and an optional ServiceMonitor. No ServiceAccount and no RBAC — the
+  exporter reads the node's filesystem and never the Kubernetes API, so there
+  is nothing a token would be for.
+- **Hardened systemd units** for both binaries. `DynamicUser`,
+  `ProtectSystem=strict`, an empty `CapabilityBoundingSet` and a syscall
+  allow-list; `systemd-analyze security` rates them 1.5 and 1.8.
+- **Four Grafana dashboards** — GPU Tenancy, Node Overview, Container Resources,
+  Fleet Health — with a textbox paired to a dropdown per identity label,
+  contains-search, chained filtering, and `command` rather than any PID.
+- **A compose quickstart** bundling prickle, Prometheus and a pre-provisioned
+  Grafana.
+
 ### Notes
 
 - **Swept across every DigitalOcean base image** on 2026-08-01 — fourteen of
@@ -543,7 +584,8 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.1.1...v0.2.0
