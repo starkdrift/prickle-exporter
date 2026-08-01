@@ -13,6 +13,19 @@ what to do about it, which no commit-log generator writes.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-08-01
+
+**Read this before upgrading: the default output is smaller.**
+`-metrics.preset` now defaults to `minimal`, which exposes the families the
+shipped dashboards query and withholds the rest — on a typical host that is 25
+families where 0.5.x served about 118. If you query anything the dashboards do
+not, set `-metrics.preset=full` and nothing changes. `prickle diagnose` reports
+the active preset and the number of families withheld.
+
+SPEC.md §Versioning calls a default that changes output a **major**; pre-1.0 a
+minor is allowed to do it, and this is that. No metric was renamed and no label
+key changed meaning, so what you still receive is byte-identical to before.
+
 ### Changed
 
 - **Container panels are legended `<pod>/<container>`**, truncated to 8 and 12
@@ -643,7 +656,8 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.2.0...v0.3.0
