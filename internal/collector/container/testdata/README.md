@@ -61,8 +61,8 @@ is either unit-tested on the name parse alone, or not implemented at all.
 | `crio-<hex>.scope` (CRI-O) | Directory-name parse only, in `TestIdentify`. No CRI-O host was captured. |
 | Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component | Directory-name parse only, in `TestIdentify`. The rental ran no Guaranteed pod. |
 | `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
-| A container with a CPU quota (`cpu.max` = `<quota> <period>`) | Covered by hand-written trees in `cpu_test.go` — `TestCPULimitFromQuota` and `TestCPUThrottlingCounters` — because no capture can supply it here: every cgroup on the captured host reads `max 100000`, so `nr_periods` and `nr_throttled` are zero throughout the golden file. The arithmetic is what those tests pin; a real capture would add nothing they do not already assert. |
-| cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Not implemented.** `capture-fixtures.sh` looks for it, but the captured host used the systemd driver, so nothing confirms the shape. Docker on a cgroupfs-driver host reports no containers until a capture exists. |
+| A container with a CPU quota (`cpu.max` = `<quota> <period>`) | **Captured**, in `docker-cgroupfs-20260801/`. The hand-written trees in `cpu_test.go` stay — they pin the arithmetic in isolation — but the quota, the throttle counters and the conversion to cores are now also checked against values a kernel actually produced. |
+| cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Implemented and captured**, in `docker-cgroupfs-20260801/`. Unlike the kubepods layout, this one *does* name its runtime: the parent directory is literally `docker`. |
 | Non-systemd kubelet — `kubepods/<qos>/pod<uid>/<hex>` | **Implemented and captured.** `doks-cgroupfs-20260801/` is that host, with its own golden file; see below. The runtime is not recoverable from it — that is a gap in the layout, not in the parser. |
 | Guaranteed pods under the cgroupfs driver — `kubepods/pod<uid>/<hex>` | Directory-name parse only, in `TestIdentify`. Neither cluster ran a Guaranteed pod, in either layout. |
 
@@ -89,7 +89,7 @@ The difference is total, not cosmetic:
 `identify` in [cgroup.go](../cgroup.go) used to require the `.scope` suffix
 before looking at anything else, so on this tree it rejected every directory
 and the collector reported **zero containers where fourteen cgroups exist**.
-`identifyPodChild` now reads this shape: fourteen containers across five pods,
+`identifyBareID` now reads this shape: fourteen containers across five pods,
 353 series, pinned by `container-cgroupfs.prom`.
 
 A bare hex name is not by itself enough to call a directory a container — its
@@ -123,6 +123,33 @@ The capture came through an already-running pod — the node's `cilium-agent`
 bind-mounts the host cgroup2 root at `/run/cilium/cgroupv2` — so nothing was
 scheduled and no image was pulled to obtain it. The same thirteen per-cgroup
 files as the systemd tree, and `cgroup.procs` excluded for the same reason.
+
+## The Docker cgroupfs tree: `docker-cgroupfs-20260801/`
+
+Ubuntu 24.04, Docker 29.1.3 configured with
+`"exec-opts": ["native.cgroupdriver=cgroupfs"]`, captured 2026-08-01. Docker
+then places containers at `/sys/fs/cgroup/docker/<hex>/` rather than
+`system.slice/docker-<hex>.scope`, which is the shape this file listed as
+unconfirmed for two phases.
+
+Three containers, chosen for their `cpu.max` states rather than their
+workloads — that is the part no previous capture could supply:
+
+| Container | `cpu.max` | `memory.max` | What it pins |
+|---|---|---|---|
+| `d38f2cabd19d…` | `25000 100000` | `max` | A quota **being hit**: a busy loop against 0.25 CPU, throttled in 385 of 386 periods, 28.797198 s stalled |
+| `f628cec04bf1…` | `150000 100000` | `67108864` | A quota **never hit**, and a real 64 MiB memory limit |
+| `db66742d610a…` | `max 100000` | `max` | No quota at all — `cpu_limit_cores` must not be emitted, and every counter stays zero |
+
+Until this tree existed, every cgroup in every capture read `max 100000`, so
+`nr_periods` and `nr_throttled` were zero throughout `container.prom` and the
+quota arithmetic was pinned only by hand-written trees. Those tests remain —
+they isolate the arithmetic — but `0.25` and `1.5` cores are now derived from
+numbers a kernel wrote, and the throttled seconds from time a kernel actually
+withheld.
+
+`cgroup.procs` was captured by the script and stripped before committing, for
+the reason in **Not copied** below.
 
 ## Not copied
 

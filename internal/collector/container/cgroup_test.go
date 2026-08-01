@@ -63,6 +63,16 @@ func TestIdentify(t *testing.T) {
 		path: "/kubepods/pod6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3/" + id,
 		want: cgroup{id: id, pod: "6eb5044d-ef2e-49d1-a9cc-28f4e3fe88a3", qos: "guaranteed"},
 	}, {
+		// Docker with native.cgroupdriver=cgroupfs. Unlike the kubepods case
+		// below, the parent directory does name the runtime.
+		name: "cgroupfs docker container",
+		path: "/docker/" + id,
+		want: cgroup{id: id, runtime: "docker"},
+	}, {
+		name:    "a docker directory entry that is not an ID",
+		path:    "/docker/buildkit",
+		wantNot: true,
+	}, {
 		name:    "the cgroupfs pod directory itself is not a container",
 		path:    "/kubepods/burstable/pod4d521664-aa00-4570-9841-ce67a3756762",
 		wantNot: true,

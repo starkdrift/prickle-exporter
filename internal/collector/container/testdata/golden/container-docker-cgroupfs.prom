@@ -1,0 +1,118 @@
+# HELP prickle_container_cpu_limit_cores CPU quota in cores: the cgroup v2 cpu.max quota divided by its period. Absent when unlimited.
+# TYPE prickle_container_cpu_limit_cores gauge
+prickle_container_cpu_limit_cores{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0.25
+prickle_container_cpu_limit_cores{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 1.5
+# HELP prickle_container_cpu_periods_total Bandwidth-enforcement periods elapsed. Zero until a CPU quota is set.
+# TYPE prickle_container_cpu_periods_total counter
+prickle_container_cpu_periods_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 386
+prickle_container_cpu_periods_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_cpu_periods_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 76
+# HELP prickle_container_cpu_seconds_total CPU time consumed, split by mode.
+# TYPE prickle_container_cpu_seconds_total counter
+prickle_container_cpu_seconds_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",mode="user"} 9.612249
+prickle_container_cpu_seconds_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",mode="system"} 0.071603
+prickle_container_cpu_seconds_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",mode="user"} 0.058154
+prickle_container_cpu_seconds_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",mode="system"} 0.11811
+prickle_container_cpu_seconds_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",mode="user"} 0.075227
+prickle_container_cpu_seconds_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",mode="system"} 0.147965
+# HELP prickle_container_cpu_throttled_periods_total Periods in which the container exhausted its CPU quota and was throttled.
+# TYPE prickle_container_cpu_throttled_periods_total counter
+prickle_container_cpu_throttled_periods_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 385
+prickle_container_cpu_throttled_periods_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_cpu_throttled_periods_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_cpu_throttled_seconds_total Seconds the container spent throttled against its CPU quota.
+# TYPE prickle_container_cpu_throttled_seconds_total counter
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 28.797198
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_cpu_throttled_seconds_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_cpu_usage_seconds_total Total CPU time consumed. The sum of the user and system modes below, from the kernel's own accounting.
+# TYPE prickle_container_cpu_usage_seconds_total counter
+prickle_container_cpu_usage_seconds_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 9.683852
+prickle_container_cpu_usage_seconds_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0.176264
+prickle_container_cpu_usage_seconds_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0.223193
+# HELP prickle_container_cpu_weight Relative share of CPU time under contention. The cgroup v2 cpu.weight, 1 to 10000, default 100.
+# TYPE prickle_container_cpu_weight gauge
+prickle_container_cpu_weight{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 100
+prickle_container_cpu_weight{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 100
+prickle_container_cpu_weight{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 100
+# HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
+# TYPE prickle_container_info gauge
+prickle_container_info{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",pod="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",pod="",runtime="docker",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",pod="",runtime="docker",qos="",name="",image=""} 1
+# HELP prickle_container_memory_anon_bytes Anonymous memory: heap and stack, not backed by a file, reclaimable only to swap.
+# TYPE prickle_container_memory_anon_bytes gauge
+prickle_container_memory_anon_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 143360
+prickle_container_memory_anon_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 274432
+prickle_container_memory_anon_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 282624
+# HELP prickle_container_memory_file_bytes Page cache.
+# TYPE prickle_container_memory_file_bytes gauge
+prickle_container_memory_file_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0
+prickle_container_memory_file_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_memory_file_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_memory_inactive_file_bytes Page cache on the inactive LRU list, the first thing reclaimed under pressure. Subtract it from memory_usage_bytes for the working set.
+# TYPE prickle_container_memory_inactive_file_bytes gauge
+prickle_container_memory_inactive_file_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_memory_inactive_file_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_memory_kernel_stack_bytes Kernel stacks of the container's threads.
+# TYPE prickle_container_memory_kernel_stack_bytes gauge
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 16384
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 32768
+prickle_container_memory_kernel_stack_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 32768
+# HELP prickle_container_memory_limit_bytes Hard memory limit: the container is OOM-killed above it. Absent when unlimited.
+# TYPE prickle_container_memory_limit_bytes gauge
+prickle_container_memory_limit_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 67108864
+# HELP prickle_container_memory_major_page_faults_total Page faults that required a disk read. A rising rate here is a container swapping or thrashing its page cache.
+# TYPE prickle_container_memory_major_page_faults_total counter
+prickle_container_memory_major_page_faults_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_memory_major_page_faults_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_memory_page_faults_total Page faults taken by the container, major and minor together.
+# TYPE prickle_container_memory_page_faults_total counter
+prickle_container_memory_page_faults_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 1380
+prickle_container_memory_page_faults_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 4453
+prickle_container_memory_page_faults_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 4228
+# HELP prickle_container_memory_page_tables_bytes Page tables mapping the container's address spaces.
+# TYPE prickle_container_memory_page_tables_bytes gauge
+prickle_container_memory_page_tables_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 49152
+prickle_container_memory_page_tables_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 98304
+prickle_container_memory_page_tables_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 94208
+# HELP prickle_container_memory_shmem_bytes Shared memory and tmpfs, charged to the container that faulted it in.
+# TYPE prickle_container_memory_shmem_bytes gauge
+prickle_container_memory_shmem_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_memory_shmem_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_memory_slab_bytes Kernel data structures allocated on the container's behalf.
+# TYPE prickle_container_memory_slab_bytes gauge
+prickle_container_memory_slab_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 216488
+prickle_container_memory_slab_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 243800
+prickle_container_memory_slab_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 243400
+# HELP prickle_container_memory_socket_bytes Memory held in network socket buffers.
+# TYPE prickle_container_memory_socket_bytes gauge
+prickle_container_memory_socket_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_memory_socket_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_memory_unevictable_bytes Memory that cannot be reclaimed at all, such as mlock'd pages.
+# TYPE prickle_container_memory_unevictable_bytes gauge
+prickle_container_memory_unevictable_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 0
+prickle_container_memory_unevictable_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 0
+# HELP prickle_container_memory_usage_bytes Total memory charged to the container, including page cache.
+# TYPE prickle_container_memory_usage_bytes gauge
+prickle_container_memory_usage_bytes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 450560
+prickle_container_memory_usage_bytes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 692224
+prickle_container_memory_usage_bytes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 786432
+# HELP prickle_container_pressure_stalled_seconds_total Seconds of stall from resource pressure. kind=some: at least one task stalled; kind=full: every task stalled.
+# TYPE prickle_container_pressure_stalled_seconds_total counter
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84",resource="memory",kind="full"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",resource="memory",kind="some"} 0
+prickle_container_pressure_stalled_seconds_total{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a",resource="memory",kind="full"} 0
+# HELP prickle_container_processes Processes and threads currently in the container's cgroup.
+# TYPE prickle_container_processes gauge
+prickle_container_processes{node="fixture",container="d38f2cabd19d5aa5967b2ead1e91fddb33f7b692086cc0f4047cd3a62a1e8aea"} 1
+prickle_container_processes{node="fixture",container="db66742d610a3fa3649a4db308edf46b3a07f971ceb28e6f1b1c7044ac484a84"} 2
+prickle_container_processes{node="fixture",container="f628cec04bf1de88370f528de996af6149f20efc3928d49850550507b8de7a5a"} 2

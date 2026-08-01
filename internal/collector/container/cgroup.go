@@ -143,7 +143,7 @@ func identify(path, name string) (cgroup, bool) {
 	if cg, ok := identifyScope(path, name); ok {
 		return cg, true
 	}
-	return identifyPodChild(path, name)
+	return identifyBareID(path, name)
 }
 
 // identifyScope reads the systemd-driver layout, where the directory name
@@ -168,32 +168,44 @@ func identifyScope(path, name string) (cgroup, bool) {
 	return cgroup{}, false
 }
 
-// identifyPodChild reads the **cgroupfs**-driver layout, where the container
-// directory is a bare ID under a pod directory:
+// dockerCgroupfsDir is where Docker puts containers when it is configured with
+// the cgroupfs driver rather than systemd: /sys/fs/cgroup/docker/<hex>.
+const dockerCgroupfsDir = "docker"
+
+// identifyBareID reads the **cgroupfs**-driver layouts, where the container
+// directory is a bare ID and its parent says what it belongs to:
 //
+//	docker/<hex>                   Docker with native.cgroupdriver=cgroupfs
 //	kubepods/burstable/pod<uid>/<hex>
 //	kubepods/pod<uid>/<hex>        (guaranteed)
 //
-// This is what a managed Kubernetes cluster gives you by default, not an
-// exotic configuration — testdata/doks-cgroupfs-20260801 is a capture of one.
-// Until it was handled, such a node reported zero containers while running
-// nine, because the .scope test above rejected every directory in the tree.
+// Neither is exotic — the Kubernetes one is what a managed cluster gives you by
+// default. Until they were handled, such a host reported zero containers while
+// running many, because the .scope test above rejected every directory.
 //
-// A bare hex name is not on its own enough to call something a container: the
-// parent must be a pod directory. That is what keeps this from matching some
-// unrelated hex-named cgroup elsewhere in the tree.
+// A bare hex name is never enough on its own: the parent has to identify it.
+// That is what keeps this from matching an unrelated hex-named cgroup that some
+// process happened to create elsewhere in the tree.
 //
-// The runtime is left empty, deliberately. These names do not encode it — that
-// is a property of the layout, not an oversight — so this tree cannot say
-// whether containerd or CRI-O is underneath. An empty attribute on the _info
-// gauge says "not known from here", which is true; naming a runtime would be a
-// guess, and the collector already declines the same way over `namespace`.
-func identifyPodChild(path, name string) (cgroup, bool) {
+// The two differ in one respect worth keeping straight. Docker's parent
+// directory names the runtime, so that case reports `docker`. The Kubernetes
+// one does not — no part of `kubepods/burstable/pod<uid>/<hex>` says whether
+// containerd or CRI-O is underneath — so it reports an empty runtime. That is a
+// property of the layout, not a parse failure: an empty attribute on the _info
+// gauge says "not known from here", where naming one would be a guess. The
+// collector already declines the same way over `namespace`.
+func identifyBareID(path, name string) (cgroup, bool) {
 	if !hexID.MatchString(name) {
 		return cgroup{}, false
 	}
 	parentPath := filepath.Dir(path)
-	m := podDirPattern.FindStringSubmatch(filepath.Base(parentPath))
+	parent := filepath.Base(parentPath)
+
+	if parent == dockerCgroupfsDir {
+		return cgroup{dir: path, id: name, runtime: "docker"}, true
+	}
+
+	m := podDirPattern.FindStringSubmatch(parent)
 	if m == nil {
 		return cgroup{}, false
 	}

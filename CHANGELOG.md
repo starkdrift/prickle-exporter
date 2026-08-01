@@ -27,6 +27,12 @@ what to do about it, which no commit-log generator writes.
   changes, but hosts that reported nothing now emit the full
   `prickle_container_*` namespace, and a Prometheus scraping one will see its
   series count rise.
+- **Containers on a cgroupfs-driver Docker host are now reported**, from
+  `/sys/fs/cgroup/docker/<hex>/`. Same defect, same cause, different runtime:
+  the directory has no `.scope` suffix, so nothing matched it. `runtime` is
+  `docker` here — unlike the Kubernetes layout, the parent directory names it.
+  Also a **minor**, and for the same reason: a host that reported nothing now
+  reports its containers.
 - The `runtime` attribute on `prickle_container_info` is **empty** for
   containers found this way. Those directory names do not encode the runtime —
   a property of the layout, not a parse failure — so the tree cannot say
@@ -36,6 +42,16 @@ what to do about it, which no commit-log generator writes.
   empty string rather than a missing series. `prickle diagnose` now says so
   explicitly instead of printing `docker 0, containerd 0, crio 0` under a
   non-zero total, which read as three failed identifications.
+
+- **A CPU quota that is actually being hit**, captured rather than hand-built.
+  Every cgroup in every previous capture read `cpu.max` = `max 100000`, so
+  `prickle_container_cpu_throttled_periods_total` was zero throughout the
+  golden file and the quota arithmetic was pinned only by trees written by
+  hand. `docker-cgroupfs-20260801` holds a container throttled in 385 of 386
+  periods for 28.797198 s, one with a quota it never reaches, and one with no
+  quota at all — so `0.25` and `1.5` cores are now derived from numbers a
+  kernel wrote. No behaviour changed; this is the evidence that the existing
+  behaviour is right.
 
 ### Fixed
 

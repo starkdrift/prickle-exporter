@@ -17,7 +17,7 @@ import (
 //
 // Every directory name in it differs from the systemd tree — no `.scope`
 // suffix, no runtime prefix, QoS as its own level, the UID unescaped — so
-// before identifyPodChild existed the walk returned nothing at all here. The
+// before identifyBareID existed the walk returned nothing at all here. The
 // numbers below are what the capture holds; see testdata/README.md for which
 // pod is which.
 const cgroupfsDir = "testdata/doks-cgroupfs-20260801"
@@ -162,5 +162,97 @@ func TestCgroupfsSystemdTreeStillParses(t *testing.T) {
 		if cg.runtime == "" {
 			t.Errorf("systemd container %s lost its runtime", cg.id)
 		}
+	}
+}
+
+// dockerCgroupfsDirFixture is a Docker host configured with
+// native.cgroupdriver=cgroupfs, so its containers sit at
+// /sys/fs/cgroup/docker/<hex> instead of system.slice/docker-<hex>.scope.
+//
+// Three containers, chosen for their cpu.max states rather than their
+// workloads, because that is what no previous capture could supply: every
+// cgroup on the systemd host read `max 100000`, so nr_throttled was zero
+// throughout the first golden file and the throttling arithmetic was pinned
+// only by hand-written trees.
+const dockerCgroupfsFixture = "testdata/docker-cgroupfs-20260801"
+
+const dockerCgroupfsContainers = 3
+
+func TestDockerCgroupfsDiscovery(t *testing.T) {
+	found, err := New(Options{Roots: fsroot.At(dockerCgroupfsFixture)}).discover(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != dockerCgroupfsContainers {
+		t.Fatalf("discovered %d containers, want %d", len(found), dockerCgroupfsContainers)
+	}
+	for _, cg := range found {
+		// Docker's cgroupfs parent directory names the runtime, unlike the
+		// kubepods one. Getting this wrong would be invisible in the counts.
+		if cg.runtime != "docker" {
+			t.Errorf("container %s reports runtime %q, want docker", cg.id, cg.runtime)
+		}
+		if cg.pod != "" || cg.qos != "" {
+			t.Errorf("container %s has pod=%q qos=%q; a plain Docker host has neither",
+				cg.id, cg.pod, cg.qos)
+		}
+	}
+}
+
+// TestDockerCgroupfsThrottlingIsNonZero is the assertion the older capture
+// could not make. One container ran a busy loop against a 0.25-CPU quota, so
+// the kernel throttled it in nearly every period; the counters below come from
+// that, not from arithmetic this package performed.
+func TestDockerCgroupfsThrottlingIsNonZero(t *testing.T) {
+	set := newFixtureSet()
+	if err := New(Options{Roots: fsroot.At(dockerCgroupfsFixture)}).Collect(context.Background(), set); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	rendered := set.String()
+
+	var throttled, limited int
+	for _, line := range strings.Split(rendered, "\n") {
+		if strings.HasPrefix(line, "prickle_container_cpu_throttled_periods_total{") &&
+			!strings.HasSuffix(line, " 0") {
+			throttled++
+		}
+		if strings.HasPrefix(line, "prickle_container_cpu_limit_cores{") {
+			limited++
+		}
+	}
+	if throttled == 0 {
+		t.Error("no container reports non-zero throttled periods; the capture was meant to contain one")
+	}
+	// Two of the three carry a quota: 0.25 and 1.5 cores. The third is `max`
+	// and must not produce a limit series at all.
+	if limited != 2 {
+		t.Errorf("prickle_container_cpu_limit_cores samples = %d, want 2", limited)
+	}
+}
+
+func TestDockerCgroupfsGolden(t *testing.T) {
+	set := newFixtureSet()
+	if err := New(Options{Roots: fsroot.At(dockerCgroupfsFixture)}).Collect(context.Background(), set); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if err := set.Err(); err != nil {
+		t.Fatalf("exposition problems: %v", err)
+	}
+	got := set.String()
+	path := filepath.Join("testdata", "golden", "container-docker-cgroupfs.prom")
+
+	if *updateGolden {
+		if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("wrote %s", path)
+		return
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("%v (regenerate with -update-golden)", err)
+	}
+	if got != string(want) {
+		t.Errorf("output differs from golden; first difference:\n%s", firstDiff(string(want), got))
 	}
 }
