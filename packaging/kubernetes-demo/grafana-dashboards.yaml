@@ -1970,8 +1970,8 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "prickle_gpu_utilization_ratio{node=~\"$node\",gpu_uuid=~\"$gpu\"} * 100",
-              "legendFormat": "{{gpu_uuid}}",
+              "expr": "label_join((prickle_gpu_utilization_ratio{node=~\"$node\",gpu_uuid=~\"$gpu\"} * 100) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+              "legendFormat": "{{gpu}}",
               "refId": "A"
             }
           ],
@@ -2023,8 +2023,8 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "prickle_gpu_memory_used_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"}",
-              "legendFormat": "{{gpu_uuid}}",
+              "expr": "label_join((prickle_gpu_memory_used_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"}) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+              "legendFormat": "{{gpu}}",
               "refId": "A"
             },
             {
@@ -2032,8 +2032,8 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "prickle_gpu_memory_total_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"}",
-              "legendFormat": "{{gpu_uuid}} total",
+              "expr": "label_join((prickle_gpu_memory_total_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"}) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+              "legendFormat": "{{gpu}} total",
               "refId": "B"
             }
           ],
@@ -2212,8 +2212,8 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "sum by (command, gpu_uuid) (prickle_gpu_process_memory_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"})",
-              "legendFormat": "{{command}} @ {{gpu_uuid}}",
+              "expr": "label_join((sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"})) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+              "legendFormat": "{{gpu}} / {{command}}",
               "refId": "A"
             }
           ],

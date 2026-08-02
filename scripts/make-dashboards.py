@@ -232,6 +232,24 @@ def dashboard(uid, title, description, panels):
 # --------------------------------------------------------------------------
 # 1. GPU Tenancy — which tenant is on which accelerator.
 # --------------------------------------------------------------------------
+def gpu_qualified(expr):
+    """Label a GPU series `<node>/<index>/<gpu_uuid>`.
+
+    A UUID alone does not say which machine or which slot a card is in, which
+    is the first thing anyone asks when a card misbehaves. `index` is the
+    driver's enumeration order on that node — what `nvidia-smi -L` prints — and
+    it lives on prickle_gpu_info, not on the hot series, so it has to be joined
+    in exactly as pod_name is for containers.
+
+    The right-hand side is aggregated for the same reason it is there: during a
+    DaemonSet rollout two exporters report the same card, and an unaggregated
+    one-to-many join fails the whole panel with "found duplicate series for the
+    match group".
+    """
+    joined = (f'({expr}) * on (gpu_uuid) group_left(index) '
+              f'max by (gpu_uuid, index) (prickle_gpu_info)')
+    return f'label_join({joined}, "gpu", "/", "node", "index", "gpu_uuid")'
+
 def gpu_tenancy():
     g = selector(["node", "gpu_uuid"])
     mig = selector(["node", "gpu_uuid", "mig_uuid"])
@@ -257,14 +275,14 @@ def gpu_tenancy():
 
         row("Utilization", 5),
         ts("GPU utilization",
-           [(f"prickle_gpu_utilization_ratio{g} * 100", "{{gpu_uuid}}")],
+           [(gpu_qualified(f"prickle_gpu_utilization_ratio{g} * 100"), "{{gpu}}")],
            {"h": 8, "w": 12, "x": 0, "y": 6}, unit="percent",
            desc="ABSENT, not zero, once MIG is enabled — the driver reports "
                 "[N/A] and reporting zero would fire idle-capacity alerts "
                 "across a MIG fleet. A gap here on a MIG card is correct."),
         ts("Memory used per card",
-           [(f"prickle_gpu_memory_used_bytes{g}", "{{gpu_uuid}}"),
-            (f"prickle_gpu_memory_total_bytes{g}", "{{gpu_uuid}} total")],
+           [(gpu_qualified(f"prickle_gpu_memory_used_bytes{g}"), "{{gpu}}"),
+            (gpu_qualified(f"prickle_gpu_memory_total_bytes{g}"), "{{gpu}} total")],
            {"h": 8, "w": 12, "x": 12, "y": 6}, unit="bytes"),
 
         row("MIG partitions", 14),
@@ -282,8 +300,8 @@ def gpu_tenancy():
 
         row("Per-process (opt-in)", 23),
         ts("GPU memory by command",
-           [(f"sum by (command, gpu_uuid) (prickle_gpu_process_memory_bytes{g})",
-             "{{command}} @ {{gpu_uuid}}")],
+           [(gpu_qualified(f"sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{g})"),
+             "{{gpu}} / {{command}}")],
            {"h": 8, "w": 24, "x": 0, "y": 24}, unit="bytes", stack=True,
            desc="Requires -collector.gpu.per-process. Keyed on `command`, the "
                 "basename of the exe symlink — never a PID, which SPEC.md "

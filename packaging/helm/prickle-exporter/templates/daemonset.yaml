@@ -105,10 +105,24 @@ spec:
             privileged: false
             capabilities:
               drop: ["ALL"]
-              {{- if .Values.collectors.podNames.enabled }}
-              # The one grant that buys pod names. Bypasses file-read checks
-              # host-wide; see values.yaml before enabling.
-              add: ["DAC_READ_SEARCH"]
+              {{- if or .Values.collectors.podNames.enabled .Values.collectors.perProcess }}
+              add:
+                {{- if .Values.collectors.podNames.enabled }}
+                # The one grant that buys pod names. Bypasses file-read checks
+                # host-wide; see values.yaml before enabling.
+                - DAC_READ_SEARCH
+                {{- end }}
+                {{- if .Values.collectors.perProcess }}
+                # Per-process GPU attribution reads /proc/<pid>/exe to name a
+                # process. That is a PTRACE_MODE_READ operation, so under Yama
+                # ptrace_scope=1 — the default on Ubuntu and Debian — a process
+                # may only inspect its own descendants without this. The GPU
+                # workload is never the exporter's descendant, so without
+                # SYS_PTRACE every process resolves to an empty command and is
+                # dropped: prickle_gpu_process_memory_bytes simply never
+                # appears, with nothing logged. Verified on an H100.
+                - SYS_PTRACE
+                {{- end }}
               {{- end }}
             seccompProfile:
               type: RuntimeDefault
