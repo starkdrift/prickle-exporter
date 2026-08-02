@@ -78,6 +78,32 @@ for golden in internal/collector/*/testdata/golden/*.prom; do
   promtool check metrics < "$golden" || fail "promtool rejected $golden"
 done
 
+step "documentation links resolve"
+# Added after splitting the README into docs/: eleven links broke silently
+# because they were written repo-relative and the files moved a directory down,
+# and every other gate stayed green. A dead link in the front door is the first
+# thing a new reader hits.
+if command -v python3 >/dev/null 2>&1; then
+  python3 - <<'PYCHECK' || fail "a documentation link does not resolve"
+import pathlib, re, sys
+bad = []
+for f in pathlib.Path(".").rglob("*.md"):
+    if any(part in (".git", "node_modules") for part in f.parts):
+        continue
+    for text, target in re.findall(r"\[([^\]]+)\]\(([^)#\s]+)(?:#[^)]*)?\)", f.read_text()):
+        if target.startswith(("http", "mailto", "#")):
+            continue
+        if not (f.parent / target).exists():
+            bad.append(f"  {f}: [{text}]({target})")
+if bad:
+    print("\n".join(bad), file=sys.stderr)
+    sys.exit(1)
+PYCHECK
+  printf '  ok  every relative link in every .md resolves\n'
+else
+  printf '  \033[1;33mSKIP\033[0m python3 not found; links unchecked\n'
+fi
+
 step "grafana dashboards are in sync (SPEC.md §Distribution)"
 # The JSON is generated and checked in: Grafana loads JSON and a quickstart
 # should not need a build step, but four dashboards sharing eleven template
