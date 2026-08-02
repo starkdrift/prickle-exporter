@@ -11,6 +11,76 @@ roadmap phase; `1.0.0` is where the metrics contract freezes.
 This file is written by hand. A metric change needs prose telling an operator
 what to do about it, which no commit-log generator writes.
 
+## [Unreleased]
+
+Nothing here changes a metric, a label or a flag. It is tooling, tests and
+documentation — recorded because two of the fixes are to things that told
+contributors something false.
+
+### Fixed
+
+- **`capture-fixtures.sh` captured no Kubernetes cgroups at all on a
+  cgroupfs-driver node.** Three places hardcoded
+  `/sys/fs/cgroup/kubepods.slice`, which is the systemd driver's spelling; the
+  cgroupfs driver writes `/sys/fs/cgroup/kubepods`. The script then reported
+  `no kubepods.slice pods — Phase 2 kubernetes fixtures will be EMPTY`, which
+  reads as "you forgot to start something" on a host that was running nine
+  pods. 53 files captured where the fixed script takes 869. It now resolves
+  either layout and prints which one it found.
+
+- **`cgroup.procs` is no longer captured.** It is the only file in a cgroup
+  that contains PIDs, SPEC.md §Metrics contract forbids a PID appearing
+  anywhere, and the collector never reads it. Keeping it out of commits was a
+  manual step in a checklist — a SPEC violation one forgotten edit away from
+  the repository, in exchange for a file nothing reads. `ci/check.sh` now fails
+  if one appears under any `testdata/` tree.
+
+- **The contributor docs claimed shipped features were missing.**
+  `scripts/README.md` said cgroupfs-driver Docker and the
+  `kubepods/<qos>/pod<uid>/<hex>` layout were "unimplemented today, so those
+  hosts report no containers at all", and that CRI-O was parse-tested only. All
+  three shipped in 0.5.x with captured fixtures. `testdata/README.md`
+  contradicted its own table three lines below it.
+
+- **The README's Helm example set `nvml.enabled=true` in its headline
+  command**, which cannot work on a node without an NVIDIA driver — the driver
+  library and device nodes are `hostPath` mounts, so such a node leaves the pod
+  in `ContainerCreating` indefinitely rather than `CrashLoopBackOff`. GPU
+  metrics now get their own section with a `nodeSelector`, and the
+  `--set-string` that command needs, since plain `--set` types the value as a
+  boolean and the API rejects the DaemonSet.
+
+### Added
+
+- **A capture of the cgroupfs Guaranteed layout**,
+  `kubeadm-cgroupfs-20260802/`. Under that driver a Guaranteed pod's cgroup is
+  `kubepods/pod<uid>/<hex>` — one level shallower than Burstable's, with no QoS
+  component — so the class is implied by an absent directory level. It had only
+  ever been checked against a directory name, because Guaranteed requires
+  `requests == limits` for cpu *and* memory on every container in a pod and
+  nothing arrives there by accident. The container coverage-gap table now has
+  no open rows.
+
+- `cpu.pressure` and `io.pressure` to the capture script — read by the
+  collector, previously covered only by a hand-written tree.
+
+- **Tests for `cmd/prickle`**, which was at 3.5% coverage against 77–97%
+  everywhere else despite holding flag parsing, `diagnose` and startup wiring.
+  Now 69.4%. The notable one walks `packaging/` and `docs/` and asserts every
+  flag they name is one the binary defines: those artifacts pass flags to a
+  binary none of them can typecheck against.
+
+- **Three `ci/check.sh` gates**, each verified by planting a failure: every
+  fixture directory must be named in its README, the version must be stated
+  consistently across the README and chart, and no `cgroup.procs` may exist in
+  the tree.
+
+### Changed
+
+- The README has a nested Contents, Status moved down beside License, and the
+  two Kubernetes installs — one that runs on every node, one node-selected for
+  GPUs — are now distinguishable from the Contents alone.
+
 ## [0.7.0] — 2026-08-02
 
 **If you deploy with the Helm chart, this is the release that makes

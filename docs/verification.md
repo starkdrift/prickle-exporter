@@ -128,7 +128,8 @@ usefully — what it does not:
 
 - [Container fixtures](../internal/collector/container/testdata/README.md) —
   both cgroup hierarchies, both cgroup drivers, four runtimes, a Guaranteed
-  pod, a CPU quota actually being hit, and the gaps that remain.
+  pod in each driver's layout, and a CPU quota actually being hit. As of
+  2026-08-02 its coverage-gap table has no open rows.
 - [GPU fixtures](../internal/collector/gpu/testdata/README.md) — four NVIDIA
   captures across two card classes, the hardware verification log, and the
   three defects that only running on hardware could find.
