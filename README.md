@@ -24,7 +24,8 @@
 
 - [What it is](#what-it-is)
 - [Quick start](#quick-start)
-- [Deploying](#deploying) — [systemd](#standalone-with-systemd) · [Kubernetes](#kubernetes-with-helm) · [container](#container-directly)
+- [Deploying](#deploying) — [systemd](#standalone-with-systemd) · [container](#container-directly)
+  - Kubernetes, in two installs — [any node](#kubernetes-any-node): host and container metrics, starts on every node · [GPU nodes](#kubernetes-gpu-nodes): adds NVIDIA metrics, node-selected
 - [Try it: Prometheus and Grafana](#try-it-prometheus-and-grafana) — [Docker Compose](#with-docker-compose) · [Kubernetes](#on-kubernetes)
 - [Pod names, and what they cost](#pod-names-and-what-they-cost)
 - [Configuration](#configuration)
@@ -128,7 +129,7 @@ Use `packaging/systemd/prickle-nvml.service` on NVIDIA hosts. **Do not skip the
 invisible to systemd, which then reports `Unit prickle.service not found` for a
 file that is plainly there.
 
-### Kubernetes, with Helm
+### Kubernetes, any node
 
 ```sh
 helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace \
@@ -153,7 +154,7 @@ Drop either one and the install is still valid — plain `helm install prickle
 packaging/helm/prickle-exporter -n monitoring --create-namespace` gives you
 every host and container metric, unprivileged, with pods identified by UID.
 
-#### GPU nodes need a second install
+### Kubernetes, GPU nodes
 
 The static image carries **no GPU support at all** — it is `FROM scratch` with
 one binary, so its `nvidia-smi` fallback has nothing to exec and `prickle
