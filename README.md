@@ -164,23 +164,45 @@ file that is plainly there.
 ### Kubernetes, with Helm
 
 ```sh
-helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace
-helm install prickle packaging/helm/prickle-exporter -n monitoring \
-  --set nvml.enabled=true --set serviceMonitor.enabled=true
+helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace \
+  --set collectors.podNames.enabled=true \
+  --set nvml.enabled=true \
+  --set serviceMonitor.enabled=true
 ```
 
 A DaemonSet, a headless Service, and an optional ServiceMonitor. **No
 ServiceAccount and no RBAC** — the exporter reads the node's filesystem and
 never the Kubernetes API, so there is nothing for a token to be for.
 
-On Kubernetes you almost certainly want **pod names**, which are off by default
-because of what they cost — read
-[the next section](#pod-names-and-what-they-cost) before enabling it:
+All three flags are off by default, and each is a deliberate trade:
 
-```sh
-helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace \
-  --set collectors.podNames.enabled=true
+| Flag | What it buys | What it costs |
+|---|---|---|
+| `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | `CAP_DAC_READ_SEARCH`, which bypasses file-read checks host-wide — [read this first](#pod-names-and-what-they-cost) |
+| `nvml.enabled` | GPU metrics via the `prickle-nvml` image: per-GPU utilisation, memory, temperature, power and MIG | Mounts the host's `libnvidia-ml.so.1` and the NVIDIA device nodes, so it only works on nodes that have a driver — see below |
+| `serviceMonitor.enabled` | Prometheus Operator discovers the DaemonSet on its own | Needs the `ServiceMonitor` CRD installed. Without the Operator, scrape it with a static config or pod discovery instead |
+
+Drop any flag you do not want — plain `helm install prickle
+packaging/helm/prickle-exporter -n monitoring --create-namespace` is a valid
+install and gives you every host and container metric, unprivileged, with pods
+identified by UID.
+
+On a **mixed cluster, install it twice** — once plain across everything, once
+with `nvml.enabled=true` and a `nodeSelector` onto the GPU nodes. The DaemonSet
+otherwise tolerates every taint by design, so it lands on the CPU nodes too and
+gets stuck there: the driver library and device nodes are `hostPath` mounts, and
+a node without them leaves the pod in **`ContainerCreating` indefinitely**, not
+`CrashLoopBackOff`. That distinction costs time — `kubectl logs` prints nothing
+at all for such a pod, and the reason is only in `kubectl describe`:
+
 ```
+MountVolume.SetUp failed for volume "nvidia-ml":
+  hostPath type check failed: /usr/lib/…/libnvidia-ml.so.1 is not a file
+```
+
+RHEL-family nodes keep that library under `/usr/lib64` — set
+`nvml.libraryPath` to match, and add a `nvml.devices` entry per GPU beyond the
+first.
 
 Images are published to `ghcr.io/starkdrift/prickle-exporter` as
 multi-architecture manifest lists, so an air-gapped registry can mirror them
@@ -191,7 +213,7 @@ with `skopeo copy --all`.
 ```sh
 docker run -d --name prickle --network=host \
   -v /proc:/host/proc:ro -v /sys:/host/sys:ro \
-  ghcr.io/starkdrift/prickle-exporter:0.6.0 -path.rootfs=/host
+  ghcr.io/starkdrift/prickle-exporter:0.7.0 -path.rootfs=/host
 ```
 
 `-path.rootfs=/host` is not optional — without it the exporter faithfully
