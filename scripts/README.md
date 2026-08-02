@@ -123,24 +123,24 @@ syscall behind an interface. The script writes `meta/statfs-reference.txt` from
 
 ### What the next capture should add
 
-The captured H200 answered Phase 1 and most of Phase 2. What it did not contain
-is the reason for the coverage gaps recorded in
-[internal/collector/container/testdata/README.md](../internal/collector/container/testdata/README.md#coverage-gaps),
-and `check` does not currently flag any of it. If you are renting a host anyway,
-these are cheap to arrange and each one closes a gap:
+Ten captures now exist, covering both cgroup hierarchies, both cgroup drivers
+and four runtimes — the inventory is in
+[internal/collector/container/testdata/README.md](../internal/collector/container/testdata/README.md#coverage-gaps).
+Two gaps are left, and `check` flags neither:
 
 | Arrange | Closes |
 |---|---|
-| Docker configured with `"exec-opts": ["native.cgroupdriver=cgroupfs"]`, or a second capture from such a host | Docker's cgroupfs-driver layout, `/sys/fs/cgroup/docker/<hex>/` — **unimplemented today, so those hosts report no containers at all** |
-| A kubelet with `cgroupDriver: cgroupfs` | The matching `kubepods/besteffort/pod<uid>/<hex>` layout — same, unimplemented |
-| A CRI-O host | `crio-<hex>.scope`, currently unit-tested on the name parse only |
-| One pod with equal requests and limits | Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component in the name |
-| `docker run --cpus=2`, or a pod with a CPU limit | A non-`max` `cpu.max`, so `cpu_limit_cores` and the throttling counters are seen with real values rather than parsed in the dark |
+| A kubelet with `cgroupDriver: cgroupfs`, plus one pod with equal requests and limits for cpu *and* memory | Guaranteed pods in the cgroupfs layout — `kubepods/pod<uid>/<hex>`, with no QoS directory level. Parsed today on the directory name alone, in `TestIdentify`. The systemd-driver spelling of this is captured; the cgroupfs one is not |
 | Adding `cpu.pressure` and `io.pressure` to `CG_FILES` | Two files the collector already reads, covered today by a hand-written tree rather than a capture |
 
-The first two rows are the ones that cost a real operator metrics, so they are
-worth a capture on their own. Everything else can ride along with the Phase 3
-GPU capture.
+Neither costs an operator metrics — the first is a fixture gap rather than a
+parser gap, and the second is a test-provenance gap. Both can ride along with
+whatever the next host is rented for.
+
+**Guaranteed pods have to be created deliberately.** QoS follows from requests
+versus limits, and Guaranteed needs `requests == limits` for cpu *and* memory on
+*every* container in the pod. No cluster observed for this project has ever run
+one by accident, so a capture that does not arrange one will not contain one.
 
 ### Output layout
 

@@ -104,6 +104,26 @@ else
   printf '  \033[1;33mSKIP\033[0m python3 not found; links unchecked\n'
 fi
 
+step "every fixture is accounted for in its README (SPEC.md §Testing rules)"
+# Added after two releases of stale documentation: scripts/README.md told
+# contributors that cgroupfs Docker and the kubepods/<qos>/pod<uid>/<hex> layout
+# were "unimplemented today, so those hosts report no containers at all", long
+# after both shipped and were captured. Nothing failed, because no gate reads
+# prose. This one cannot check a claim, but it can check the inventory the claim
+# is about: a capture added without a line in the README is exactly how the gap
+# table fell behind the tree.
+for dir in internal/collector/*/testdata/*/; do
+  name=$(basename "$dir")
+  [ "$name" = golden ] && continue
+  readme="$(dirname "$dir")/README.md"
+  [ -f "$readme" ] || fail "$dir has no README.md beside it to record it in"
+  grep -q -- "$name" "$readme" \
+    || fail "fixture '$name' is not mentioned in $readme.
+      Every capture is recorded there with what it covers; a fixture the README
+      does not name is one the coverage-gap table has silently fallen behind."
+done
+printf '  ok  every fixture directory is named in its README\n'
+
 step "grafana dashboards are in sync (SPEC.md §Distribution)"
 # The JSON is generated and checked in: Grafana loads JSON and a quickstart
 # should not need a build step, but four dashboards sharing eleven template

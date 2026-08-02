@@ -66,9 +66,11 @@ is either unit-tested on the name parse alone, or not implemented at all.
 | Non-systemd kubelet — `kubepods/<qos>/pod<uid>/<hex>` | **Implemented and captured.** `doks-cgroupfs-20260801/` is that host, with its own golden file; see below. The runtime is not recoverable from it — that is a gap in the layout, not in the parser. |
 | Guaranteed pods under the cgroupfs driver — `kubepods/pod<uid>/<hex>` | Directory-name parse only, in `TestIdentify`. Neither cluster ran a Guaranteed pod, in either layout. |
 
-Closing cgroupfs-driver Docker needs a capture from a host configured that way;
-the rest need a CRI-O host, a Guaranteed pod, and a container with a CPU limit,
-which `capture-fixtures.sh prep` could arrange on a disposable rental.
+Only the last two rows are open, and neither costs an operator metrics: one is
+a fixture that no cluster produces without being asked to, the other is a file
+the capture script does not collect. Closing the first needs a cgroupfs-driver
+kubelet running a pod with `requests == limits` for cpu and memory on every
+container — `capture-fixtures.sh prep` can arrange it on a disposable host.
 
 ## The cgroupfs-driver tree: `doks-cgroupfs-20260801/`
 
@@ -290,6 +292,53 @@ withheld.
 
 `cgroup.procs` was captured by the script and stripped before committing, for
 the reason in **Not copied** below.
+
+## The nerdctl tree: `containerd-nerdctl-20260801/`
+
+AlmaLinux 9.8, containerd with the systemd cgroup driver, nerdctl 2.3.5,
+captured 2026-08-01. Two containers as `nerdctl-<hex>.scope` under
+`system.slice`.
+
+containerd reached through the **CRI** — which is what a kubelet does — writes
+`cri-containerd-<hex>.scope` inside a pod slice. Driven directly by nerdctl it
+writes a different prefix in a different place, with no pod or QoS identity to
+read. Same daemon, same version, two layouts, and a parser that knew only the
+first reported nothing on the second. Both prefixes are in `scopePrefixes` and
+both map to `runtime="containerd"`, because the runtime is what it is
+regardless of who asked it.
+
+## The podman tree: `podman-alma9-20260801/`
+
+AlmaLinux 9.8, kernel 5.14, podman 5.8.2 with the systemd cgroup manager on
+cgroup v2, captured 2026-08-01. Three containers as `libpod-<hex>.scope` under
+`machine.slice` — not a pod slice, so there is no pod or QoS identity and both
+labels stay empty rather than being invented from the slice name.
+
+Podman is the default runtime on RHEL and Fedora, and before `libpod-` was in
+`scopePrefixes` such a host reported **no containers at all**.
+
+**Each container is paired with a `libpod-conmon-<hex>.scope` monitor**, and
+this capture is why that matters. Unlike CRI-O's empty siblings, these hold
+real values — 1 pid and roughly 340 KB apiece — so counting them would not look
+like an artefact. It would look like six containers, three of them nearly idle.
+Nothing rejects them explicitly: stripping `libpod-` leaves `conmon-<hex>`, and
+`hexID` declines it because `conmon-` is not hex. Two independent rules that
+happen to compose, which is exactly the kind of thing that breaks quietly when
+one is loosened — `TestMonitorScopesAreNotContainers` pins it.
+
+## The pod-names tree: `kubeadm-podnames-20260801/`
+
+The kubelet's `/var/log/pods` from the kubeadm cluster, captured 2026-08-01 for
+`-collector.container.pod-names`. Nine pod directories named
+`<namespace>_<pod>_<uid>`, which is the entire content of interest: the
+collector reads the **directory names** and never opens what is inside them, so
+workload log content stays out of reach.
+
+This tree is **structure only** — the twelve files in it are `.gitkeep`
+markers. That is not tidiness. Git does not track empty directories, so the
+per-container subdirectories vanished on clone and the test passed locally
+while failing in CI on a tree that no longer had the shape it was testing. The
+markers are load-bearing; do not remove them.
 
 ## Not copied
 
