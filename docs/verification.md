@@ -120,34 +120,29 @@ are fixed by NVIDIA's own ABI contract rather than by hope. Nothing from the
 `nvmlDeviceSet*` or `nvmlDeviceClear*` families is resolved at all.
 
 
-## Release acceptance, 0.7.0
+## Release acceptance, 0.7.1
 
 Every DigitalOcean base image, swept on 2026-08-02 against the **published
-artifacts** rather than a local build — the release tarball and its
-`SHA256SUMS`, the container image from ghcr.io, and a from-source build at the
-`v0.7.0` tag. Each host ran the README's install instructions verbatim.
+artifacts** — the release tarball and its `SHA256SUMS`, the container image
+from ghcr.io, and a from-source build at the tag. Each host ran the README's
+install instructions verbatim.
 
-One caveat on the **service** column: those units started and stayed active, but
-at 0.7.0 the unit file was not in the tarball — the probe fetched it from the
-tag so the systemd path could be exercised at all. That absence is itself one of
-the two findings below, and is fixed for the next release.
-
-| Image | cgroup | PSI | sha256 | service | CapEff | exposure | scrape | container | source build |
-|---|---|---|---|---|---|---|---|---|---|
-| `almalinux-8` | **v1** | absent | ok | active | empty | 1.4 | 200 | 200 | ok |
-| `almalinux-9` | v2 | absent | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `almalinux-10` | v2 | absent | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `centos-stream-9` | v2 | absent | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `centos-stream-10` | v2 | absent | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `rockylinux-8` | **v1** | absent | ok | active | empty | 1.4 | 200 | 200 | ok |
-| `rockylinux-9` | v2 | absent | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `rockylinux-10` | v2 | absent | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `debian-13` | v2 | yes | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `fedora-43` | v2 | yes | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `fedora-44` | v2 | yes | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `ubuntu-22-04` | v2 | yes | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `ubuntu-24-04` | v2 | yes | ok | active | empty | 1.5 | 200 | 200 | ok |
-| `ubuntu-26-04` | v2 | yes | ok | active | empty | 1.5 | 200 | 200 | ok |
+| Image | cgroup | PSI | sha256 | unit in tarball | service | CapEff | exposure | scrape | container | source |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `almalinux-8` | **v1** | absent | ok | yes | active | empty | 1.4 | 200 | 200 | ok |
+| `almalinux-9` | v2 | absent | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `almalinux-10` | v2 | absent | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `centos-stream-9` | v2 | absent | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `centos-stream-10` | v2 | absent | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `rockylinux-8` | **v1** | absent | ok | yes | active | empty | 1.4 | 200 | 200 | ok |
+| `rockylinux-9` | v2 | absent | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `rockylinux-10` | v2 | absent | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `debian-13` | v2 | yes | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `fedora-43` | v2 | yes | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `fedora-44` | v2 | yes | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `ubuntu-22-04` | v2 | yes | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `ubuntu-24-04` | v2 | yes | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
+| `ubuntu-26-04` | v2 | yes | ok | yes | active | empty | 1.5 | 200 | 200 | ok |
 
 Every column that varies is explained by the host, not by the exporter:
 
@@ -155,35 +150,40 @@ Every column that varies is explained by the host, not by the exporter:
   exercise the v1 reader on real hardware rather than on a fixture.
 - **PSI is absent across the entire RHEL family**, at 8, 9 and 10. The kernels
   have it compiled in; it needs `psi=1` at boot.
-- `systemd-analyze` scores 1.4 on the two el8 hosts rather than 1.5, because an
-  older systemd does not recognise some directives — a slightly *better* score
-  for a slightly less hardened unit.
-- `restorecon` runs only where SELinux exists, which is the README's
-  `command -v` guard behaving as designed.
+- `systemd-analyze` scores 1.4 on the two el8 hosts and 1.5 elsewhere: an older
+  systemd does not recognise some directives, so it scores a slightly less
+  hardened unit slightly *better*.
+- `restorecon` runs only where SELinux exists — the README's `command -v` guard.
 - Debian 13 reports the `DynamicUser` as a numeric UID rather than a name,
   because `nss-systemd` is not wired into its `nsswitch.conf`. Cosmetic; the
   process is equally unprivileged.
 
-Kubernetes was tested once rather than per image, on a kubeadm cluster: 220
-series, 24 containers, every pod name resolved, four namespaces, and all three
-QoS classes.
+Kubernetes is tested once rather than per image, on a single-node kubeadm
+cluster: the README's install command verbatim gave 162 series, 18 containers,
+every pod name resolved and three namespaces, from
+`ghcr.io/starkdrift/prickle-exporter:0.7.1`.
 
-### What it found
+### What the 0.7.0 sweep found
 
-Two defects, both the same shape — **a documented command carrying a flag or
-path that only works in some environments**, which no amount of reading catches
-and one bare host does:
+0.7.1 exists because of it. The same sweep against 0.7.0 differed in exactly two
+keys on all fourteen hosts — `binary_version`, and `unit_shipped`, which was
+**no** everywhere:
 
-- The headline Helm command set `serviceMonitor.enabled=true`, which makes
+- **The release tarball shipped no systemd unit**, while the README said to
+  install one from `packaging/` — a path that exists only in a git clone, not
+  in the artifact people download to a server. The probe had to fetch the unit
+  from the tag to exercise systemd at all.
+- **The headline Helm command set `serviceMonitor.enabled=true`**, which makes
   `helm install` fail outright on a cluster with no Prometheus Operator CRD.
-- The release tarball shipped **no systemd unit**, while the README told you to
-  install one from `packaging/`, a path that exists only in a git clone. All
-  fourteen hosts had nothing to install.
+  Confirmed still failing, deliberately and with a clear message, when set on a
+  bare cluster — which is why the README documents it in a table rather than
+  putting it in a line people copy.
 
-A third instance had been fixed days earlier: the same command once set
-`nvml.enabled=true`, stranding the DaemonSet in `ContainerCreating` on every
-driverless node. Headline commands are now checked against a bare environment
-each release.
+Both are the shape a third defect had days earlier, when the same command set
+`nvml.enabled=true` and stranded the DaemonSet in `ContainerCreating` on every
+driverless node: **a documented command carrying a flag or path that only works
+in some environments.** None was catchable by reading; each took one bare host.
+Headline commands are checked against a bare environment every release.
 
 ## Fixture coverage
 
