@@ -23,13 +23,13 @@
 ## Contents
 
 - [What it is](#what-it-is)
-- [Status](#status)
 - [Quick start](#quick-start)
 - [Deploying](#deploying) — [systemd](#standalone-with-systemd) · [Kubernetes](#kubernetes-with-helm) · [container](#container-directly)
 - [Try it: Prometheus and Grafana](#try-it-prometheus-and-grafana) — [Docker Compose](#with-docker-compose) · [Kubernetes](#on-kubernetes)
 - [Pod names, and what they cost](#pod-names-and-what-they-cost)
 - [Configuration](#configuration)
 - [Documentation](#documentation)
+- [Status](#status)
 - [License](#license)
 
 ## What it is
@@ -61,39 +61,6 @@ does:
 
 The full contract is [SPEC.md](SPEC.md). It is frozen: code follows the spec, and
 changing a decision means editing SPEC.md first, in its own commit.
-
-## Status
-
-**Phase 5 — all five roadmap phases are implemented.** Host, container and
-NVIDIA GPU collectors, each developed against captured fixture trees;
-per-collector timeouts, cardinality caps and self-instrumentation; and the
-distribution artifacts — two binaries with hardened systemd units,
-multi-architecture container images, a Helm chart, a compose quickstart and
-four Grafana dashboards.
-
-The container collector reads **both cgroup hierarchies**, both cgroup drivers,
-and four runtimes: Docker, containerd (through the CRI and through nerdctl),
-CRI-O and podman.
-
-Two gaps remain, both for want of hardware rather than design: **AMD is
-specified but not written** — no capture exists, and SPEC §Testing rules
-forbids a parser written against a layout nobody has captured — and
-**multi-GPU hosts are unverified**, every card reached so far being one per
-host. Intel is out of scope (SPEC §Collectors).
-
-This is `0.6.x`, deliberately not `1.0`: that freezes the metrics contract, and
-the contract is still moving.
-
-| Phase | Scope | State |
-|---|---|---|
-| 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
-| 2 | Containers — cgroup v2 and v1, Docker/containerd/CRI-O/podman/Kubernetes | **shipped** |
-| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; AMD unimplemented, Intel out of scope |
-| 4 | Per-collector timeouts, cardinality caps, self-instrumentation | **shipped** |
-| 5 | Distribution — systemd, images, Helm, dashboards | **shipped** |
-
-Linux only. Where it has been run, and what that found, is in
-[docs/verification.md](docs/verification.md).
 
 ## Quick start
 
@@ -351,6 +318,39 @@ first scrape.
 | [docs/development.md](docs/development.md) | Building, testing, releasing |
 | [SPEC.md](SPEC.md) | The frozen contract — every decision and its reason |
 | [CHANGELOG.md](CHANGELOG.md) | What changed per release, and what to do about it |
+
+## Status
+
+**Phase 5 — all five roadmap phases are implemented.** Host, container and
+NVIDIA GPU collectors, each developed against captured fixture trees;
+per-collector timeouts, cardinality caps and self-instrumentation; and the
+distribution artifacts — two binaries with hardened systemd units,
+multi-architecture container images, a Helm chart, a compose quickstart and
+four Grafana dashboards.
+
+The container collector reads **both cgroup hierarchies**, both cgroup drivers,
+and four runtimes: Docker, containerd (through the CRI and through nerdctl),
+CRI-O and podman.
+
+Two gaps remain, both for want of hardware rather than design: **AMD is
+specified but not written** — no capture exists, and SPEC §Testing rules
+forbids a parser written against a layout nobody has captured — and
+**multi-GPU hosts are unverified**, every card reached so far being one per
+host. Intel is out of scope (SPEC §Collectors).
+
+This is `0.7.x`, deliberately not `1.0`: that freezes the metrics contract, and
+the contract is still moving.
+
+| Phase | Scope | State |
+|---|---|---|
+| 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
+| 2 | Containers — cgroup v2 and v1, Docker/containerd/CRI-O/podman/Kubernetes | **shipped** |
+| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; AMD unimplemented, Intel out of scope |
+| 4 | Per-collector timeouts, cardinality caps, self-instrumentation | **shipped** |
+| 5 | Distribution — systemd, images, Helm, dashboards | **shipped** |
+
+Linux only. Where it has been run, and what that found, is in
+[docs/verification.md](docs/verification.md).
 
 ## License
 
