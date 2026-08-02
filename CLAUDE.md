@@ -77,6 +77,14 @@ behind the `nvidiaSource` interface and unit tests use a fake source.
   for both. `nvidia-smi` is a supported fallback, not deprecated — keep it
   tested. The two sources must emit identical metric output for the same GPU.
 
+## Contribution policy
+
+External PRs are not accepted — never add contribution-welcoming language or
+PR-based workflows. [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) is the
+policy; `.github/workflows/close-prs.yml` enforces it on fork PRs only, so
+internal and Dependabot branches can still use a PR for CI. Issues are welcome
+and should stay that way.
+
 ## Naming discipline
 
 The names in SPEC.md §Identity are the only ones used anywhere — code, comments,
