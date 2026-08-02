@@ -1,0 +1,5 @@
+capture_date: 2026-08-02T05:01:23+00:00
+hostname: h100x1-ubuntu2604-20260802
+kernel: 7.0.0-27-generic
+uname: Linux h100x1-ubuntu2604-20260802 7.0.0-27-generic #27-Ubuntu SMP PREEMPT_DYNAMIC Thu Jun 18 19:13:49 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+cgroup_fstype: cgroup2fs

@@ -74,9 +74,27 @@ docker_running_count() {
   have docker || { echo 0; return; }
   docker ps -q 2>/dev/null | wc -l
 }
+# The kubelet writes one of two trees depending on its cgroup driver, and they
+# differ in the directory name as well as the layout:
+#
+#   systemd   /sys/fs/cgroup/kubepods.slice/kubepods-<qos>.slice/kubepods-<qos>-pod<uid>.slice/
+#   cgroupfs  /sys/fs/cgroup/kubepods/<qos>/pod<uid>/
+#
+# Only the first was known here, so on a cgroupfs node this script captured no
+# pod cgroups at all and reported "no kubepods.slice pods", which reads as "you
+# forgot to run something" on a host that was running nine.
+kubepods_root() {
+  local d
+  for d in /sys/fs/cgroup/kubepods.slice /sys/fs/cgroup/kubepods; do
+    [[ -d $d ]] && { printf '%s' "$d"; return 0; }
+  done
+  return 1
+}
 kubepods_pod_count() {
-  find /sys/fs/cgroup/kubepods.slice -maxdepth 3 -type d -name 'kubepods-pod*' \
-       -o -maxdepth 3 -type d -name '*pod*.slice' 2>/dev/null | wc -l
+  local root; root=$(kubepods_root) || { echo 0; return; }
+  # pod<uid> under cgroupfs, kubepods-...pod<uid>.slice under systemd.
+  find "$root" -maxdepth 3 -type d \( -name 'pod*' -o -name '*pod*.slice' \) \
+       2>/dev/null | wc -l
 }
 nvidia_present()      { have nvidia-smi; }
 nvidia_mig_capable()  { nvidia-smi mig -lgip >/dev/null 2>&1; }
@@ -335,7 +353,7 @@ cmd_check() {
 
   n=$(kubepods_pod_count)
   if [[ $n -gt 0 ]]; then ok "kubepods: $n pod slice(s)"
-  else gap "no kubepods.slice pods — Phase 2 kubernetes fixtures will be EMPTY"; fi
+  else gap "no kubepods pods under either driver's layout — Phase 2 kubernetes fixtures will be EMPTY"; fi
 
   if nvidia_present; then
     ok "nvidia-smi present (driver $(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1))"
@@ -506,10 +524,11 @@ cmd_capture() {
   [[ $found -eq 0 ]] && gap "no Docker container cgroups captured"
 
   say "kubepods cgroup tree"
-  if [[ -d /sys/fs/cgroup/kubepods.slice ]]; then
+  if kp_root=$(kubepods_root); then
+    say "  driver layout: $kp_root"
     while IFS= read -r d; do grab_cgroup_dir "$d"; done \
-      < <(find /sys/fs/cgroup/kubepods.slice -type d 2>/dev/null)
-  else gap "no kubepods.slice captured"; fi
+      < <(find "$kp_root" -type d 2>/dev/null)
+  else gap "no kubepods tree under either /sys/fs/cgroup/kubepods.slice or /sys/fs/cgroup/kubepods"; fi
 
   say "Docker API"
   if [[ -S /var/run/docker.sock ]] && have curl; then

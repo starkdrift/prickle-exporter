@@ -1,0 +1,17 @@
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 12573483   39039    0    0    0     0          0         0 12573483   39039    0    0    0     0       0          0
+  eth0: 4155872     990    0    0    0     0          0         0   123920     691    0    0    0     0       0          0
+  eth1:     180       2    0    0    0     0          0         0     1685      24    0    0    0     0       0          0
+docker0:       0       0    0    0    0     0          0         0        0       0    0    2    0     0       0          0
+flannel.1:       0       0    0    0    0     0          0         0        0       0    0   11    0     0       0          0
+  cni0:   69449     742    0    0    0     0          0        89  4247917     910    0    2    0     0       0          0
+veth9b8bdbb9:   22129     206    0    0    0     0          0         0    47216     305    0    0    0     0       0          0
+veth90ccd883:   21323     197    0    0    0     0          0         0    45410     285    0    0    0     0       0          0
+vetheec48e76:     822      11    0    0    0     0          0         0     6816      92    0    0    0     0       0          0
+veth82cff2dc:   25403     213    0    0    0     0          0         0  3650305     547    0    0    0     0       0          0
+vethf04d9df7:   14700     131    0    0    0     0          0         0   539262     187    0    0    0     0       0          0
+veth6c1ab671:     822      11    0    0    0     0          0         0     5726      79    0    0    0     0       0          0
+veth7d27bb04:     822      11    0    0    0     0          0         0     4340      58    0    0    0     0       0          0
+vethe98638a3:     752      10    0    0    0     0          0         0     4090      55    0    0    0     0       0          0
+veth35a2c72a:     822      11    0    0    0     0          0         0     3840      52    0    0    0     0       0          0

@@ -129,24 +129,24 @@ syscall behind an interface. The script writes `meta/statfs-reference.txt` from
 
 ### What the next capture should add
 
-Ten captures now exist, covering both cgroup hierarchies, both cgroup drivers
-and four runtimes — the inventory is in
-[internal/collector/container/testdata/README.md](../internal/collector/container/testdata/README.md#coverage-gaps).
-Two gaps are left, and `check` flags neither:
+Nothing, for the container collector. Eleven captures now cover both cgroup
+hierarchies, both cgroup drivers and four runtimes, and the coverage-gap table
+in
+[internal/collector/container/testdata/README.md](../internal/collector/container/testdata/README.md#coverage-gaps)
+has no open rows. What remains needs hardware nobody has yet: an AMD GPU, and a
+host with more than one card.
 
-| Arrange | Closes |
-|---|---|
-| A kubelet with `cgroupDriver: cgroupfs`, plus one pod with equal requests and limits for cpu *and* memory | Guaranteed pods in the cgroupfs layout — `kubepods/pod<uid>/<hex>`, with no QoS directory level. Parsed today on the directory name alone, in `TestIdentify`. The systemd-driver spelling of this is captured; the cgroupfs one is not |
-| Adding `cpu.pressure` and `io.pressure` to `CG_FILES` | Two files the collector already reads, covered today by a hand-written tree rather than a capture |
+Two things to know if you are arranging a capture anyway.
 
-Neither costs an operator metrics — the first is a fixture gap rather than a
-parser gap, and the second is a test-provenance gap. Both can ride along with
-whatever the next host is rented for.
-
-**Guaranteed pods have to be created deliberately.** QoS follows from requests
+**A Guaranteed pod has to be created deliberately.** QoS follows from requests
 versus limits, and Guaranteed needs `requests == limits` for cpu *and* memory on
 *every* container in the pod. No cluster observed for this project has ever run
-one by accident, so a capture that does not arrange one will not contain one.
+one by accident, which is why that layout went uncaptured until 2026-08-02.
+
+**Switching a node's cgroup driver requires a reboot before capturing.** The old
+driver's directories survive a kubelet restart and `rmdir` will not clear them,
+so the capture ends up holding both layouts at once — which is worse than not
+capturing, because it looks complete.
 
 ### Output layout
 

@@ -60,17 +60,15 @@ is either unit-tested on the name parse alone, or not implemented at all.
 |---|---|
 | `crio-<hex>.scope` (CRI-O) | **Captured**, in `crio-systemd-20260801/`. |
 | Guaranteed pods — `kubepods-pod<uid>.slice`, with no QoS component | **Captured**, in `kubeadm-systemd-20260801/`. |
-| `cpu.pressure`, `io.pressure` | Read by the collector, covered by a hand-written tree in `TestPerCgroupPressure`. The capture script collects only `memory.pressure`; the format is identical to it and to the `/proc/pressure/*` files the Phase 1 fixtures do capture. |
+| `cpu.pressure`, `io.pressure` | **Captured**, in `kubeadm-cgroupfs-20260802/` — 51 of each. The capture script collects them since 2026-08-02; the hand-written tree in `TestPerCgroupPressure` stays, pinning the parse in isolation. |
 | A container with a CPU quota (`cpu.max` = `<quota> <period>`) | **Captured**, in `docker-cgroupfs-20260801/`. The hand-written trees in `cpu_test.go` stay — they pin the arithmetic in isolation — but the quota, the throttle counters and the conversion to cores are now also checked against values a kernel actually produced. |
 | cgroupfs-driver Docker — `/sys/fs/cgroup/docker/<hex>/` | **Implemented and captured**, in `docker-cgroupfs-20260801/`. Unlike the kubepods layout, this one *does* name its runtime: the parent directory is literally `docker`. |
 | Non-systemd kubelet — `kubepods/<qos>/pod<uid>/<hex>` | **Implemented and captured.** `doks-cgroupfs-20260801/` is that host, with its own golden file; see below. The runtime is not recoverable from it — that is a gap in the layout, not in the parser. |
-| Guaranteed pods under the cgroupfs driver — `kubepods/pod<uid>/<hex>` | Directory-name parse only, in `TestIdentify`. Neither cluster ran a Guaranteed pod, in either layout. |
+| Guaranteed pods under the cgroupfs driver — `kubepods/pod<uid>/<hex>` | **Captured**, in `kubeadm-cgroupfs-20260802/`. A Guaranteed pod had to be created deliberately; no observed cluster ran one by accident. |
 
-Only the last two rows are open, and neither costs an operator metrics: one is
-a fixture that no cluster produces without being asked to, the other is a file
-the capture script does not collect. Closing the first needs a cgroupfs-driver
-kubelet running a pod with `requests == limits` for cpu and memory on every
-container — `capture-fixtures.sh prep` can arrange it on a disposable host.
+**No rows are open.** Every layout SPEC.md §Collectors names is now covered by
+a tree a kernel produced, on both cgroup hierarchies, both cgroup drivers and
+four runtimes.
 
 ## The cgroupfs-driver tree: `doks-cgroupfs-20260801/`
 
@@ -339,6 +337,38 @@ markers. That is not tidiness. Git does not track empty directories, so the
 per-container subdirectories vanished on clone and the test passed locally
 while failing in CI on a tree that no longer had the shape it was testing. The
 markers are load-bearing; do not remove them.
+
+## The cgroupfs Guaranteed tree: `kubeadm-cgroupfs-20260802/`
+
+A single-node kubeadm cluster, Ubuntu 26.04, containerd, with the kubelet
+switched to the **cgroupfs** driver and one pod deliberately made Guaranteed.
+32 containers: 2 guaranteed, 22 burstable, 8 besteffort.
+
+The shape it exists for is the Guaranteed pod's, because under this driver a
+Guaranteed pod's QoS class is not written down anywhere:
+
+| Class | Path |
+|---|---|
+| Burstable | `kubepods/burstable/pod<uid>/<hex>` |
+| BestEffort | `kubepods/besteffort/pod<uid>/<hex>` |
+| **Guaranteed** | `kubepods/pod<uid>/<hex>` — **one level shallower, no QoS component** |
+
+So the class is implied by an absent directory level, and `qosFromDir` has to
+read the pod directory's parent and treat `kubepods` itself as meaning
+guaranteed. That rule reads like an off-by-one until the tree is in front of
+you, and it had never been checked against a real one: **QoS follows from
+requests versus limits**, and Guaranteed needs `requests == limits` for cpu
+*and* memory on *every* container in the pod. Nothing arrives at that by
+accident, so no observed cluster had ever produced the layout.
+
+This capture also carries the first `cpu.pressure` and `io.pressure` files — 51
+of each — and no `cgroup.procs` at all, the capture script having stopped
+collecting it the same day.
+
+**Switching a node's cgroup driver requires a reboot.** The old driver's
+directories survive a kubelet restart and `rmdir` will not remove them, so a
+capture taken without rebooting holds both layouts at once and is worse than no
+capture: it looks complete.
 
 ## Not copied
 
