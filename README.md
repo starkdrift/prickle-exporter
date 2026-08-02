@@ -155,40 +155,33 @@ every host and container metric, unprivileged, with pods identified by UID.
 
 #### GPU nodes need a second install
 
-The command above deploys the **static** `prickle` image, and that image
-exposes **no GPU metrics at all** — not degraded ones, none. Standalone, the
-static binary falls back to shelling out to `nvidia-smi`; in a container it
-cannot, because the image is `FROM scratch` and holds one file, and nothing
-mounts the host's `nvidia-smi` into it. The DaemonSet requests no
-`nvidia.com/gpu`, so the NVIDIA container runtime injects nothing either.
-`prickle diagnose` says so outright:
+The static image carries **no GPU support at all** — it is `FROM scratch` with
+one binary, so its `nvidia-smi` fallback has nothing to exec and `prickle
+diagnose` reports `live source: none`. GPU metrics mean a second install, onto
+the GPU nodes only:
 
-```
-this binary: prickle (static) — nvidia-smi only; a static binary cannot dlopen NVML
-live source: none — no NVIDIA metrics will be exposed.
-```
-
-GPU metrics on Kubernetes therefore mean `nvml.enabled=true`, which selects the
-`prickle-nvml` image and mounts the host's `libnvidia-ml.so.1` and NVIDIA device
-nodes so it can `dlopen` the driver — per-GPU utilisation, memory, temperature,
-power and MIG. Those are `hostPath` mounts, so it only works where a driver is
-installed.
-
-**On a mixed cluster, install the chart twice**: once plain across everything,
-once with `nvml.enabled=true` and a `nodeSelector` onto the GPU nodes. The
-DaemonSet tolerates every taint by design, so an untargeted GPU install lands on
-the CPU nodes too and strands itself there — a node without the driver files
-leaves the pod in **`ContainerCreating` indefinitely**, not `CrashLoopBackOff`.
-That distinction costs time: `kubectl logs` prints nothing at all for a pod in
-that state, and the reason is only in `kubectl describe`:
-
-```
-MountVolume.SetUp failed for volume "nvidia-ml":
-  hostPath type check failed: /usr/lib/…/libnvidia-ml.so.1 is not a file
+```sh
+helm install prickle-gpu packaging/helm/prickle-exporter -n monitoring \
+  --set collectors.podNames.enabled=true \
+  --set serviceMonitor.enabled=true \
+  --set nvml.enabled=true \
+  --set-string nodeSelector."nvidia\.com/gpu\.present"=true
 ```
 
-RHEL-family nodes keep that library under `/usr/lib64` — set `nvml.libraryPath`
-to match, and add an `nvml.devices` entry per GPU beyond the first.
+`nvml.enabled` pulls the separate `-nvml` image and `hostPath`-mounts the
+driver's `libnvidia-ml.so.1` and device nodes, which it `dlopen`s for per-GPU
+utilisation, memory, temperature, power and MIG.
+
+The `nodeSelector` is not optional. The DaemonSet tolerates every taint by
+design, so without it this lands on CPU nodes too and sticks in
+**`ContainerCreating`** forever — not `CrashLoopBackOff`, so `kubectl logs`
+shows nothing and only `kubectl describe` names the missing driver file. Use
+whatever label marks your GPU nodes; the one above is the NVIDIA device
+plugin's — and note `--set-string`, because plain `--set` types `true` as a
+boolean and the API rejects the DaemonSet (`cannot unmarshal bool … of type
+string`). `helm template` renders it without complaint, so that one only shows
+up on apply. RHEL-family nodes need `nvml.libraryPath=/usr/lib64/…`, and a node
+with more than one GPU needs an `nvml.devices` entry per card.
 
 Images are published to `ghcr.io/starkdrift/prickle-exporter` as
 multi-architecture manifest lists, so an air-gapped registry can mirror them
