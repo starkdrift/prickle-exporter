@@ -206,7 +206,17 @@ finding 18 containerd containers through the host mount.
 ## Container images and air-gapped installs
 
 Published to `ghcr.io/starkdrift/prickle-exporter` from `v0.5.0` on, as
-multi-architecture manifest lists over `linux/amd64` and `linux/arm64`:
+multi-architecture manifest lists over `linux/amd64` and `linux/arm64`.
+
+**Only the current release is kept in the registry.** Older image versions are
+removed, so `0.5.0` through `0.7.0` no longer pull even though they were once
+published. Mirror what you intend to keep — that is what the `skopeo copy`
+below is for, and a mirror inside your own perimeter is the only copy this
+project guarantees will still be there.
+
+Release tarballs follow the same rule: every GitHub release page and its notes
+stay, but the binaries are attached to the current release only. Git tags are
+never removed, so the source of any version remains buildable.
 
 | Tag | Contents | Base |
 |---|---|---|
@@ -230,10 +240,10 @@ rebuild, and the digest you mirror is the digest you verify:
 
 ```sh
 skopeo copy --all \
-  docker://ghcr.io/starkdrift/prickle-exporter:0.5.0 \
-  docker://registry.internal/prickle-exporter:0.5.0
+  docker://ghcr.io/starkdrift/prickle-exporter:0.7.1 \
+  docker://registry.internal/prickle-exporter:0.7.1
 # or
-crane copy ghcr.io/starkdrift/prickle-exporter:0.5.0 registry.internal/prickle-exporter:0.5.0
+crane copy ghcr.io/starkdrift/prickle-exporter:0.7.1 registry.internal/prickle-exporter:0.7.1
 ```
 
 `--all` matters: without it you copy one architecture and the manifest list is
@@ -244,7 +254,7 @@ Then point the chart at the mirror:
 ```sh
 helm install prickle packaging/helm/prickle-exporter -n monitoring \
   --set image.repository=registry.internal/prickle-exporter \
-  --set image.tag=0.5.0@sha256:<digest>
+  --set image.tag=0.7.1@sha256:<digest>
 ```
 
 Pinning by digest is the point of a mirror: it survives a tag being re-pushed
@@ -255,6 +265,6 @@ Provenance is attested to the manifest-list digest and pushed to the registry
 alongside the image, so it can be verified after mirroring:
 
 ```sh
-gh attestation verify oci://registry.internal/prickle-exporter:0.5.0 \
+gh attestation verify oci://registry.internal/prickle-exporter:0.7.1 \
   --repo starkdrift/prickle-exporter
 ```
