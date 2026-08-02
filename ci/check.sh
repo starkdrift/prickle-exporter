@@ -137,6 +137,43 @@ else
   printf '  \033[1;33mSKIP\033[0m python3 not found; dashboard sync unchecked\n'
 fi
 
+step "the released version is stated consistently (SPEC.md §Versioning)"
+# The README said "This is 0.6.x" for hours after the 0.7.0 tag went out, and
+# nothing caught it: every other gate here reads structure, and a version is
+# prose. It is also the one piece of prose a reader acts on — an operator
+# copying the docker run line gets whatever tag it names.
+#
+# CHANGELOG.md is the source of truth rather than `git describe`, deliberately.
+# CI checks out shallow with no tags, so a tag-derived check would be skipped
+# exactly where it needs to run. The changelog is in-tree and is written before
+# the tag is cut. [Unreleased] is skipped: it is not a version.
+ver=$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | tr -d '#[] ')
+[ -n "$ver" ] || fail "no released version heading found in CHANGELOG.md"
+series="${ver%.*}.x"
+
+check_version() {
+  # $1 file, $2 human description, $3 the string that must be present
+  grep -qF -- "$3" "$1" \
+    || fail "$2 disagrees with CHANGELOG.md, which says $ver.
+      Expected to find: $3
+      In:               $1"
+  printf '  ok  %s\n' "$2"
+}
+
+check_version README.md \
+  "the README's container image tag" \
+  "ghcr.io/starkdrift/prickle-exporter:$ver"
+check_version README.md \
+  "the README's Status version" \
+  "This is \`$series\`"
+check_version packaging/helm/prickle-exporter/Chart.yaml \
+  "the chart's appVersion" \
+  "appVersion: \"$ver\""
+
+# The chart's own `version:` is deliberately NOT checked. It versions the chart,
+# not the binary, and moves on its own schedule — asserting they match would
+# force a chart release for every exporter release and vice versa.
+
 step "naming discipline (SPEC.md §Identity)"
 # Two checks, because the obvious one cannot be made to work on its own.
 #
