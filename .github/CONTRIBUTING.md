@@ -19,8 +19,8 @@ seriously.
   issue that describes the question you cannot answer today. A proposal argued
   in an issue can change [SPEC.md](../SPEC.md), which is the only way anything
   gets built here. A patch cannot.
-- **Security reports.** Please report a suspected vulnerability privately rather
-  than opening a public issue.
+- **Security reports.** Privately, through the Security tab rather than a public
+  issue — [SECURITY.md](SECURITY.md) has the route and what is in scope.
 
 Auditing is welcome too, and is much of why the repository is public: the
 zero-dependency and read-only claims in the README are the sort of thing that
