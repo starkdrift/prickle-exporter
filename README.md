@@ -24,8 +24,12 @@
 
 - [What it is](#what-it-is)
 - [Quick start](#quick-start)
-- [Deploying](#deploying) — [systemd](#standalone-with-systemd) · [container](#container-directly)
-  - Kubernetes, in two installs — [any node](#kubernetes-any-node): host and container metrics, starts on every node · [GPU nodes](#kubernetes-gpu-nodes): adds NVIDIA metrics, node-selected
+- [Deploying](#deploying)
+  - [systemd](#standalone-with-systemd)
+  - Kubernetes
+    - [Generic](#kubernetes-any-node) — starts on every node
+    - [GPU nodes](#kubernetes-gpu-nodes) — a second, node-selected install
+  - [container](#container-directly)
 - [Try it: Prometheus and Grafana](#try-it-prometheus-and-grafana) — [Docker Compose](#with-docker-compose) · [Kubernetes](#on-kubernetes)
 - [Pod names, and what they cost](#pod-names-and-what-they-cost)
 - [Configuration](#configuration)
