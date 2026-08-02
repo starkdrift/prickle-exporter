@@ -957,6 +957,7 @@ func (s *nvmlSource) readProcesses(handle C.nvmlDevice_t, d device) []process {
 		processes = append(processes, process{
 			GPUUUID:     d.UUID,
 			Command:     command,
+			Container:   containerOfPID(s.roots, uint32(C.prickle_proc_pid(buf, i))),
 			MemoryBytes: uint64(memory),
 		})
 	}

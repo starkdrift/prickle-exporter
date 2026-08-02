@@ -115,6 +115,20 @@ type process struct {
 	// contract).
 	Command string
 
+	// Container is the ID of the container the process runs in, or "" for one
+	// running directly on the host. It comes from the process's own
+	// /proc/<pid>/cgroup, so the PID dies here exactly as it does for Command —
+	// SPEC.md §Metrics contract forbids a PID as a label or a value, not as a
+	// transient lookup key, which is the same allowance Command already relies
+	// on.
+	//
+	// `container` is already in the closed hot-series identity set, so this
+	// costs no new label key: it makes a GPU process joinable to
+	// prickle_container_info, and through it to a pod name and namespace, which
+	// is the question "who is using this card" actually reduces to on a
+	// Kubernetes node.
+	Container string
+
 	MemoryBytes uint64
 }
 

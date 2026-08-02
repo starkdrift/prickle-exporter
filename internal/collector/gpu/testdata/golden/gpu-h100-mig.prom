@@ -22,7 +22,7 @@ prickle_gpu_nvidia_source_info{node="fixture",source="smi"} 1
 prickle_gpu_power_watts{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 171.29
 # HELP prickle_gpu_process_memory_bytes GPU memory held by processes running one command, summed. Opt-in behind -collector.gpu.per-process.
 # TYPE prickle_gpu_process_memory_bytes gauge
-prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",command="loadgen"} 4391436288
+prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",command="loadgen",container=""} 4391436288
 # HELP prickle_gpu_temperature_celsius GPU core temperature.
 # TYPE prickle_gpu_temperature_celsius gauge
 prickle_gpu_temperature_celsius{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 58

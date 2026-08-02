@@ -102,12 +102,12 @@ func (c *Collector) emitMIG(out *exposition.Set, gpu exposition.Label, instances
 // operator asking "how much is PyTorch holding" wants, and is also the only
 // aggregation available once the PID is gone.
 func (c *Collector) emitProcesses(out *exposition.Set, processes []process) {
-	type key struct{ gpu, mig, command string }
+	type key struct{ gpu, mig, command, container string }
 	totals := make(map[key]uint64, len(processes))
 	order := make([]key, 0, len(processes))
 
 	for _, p := range processes {
-		k := key{p.GPUUUID, p.MIGUUID, p.Command}
+		k := key{p.GPUUUID, p.MIGUUID, p.Command, p.Container}
 		if _, seen := totals[k]; !seen {
 			order = append(order, k)
 		}
@@ -120,6 +120,11 @@ func (c *Collector) emitProcesses(out *exposition.Set, processes []process) {
 			labels = append(labels, exposition.L("mig_uuid", k.mig))
 		}
 		labels = append(labels, exposition.L("command", k.command))
+		// Always present, empty for a process running on the host rather than
+		// in a container. A label key that comes and goes with the workload
+		// would break every query written without `by`, and the empty value is
+		// the honest answer: not in a container, rather than unknown.
+		labels = append(labels, exposition.L("container", k.container))
 
 		out.Gauge(prefix+"process_memory_bytes",
 			"GPU memory held by processes running one command, summed. Opt-in behind -collector.gpu.per-process.").

@@ -11,6 +11,72 @@ roadmap phase; `1.0.0` is where the metrics contract freezes.
 This file is written by hand. A metric change needs prose telling an operator
 what to do about it, which no commit-log generator writes.
 
+## [Unreleased]
+
+### Added
+
+- **`prickle_gpu_process_memory_bytes` carries a `container` label**, so a GPU
+  process can be joined to `prickle_container_info` and through it to a pod
+  name, a namespace and an image. "Which pod is holding this card" was
+  previously unanswerable from this exporter: the series was keyed on `command`
+  alone, and two pods running the same image were one series.
+
+  The value comes from the process's own `/proc/<pid>/cgroup`. The PID dies
+  there, exactly as it already does for `command` — SPEC.md §Metrics contract
+  forbids a PID as a label or a value, not as a transient lookup key. `container`
+  is already in the closed hot-series identity set, so this adds no new label
+  key to the contract. It is empty for a process running on the host, which is
+  a statement about the process rather than a failure to look.
+
+  Adding a label key to an existing series is a **major** under SPEC.md
+  §Versioning; pre-1.0 a minor may do it. Both sources emit it, so NVML and
+  `nvidia-smi` still produce identical output for the same GPU.
+
+  The cgroup parse is delegated to the container collector rather than repeated,
+  so the runtime prefix table and the two cgroup-driver layouts keep one
+  definition between them.
+
+- **A "GPU memory by pod and container" panel**, labelled
+  `<node>/<gpu-index>/<pod>/<container>`, and GPU series everywhere else are now
+  identified as `<node>/<gpu-index>/<gpu_uuid>`. A UUID alone does not say which
+  machine or which slot a card is in.
+
+### Fixed
+
+- **Per-process GPU attribution produced nothing in a container, silently.**
+  Naming a process reads its `exe` link, a `PTRACE_MODE_READ` operation, and
+  Yama `ptrace_scope=1` — the default on Debian and Ubuntu — permits that only
+  for a process's own descendants. A GPU workload is never the exporter's
+  descendant, so every process resolved to an empty command and was dropped by
+  the guard that keeps PIDs out of labels: the family simply never appeared,
+  with nothing logged. The chart now adds `CAP_SYS_PTRACE` when
+  `collectors.perProcess` is set. Verified on an H100.
+
+- **The chart granted GPU access with `hostPath` device mounts**, which make a
+  device node visible without adding it to the container's device cgroup, so an
+  unprivileged container was refused and `nvmlInit` returned 999. It now sets
+  `NVIDIA_VISIBLE_DEVICES`, which the NVIDIA container runtime honours — and
+  which, unlike requesting `nvidia.com/gpu: 1`, does not consume an allocatable
+  GPU. On a single-GPU node that would have taken the only card away from the
+  workload the exporter exists to measure.
+
+- **`prickle-nvml` segfaulted whenever `nvmlInit` failed.** `prickle_close()`
+  calls `dlclose()` but left all 27 function pointers dangling, so the `NULL`
+  guards still passed and the call jumped into unmapped memory — while
+  formatting the error that explains the failure. Guaranteed to crash in exactly
+  the degraded case a clean message matters most for.
+
+- **Container dashboard legends never rendered a pod name.** `pod_name` was
+  named in a `sum by` over a hot series, where it does not exist, and the two
+  `label_replace` calls were ordered so that the truncated UID overwrote the
+  name whenever one was resolved. Both fixed; legends read
+  `demo-idle/4407fe1bc9bc`.
+
+- **Four container panels failed outright** with `found duplicate series for the
+  match group` once that join existed. During a DaemonSet rollout two exporters
+  report the same container, and a one-to-many join needs its right-hand side
+  aggregated. An instant query at any quiet moment shows nothing wrong.
+
 ## [0.7.1] — 2026-08-02
 
 A packaging release. No metric, label or flag changes — a 0.7.0 scrape and a

@@ -224,7 +224,7 @@ func TestBracketedTokensAreAbsentNotErrors(t *testing.T) {
 func TestMIGProcessIsAttributedToTheParent(t *testing.T) {
 	out := collectFixture(t, func(o *Options) { o.PerProcess = true })
 
-	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + fixtureGPUUUID + `",command="prickle-gpu-spin"} 631242752`
+	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + fixtureGPUUUID + `",command="prickle-gpu-spin",container=""} 631242752`
 	if !strings.Contains(out, want) {
 		t.Errorf("missing %s in:\n%s", want, out)
 	}

@@ -308,3 +308,34 @@ func podIdentity(parent string) (uid, qos string) {
 	}
 	return strings.ReplaceAll(m[2], "_", "-"), qos
 }
+
+// IDFromCgroupPath extracts a container ID from a cgroup path as it appears in
+// /proc/<pid>/cgroup, or "" when the path does not name a container.
+//
+// It exists for the GPU collector, which knows a process's PID and needs to say
+// which container that process is in. Rather than parse cgroup paths a second
+// time it reuses identify, so the runtime prefix table and the two driver
+// layouts have exactly one definition. A second copy would drift, and the way
+// it would drift is silently: a new runtime prefix added here and not there
+// gives GPU processes an empty container on precisely the hosts the prefix was
+// added for.
+//
+// The input is the path portion of a cgroup line — the third field of
+// /proc/<pid>/cgroup, e.g.
+//
+//	/kubepods.slice/kubepods-burstable-pod<uid>.slice/cri-containerd-<hex>.scope
+//	/docker/<hex>
+//
+// It is a path in the cgroup hierarchy, not on disk, so nothing here touches
+// the filesystem: this is pure string work and cannot fail or block.
+func IDFromCgroupPath(p string) string {
+	p = strings.TrimSuffix(p, "/")
+	if p == "" || p == "/" {
+		return ""
+	}
+	cg, ok := identify(p, filepath.Base(p))
+	if !ok {
+		return ""
+	}
+	return cg.id
+}

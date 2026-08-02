@@ -2171,7 +2171,7 @@ data:
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "description": "Requires -collector.gpu.per-process. Keyed on `command`, the basename of the exe symlink \u2014 never a PID, which SPEC.md \u00a7Metrics contract forbids anywhere. Empty unless the flag is set. Under the nvidia-smi source these carry gpu_uuid only: that source cannot attribute a process to a MIG instance.",
+          "description": "Which pod is holding which card, as <node>/<gpu-index>/<pod>/<container>. The container comes from the GPU process's own /proc/<pid>/cgroup and the pod is joined from prickle_container_info, so a process outside a container reads `host` in both positions rather than leaving a blank segment. Requires -collector.gpu.per-process, which on Kubernetes also needs CAP_SYS_PTRACE: reading a foreign process's exe link is a PTRACE_MODE_READ operation and Yama ptrace_scope=1 is the default on Debian and Ubuntu.",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -2191,6 +2191,60 @@ data:
             "w": 24,
             "x": 0,
             "y": 24
+          },
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS}"
+              },
+              "expr": "label_join(label_replace(label_replace(label_replace(label_replace(label_replace(((sum by (node, gpu_uuid, container) (prickle_gpu_process_memory_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"})) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info)) * on (container) group_left(pod, pod_name) max by (container, pod, pod_name) (prickle_container_info), \"cshort\", \"host\", \"container\", \"^$\"), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"host\", \"container\", \"^$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"workload\", \"/\", \"node\", \"index\", \"pshort\", \"cshort\")",
+              "legendFormat": "{{workload}}",
+              "refId": "A"
+            }
+          ],
+          "title": "GPU memory by pod and container",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "description": "Requires -collector.gpu.per-process. Keyed on `command`, the basename of the exe symlink \u2014 never a PID, which SPEC.md \u00a7Metrics contract forbids anywhere. Empty unless the flag is set. Under the nvidia-smi source these carry gpu_uuid only: that source cannot attribute a process to a MIG instance.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "fillOpacity": 40,
+                "lineWidth": 1,
+                "showPoints": "never",
+                "stacking": {
+                  "mode": "normal"
+                }
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 32
           },
           "options": {
             "legend": {

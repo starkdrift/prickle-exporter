@@ -140,7 +140,7 @@ func TestSameCommandIsOneSummedSeries(t *testing.T) {
 		t.Errorf("got %d process series for three processes running two commands, want 2", n)
 	}
 	summed := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + h100UUID +
-		`",command="loadgen"} 8782872576`
+		`",command="loadgen",container=""} 8782872576`
 	if !strings.Contains(out, summed) {
 		t.Errorf("the two loadgen processes were not summed; want:\n  %s\ngot:\n%s", summed, out)
 	}
@@ -155,7 +155,7 @@ func TestDeletedBinaryKeepsItsName(t *testing.T) {
 	out := collectMixedMIG(t, func(o *Options) { o.PerProcess = true })
 
 	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + h100UUID +
-		`",command="ghost"} 4391436288`
+		`",command="ghost",container=""} 4391436288`
 	if !strings.Contains(out, want) {
 		t.Errorf("missing %s in:\n%s", want, out)
 	}

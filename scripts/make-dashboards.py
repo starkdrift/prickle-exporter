@@ -250,6 +250,36 @@ def gpu_qualified(expr):
               f'max by (gpu_uuid, index) (prickle_gpu_info)')
     return f'label_join({joined}, "gpu", "/", "node", "index", "gpu_uuid")'
 
+def gpu_workload_qualified(expr):
+    """Label a per-process GPU series `<node>/<index>/<pod>/<container>`.
+
+    Two joins, because the three facts live in three places by design. The GPU
+    process series carries node, gpu_uuid and container; `index` is on
+    prickle_gpu_info; the pod is on prickle_container_info. SPEC.md §Metrics
+    contract keeps descriptive attributes off hot series, so assembling them is
+    the dashboard's job and not the exporter's.
+
+    Both right-hand sides are aggregated. An unaggregated one-to-many join fails
+    the entire panel the moment a DaemonSet rollout puts two exporters in the
+    data, which an instant query will not show you.
+
+    `pod` prefers the resolved name and falls back to the UID, in that order —
+    the fallback is written first because label_replace overwrites whenever its
+    regex matches, and a UID always matches.
+    """
+    with_index = (f'({expr}) * on (gpu_uuid) group_left(index) '
+                  f'max by (gpu_uuid, index) (prickle_gpu_info)')
+    with_pod = (f'({with_index}) * on (container) group_left(pod, pod_name) '
+                f'max by (container, pod, pod_name) (prickle_container_info)')
+    # A process on the host is in no container; label it so rather than
+    # rendering an empty path segment that reads like a bug.
+    inner = f'label_replace({with_pod}, "cshort", "host", "container", "^$")'
+    inner = f'label_replace({inner}, "cshort", "$1", "container", "^(.{{1,12}}).*$")'
+    inner = f'label_replace({inner}, "pshort", "host", "container", "^$")'
+    inner = f'label_replace({inner}, "pshort", "$1", "pod", "^(.{{1,8}}).*$")'
+    inner = f'label_replace({inner}, "pshort", "$1", "pod_name", "^(.+)$")'
+    return f'label_join({inner}, "workload", "/", "node", "index", "pshort", "cshort")'
+
 def gpu_tenancy():
     g = selector(["node", "gpu_uuid"])
     mig = selector(["node", "gpu_uuid", "mig_uuid"])
@@ -299,10 +329,24 @@ def gpu_tenancy():
                    "was wrong on every H200 profile."),
 
         row("Per-process (opt-in)", 23),
+        ts("GPU memory by pod and container",
+           [(gpu_workload_qualified(
+                f"sum by (node, gpu_uuid, container) (prickle_gpu_process_memory_bytes{g})"),
+             "{{workload}}")],
+           {"h": 8, "w": 24, "x": 0, "y": 24}, unit="bytes", stack=True,
+           desc="Which pod is holding which card, as "
+                "<node>/<gpu-index>/<pod>/<container>. The container comes from "
+                "the GPU process's own /proc/<pid>/cgroup and the pod is joined "
+                "from prickle_container_info, so a process outside a container "
+                "reads `host` in both positions rather than leaving a blank "
+                "segment. Requires -collector.gpu.per-process, which on "
+                "Kubernetes also needs CAP_SYS_PTRACE: reading a foreign "
+                "process's exe link is a PTRACE_MODE_READ operation and Yama "
+                "ptrace_scope=1 is the default on Debian and Ubuntu."),
         ts("GPU memory by command",
            [(gpu_qualified(f"sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{g})"),
              "{{gpu}} / {{command}}")],
-           {"h": 8, "w": 24, "x": 0, "y": 24}, unit="bytes", stack=True,
+           {"h": 8, "w": 24, "x": 0, "y": 32}, unit="bytes", stack=True,
            desc="Requires -collector.gpu.per-process. Keyed on `command`, the "
                 "basename of the exe symlink — never a PID, which SPEC.md "
                 "§Metrics contract forbids anywhere. Empty unless the flag is "

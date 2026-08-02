@@ -150,10 +150,24 @@ not implemented and Intel is out of scope** — see [Coverage gaps](#coverage-ga
 | `--query-gpu` | `prickle_gpu_utilization_ratio`, `memory_used_bytes`, `memory_total_bytes`, `temperature_celsius`, `power_watts` |
 | `nvidia-smi -L` | `prickle_gpu_mig_enabled`, `mig_info` |
 | NVML only | `prickle_gpu_mig_memory_used_bytes`, `mig_memory_total_bytes`, `mig_utilization_ratio` |
-| `--query-compute-apps` | `prickle_gpu_process_memory_bytes{command}` — opt-in |
+| `--query-compute-apps` | `prickle_gpu_process_memory_bytes{command,container}` — opt-in |
 | identity | `prickle_gpu_info`, `prickle_gpu_nvidia_source_info` |
 
 Four things worth knowing:
+
+- **`container` on a GPU process is empty for a process on the host**, not
+  missing. The value comes from the process's own `/proc/<pid>/cgroup`, so it is
+  a statement about that process rather than about the exporter, and the key is
+  always present so a query written without `by` keeps working either way.
+  Joining it to `prickle_container_info` gives the pod, the namespace and the
+  image — which is how "who is using this card" gets answered on Kubernetes.
+
+  On Kubernetes this needs **`CAP_SYS_PTRACE`** as well as the flag. Naming a
+  process means reading its `exe` link, a `PTRACE_MODE_READ` operation, and
+  Yama `ptrace_scope=1` — the default on Debian and Ubuntu — permits that only
+  for a process's own descendants. Without it every GPU process resolves to an
+  empty command and is dropped, so the family is absent with nothing logged.
+  The chart adds the capability when `collectors.perProcess` is set.
 
 - **An absent metric means the driver would not say.** `utilization_ratio`
   disappears for the whole card once MIG is enabled — the driver reports `[N/A]`,
@@ -180,6 +194,14 @@ prickle_gpu_memory_used_bytes / prickle_gpu_memory_total_bytes
 
 # Which command is holding a card. Needs -collector.gpu.per-process.
 topk(5, prickle_gpu_process_memory_bytes)
+
+# Which POD is holding a card. The GPU series carries the container; the pod
+# name comes from prickle_container_info, which is where descriptive attributes
+# live. Aggregate the right-hand side: during a DaemonSet rollout two exporters
+# report the same container and an unaggregated join fails the whole query.
+prickle_gpu_process_memory_bytes
+  * on (container) group_left (pod_name)
+    max by (container, pod_name) (prickle_container_info)
 
 # Whether a scrape came from NVML or the nvidia-smi fallback.
 prickle_gpu_nvidia_source_info

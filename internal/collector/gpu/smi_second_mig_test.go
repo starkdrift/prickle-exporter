@@ -110,7 +110,7 @@ func TestSecondMIGRepeatsTheDriverLimitations(t *testing.T) {
 	if strings.Contains(out, prefix+"utilization_ratio") {
 		t.Error("utilization_ratio emitted, but this card also reports [N/A] under MIG")
 	}
-	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + h100UUID + `",command="loadgen"} 4391436288`
+	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + h100UUID + `",command="loadgen",container=""} 4391436288`
 	if !strings.Contains(out, want) {
 		t.Errorf("missing %s in:\n%s", want, out)
 	}

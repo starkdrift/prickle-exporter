@@ -120,7 +120,7 @@ func TestDefaultModeCardReportsNoInstances(t *testing.T) {
 func TestDefaultModeProcessIsAttributedToTheCard(t *testing.T) {
 	out := collectDefaultMode(t, func(o *Options) { o.PerProcess = true })
 
-	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + h100UUID + `",command="loadgen"} 4842323968`
+	want := prefix + `process_memory_bytes{node="fixture",gpu_uuid="` + h100UUID + `",command="loadgen",container=""} 4842323968`
 	if !strings.Contains(out, want) {
 		t.Errorf("missing %s in:\n%s", want, out)
 	}

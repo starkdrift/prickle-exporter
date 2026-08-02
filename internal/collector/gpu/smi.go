@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
 
 // DefaultSMICommand is the binary the fallback source spawns.
@@ -70,6 +72,9 @@ func (execRunner) Run(ctx context.Context, name string, args ...string) ([]byte,
 type smiSource struct {
 	command string
 	runner  commandRunner
+	// roots resolves /proc for the cgroup lookup that attributes a process to
+	// a container. The same prefix the NVML source uses for the exe symlink.
+	roots fsroot.Roots
 }
 
 // newSMISource returns the nvidia-smi source, or an error when the binary is
@@ -86,7 +91,7 @@ func newSMISource(opts Options) (nvidiaSource, error) {
 		}
 		runner = execRunner{}
 	}
-	return &smiSource{command: command, runner: runner}, nil
+	return &smiSource{command: command, runner: runner, roots: opts.Roots}, nil
 }
 
 // Name implements nvidiaSource.
@@ -134,7 +139,7 @@ func (s *smiSource) Read(ctx context.Context) (snapshot, error) {
 		"--query-compute-apps="+queryProcessFields, "--format=csv,noheader,nounits"); err != nil {
 		errs = append(errs, err)
 	} else {
-		snap.processes, err = parseComputeApps(string(out))
+		snap.processes, err = parseComputeApps(string(out), s.containerOf)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -142,3 +147,6 @@ func (s *smiSource) Read(ctx context.Context) (snapshot, error) {
 
 	return snap, errors.Join(errs...)
 }
+
+// containerOf implements resolveContainer for the nvidia-smi source.
+func (s *smiSource) containerOf(pid uint32) string { return containerOfPID(s.roots, pid) }

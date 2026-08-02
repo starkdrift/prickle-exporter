@@ -247,7 +247,13 @@ func parseMIGListing(line string) (migDevice, error) {
 // process: a verified limitation of this source recorded in SPEC.md
 // §Collectors, so MIGUUID is left empty and only NVML can fill it. Attributing
 // such a process to the physical card is correct-but-coarse, not wrong.
-func parseComputeApps(out string) ([]process, error) {
+// resolveContainer maps a PID to the container it runs in, or "" for the host.
+// It is passed in rather than called later so that the PID still dies inside
+// this function: nothing downstream ever sees one, which is the invariant
+// SPEC.md §Metrics contract asks for.
+type resolveContainer func(pid uint32) string
+
+func parseComputeApps(out string, container resolveContainer) ([]process, error) {
 	var processes []process
 	var errs []error
 
@@ -268,6 +274,13 @@ func parseComputeApps(out string) ([]process, error) {
 		}
 
 		p := process{GPUUUID: f[0], Command: path.Base(f[2])}
+		// The pid column exists for exactly this and is not kept. A malformed
+		// pid is not an error: it costs the container attribution on one row,
+		// where failing the whole scrape would cost every GPU metric on the
+		// host.
+		if pid, err := strconv.ParseUint(f[1], 10, 32); err == nil && container != nil {
+			p.Container = container(uint32(pid))
+		}
 		if p.GPUUUID == "" {
 			errs = append(errs, fmt.Errorf("--query-compute-apps: row with no GPU UUID: %q", line))
 			continue
