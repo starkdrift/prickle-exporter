@@ -137,6 +137,18 @@ else
   printf '  \033[1;33mSKIP\033[0m python3 not found; dashboard sync unchecked\n'
 fi
 
+step "no PIDs in any fixture (SPEC.md §Metrics contract)"
+# cgroup.procs is the one file in a cgroup that contains PIDs. The collector
+# never reads it and no fixture carries it, but until now the capture script
+# collected it and a hand-editing step kept it out of commits — a SPEC
+# violation one forgotten step away from the tree. The script no longer
+# captures it; this makes the guarantee independent of the script.
+if procs=$(find . -path ./.git -prune -o -name 'cgroup.procs' -print 2>/dev/null) && [ -n "$procs" ]; then
+  printf '%s\n' "$procs" | sed 's/^/    /'
+  fail "a cgroup.procs file is in the tree; SPEC.md §Metrics contract forbids a PID anywhere"
+fi
+printf '  ok  no cgroup.procs anywhere in the tree\n'
+
 step "the released version is stated consistently (SPEC.md §Versioning)"
 # The README said "This is 0.6.x" for hours after the 0.7.0 tag went out, and
 # nothing caught it: every other gate here reads structure, and a version is

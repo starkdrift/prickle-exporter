@@ -113,9 +113,15 @@ failures are reported as `[skip]` and the run continues.
 | 2 — Containers | `docker-*.scope` and `/sys/fs/cgroup/docker/*` cgroup files, the full `kubepods.slice` tree, `GET /containers/json` off the Docker socket | cgroup v2 tree + Docker API |
 | 3 — GPU | `nvidia-smi -L`, `--query-gpu`, `--query-compute-apps`, `mig -lgip/-lgi/-lci`; AMD `gpu_busy_percent`, `mem_info_vram_{used,total}`, `hwmon/*`; `rocm-smi --showall`; per-process DRM/NVIDIA `fdinfo` plus that process's `cgroup`, `comm` and `exe` symlink target | vendor tools + sysfs + `/proc/<pid>/fdinfo` |
 
-Per-cgroup files captured: `cgroup.type`, `cgroup.procs`, `cpu.stat`, `cpu.max`,
-`cpu.weight`, `memory.{current,max,min,low,high,stat,pressure}`, `io.stat`,
-`pids.{current,max}`.
+Per-cgroup files captured: `cgroup.type`, `cpu.stat`, `cpu.max`,
+`cpu.weight`, `cpu.pressure`, `memory.{current,max,min,low,high,stat,pressure}`,
+`io.stat`, `io.pressure`, `pids.{current,max}`.
+
+**`cgroup.procs` is not captured**, and must never be. It is the only file in a
+cgroup holding PIDs, SPEC.md §Metrics contract forbids a PID appearing
+anywhere, and the collector does not read it. It used to be collected and
+stripped by hand before committing; `ci/check.sh` now fails if one appears
+under any `testdata/` tree, so the rule is enforced rather than remembered.
 
 `Statfs` (SPEC §Collectors, Phase 1) can't be captured as a file — it's a
 syscall behind an interface. The script writes `meta/statfs-reference.txt` from

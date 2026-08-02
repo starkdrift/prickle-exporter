@@ -44,9 +44,20 @@ grab() {
     rm -f "$dst"; warn "read failed: $src"; return 1; fi
 }
 
-CG_FILES="cgroup.type cgroup.procs cpu.stat cpu.max cpu.weight
+# cgroup.procs is deliberately absent. It is the one file in a cgroup that
+# contains PIDs, SPEC.md §Metrics contract forbids a PID appearing anywhere, and
+# the collector never reads it. Capturing it and stripping it by hand before
+# committing — which is what this script used to require — puts a SPEC violation
+# one forgotten step away from the repository, in exchange for a file nothing
+# reads. ci/check.sh fails if one ever appears under testdata/.
+#
+# cpu.pressure and io.pressure are here because the collector reads both; before
+# this they were covered only by a hand-written tree, so the format was asserted
+# against itself rather than against a kernel.
+CG_FILES="cgroup.type cpu.stat cpu.max cpu.weight cpu.pressure
           memory.current memory.max memory.min memory.low memory.high
-          memory.stat memory.pressure io.stat pids.current pids.max"
+          memory.stat memory.pressure io.stat io.pressure
+          pids.current pids.max"
 grab_cgroup_dir() { local d=$1 f; for f in $CG_FILES; do [[ -e $d/$f ]] && grab "$d/$f"; done; }
 
 require_root() {
