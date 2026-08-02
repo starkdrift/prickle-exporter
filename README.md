@@ -35,6 +35,7 @@
 - [Configuration](#configuration)
 - [Documentation](#documentation)
 - [Status](#status)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## What it is
@@ -387,6 +388,15 @@ the contract is still moving.
 
 Linux only. Where it has been run, and what that found, is in
 [docs/verification.md](docs/verification.md).
+
+## Contributing
+
+This repository is public so it can be audited and so problems can be reported —
+not so patches can be merged. **Pull requests are closed automatically**, good
+ones included; issues are the route that works, and bug reports and feature
+discussion through them are genuinely welcome. The reasoning, and how to report
+a vulnerability privately, are in
+[.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## License
 
