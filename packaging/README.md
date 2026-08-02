@@ -208,15 +208,18 @@ finding 18 containerd containers through the host mount.
 Published to `ghcr.io/starkdrift/prickle-exporter` from `v0.5.0` on, as
 multi-architecture manifest lists over `linux/amd64` and `linux/arm64`.
 
-**Only the current release is kept in the registry.** Older image versions are
-removed, so `0.5.0` through `0.7.0` no longer pull even though they were once
-published. Mirror what you intend to keep — that is what the `skopeo copy`
-below is for, and a mirror inside your own perimeter is the only copy this
-project guarantees will still be there.
+**`0.5.0` through `0.7.0` have been withdrawn.** They carried defects worth not
+shipping, so their images no longer pull and their release binaries are no
+longer attached, even though both were once published. That was a one-time
+cleanup of early pre-1.0 builds rather than a retention policy: nothing is
+removed on a schedule, and from `1.0` onward a published image or tarball stays
+published. Before `1.0`, a release found to be defective may still be withdrawn
+the same way.
 
-Release tarballs follow the same rule: every GitHub release page and its notes
-stay, but the binaries are attached to the current release only. Git tags are
-never removed, so the source of any version remains buildable.
+Release pages and their notes are never deleted, and no git tag is ever removed,
+so the source of any version remains buildable. Mirroring is still worth doing
+if you depend on a particular version — that is what the `skopeo copy` below is
+for.
 
 | Tag | Contents | Base |
 |---|---|---|
