@@ -118,7 +118,21 @@ def pod_qualified(expr):
     # walk discovers, in the same pass and before any per-source collection, and
     # prickle_container_info is in the minimal preset — so a hot series without
     # a matching _info is not a state the exporter can produce.
-    joined = (f'({expr}) * on (container) group_left(pod_name) prickle_container_info')
+    # The right-hand side is aggregated, not used raw. A one-to-many join
+    # requires the right side to be unique per match group, and
+    # prickle_container_info is not: during a DaemonSet rollout the outgoing and
+    # incoming pod both report the same containers, so for the ~5 minutes before
+    # the old series go stale there are two _info series per container differing
+    # only in `instance`. The panel then fails outright with "found duplicate
+    # series for the match group", for the whole dashboard window rather than
+    # just the overlap. An instant query at any quiet moment shows nothing wrong,
+    # which is what makes it easy to ship.
+    #
+    # max by (container, pod_name) collapses those to one. It picks a value, but
+    # every duplicate carries the same pod_name for the same container — they are
+    # the same reading seen twice — so there is nothing to choose between.
+    joined = (f'({expr}) * on (container) group_left(pod_name) '
+              f'max by (container, pod_name) (prickle_container_info)')
     inner = (f'label_replace({joined}, "cshort", "$1", "container", "^(.{{1,12}}).*$")')
     # Fallback FIRST, preference SECOND. label_replace overwrites the
     # destination whenever its regex matches the source — it does not "fill in

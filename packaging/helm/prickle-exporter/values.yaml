@@ -22,10 +22,29 @@ nvml:
   # the container's own libc with the host's to solve a one-file problem.
   # RHEL-family hosts put it under /usr/lib64.
   libraryPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
-  # Device nodes NVML opens. nvidia-uvm is not needed for queries.
+  # Device nodes NVML opens, mounted for runtimes that honour a hostPath device.
+  #
+  # On Kubernetes these are NOT sufficient on their own, and the chart no longer
+  # relies on them: a hostPath makes the device node *visible* but does not add
+  # it to the container's device cgroup, so an unprivileged container is still
+  # denied and nvmlInit returns 999. Bisected on an H100 — root, drop ALL and
+  # seccomp all made no difference; only privileged: true worked, which is the
+  # tell that the device cgroup is what is refusing.
+  #
+  # `visibleDevices` below is what actually grants access. These stay for
+  # runtimes without the NVIDIA container runtime, where they do work.
   devices:
     - /dev/nvidiactl
     - /dev/nvidia0
+
+  # How the NVIDIA container runtime is asked for the GPU. This is the
+  # mechanism that both injects the devices and allows them in the device
+  # cgroup, and unlike `resources.limits.nvidia.com/gpu: 1` it does NOT consume
+  # an allocatable GPU — the exporter must not take a card away from the work it
+  # exists to measure, which on a single-GPU node would mean taking the only one.
+  # Verified unprivileged, runAsNonRoot 65532, drop ALL, seccomp RuntimeDefault.
+  visibleDevices: "all"
+  driverCapabilities: "utility"
 
 collectors:
   container: true

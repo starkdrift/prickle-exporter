@@ -302,7 +302,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_usage_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_usage_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}}",
               "refId": "A"
             }
@@ -355,7 +355,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}} stalled",
               "refId": "A"
             },
@@ -364,7 +364,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_periods_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_periods_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}} periods",
               "refId": "B"
             }
@@ -430,7 +430,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_usage_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_usage_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}}",
               "refId": "A"
             },
@@ -439,7 +439,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_limit_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_limit_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}} limit",
               "refId": "B"
             }
@@ -492,7 +492,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_read_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_read_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}} {{device}} r",
               "refId": "A"
             },
@@ -501,7 +501,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_written_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) prickle_container_info, \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+              "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_written_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
               "legendFormat": "{{display}} {{device}} w",
               "refId": "B"
             }

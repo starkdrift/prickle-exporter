@@ -76,6 +76,19 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- if .Values.nvml.enabled }}
+            # What actually grants GPU access under Kubernetes. The hostPath
+            # device mounts below make the nodes visible but leave them out of
+            # the container's device cgroup, so nvmlInit returns 999 in an
+            # unprivileged container. These are read by the NVIDIA container
+            # runtime, which injects the devices and allows them properly — and
+            # without consuming an allocatable GPU, so the exporter never takes
+            # a card away from the workload it exists to measure.
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: {{ .Values.nvml.visibleDevices | quote }}
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: {{ .Values.nvml.driverCapabilities | quote }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: {{ .Values.service.port }}

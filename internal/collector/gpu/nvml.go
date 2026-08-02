@@ -297,6 +297,38 @@ static void prickle_close(void) {
   if (p_shutdown != NULL) p_shutdown();
   dlclose(nvml_handle);
   nvml_handle = NULL;
+  // Every pointer into the library must go with it. dlclose unmaps the code
+  // they point at, but leaves the pointers themselves non-NULL, so the NULL
+  // guards in the wrappers below all still pass and the call jumps into
+  // unmapped memory. That is not theoretical: it segfaulted prickle-nvml on a
+  // real H100 the first time nvmlInit failed there.
+  p_init = NULL;
+  p_shutdown = NULL;
+  p_error_string = NULL;
+  p_driver_version = NULL;
+  p_device_count = NULL;
+  p_device_by_index = NULL;
+  p_device_uuid = NULL;
+  p_device_name = NULL;
+  p_device_utilization = NULL;
+  p_device_memory = NULL;
+  p_device_memory_v2 = NULL;
+  p_device_temperature = NULL;
+  p_device_power = NULL;
+  p_device_mig_mode = NULL;
+  p_device_max_mig_count = NULL;
+  p_device_mig_by_index = NULL;
+  p_device_attributes = NULL;
+  p_device_gi_id = NULL;
+  p_device_parent_of_mig = NULL;
+  p_device_gi_by_id = NULL;
+  p_gi_info = NULL;
+  p_device_gi_profile_info = NULL;
+  p_device_ci_id = NULL;
+  p_gi_ci_by_id = NULL;
+  p_ci_info = NULL;
+  p_gi_ci_profile_info = NULL;
+  p_device_compute_procs = NULL;
 }
 
 static const char *prickle_dlerror(void) { return dlerror(); }
@@ -624,8 +656,11 @@ func newNVMLSource(opts Options) (nvidiaSource, error) {
 			return nil, nvmlErr
 		}
 		if r := C.prickle_init(); r != 0 {
+			// Describe the failure BEFORE closing. nvmlError reaches back into
+			// the library for the message, and prickle_close dlcloses it.
+			msg := nvmlError(r)
 			C.prickle_close()
-			nvmlErr = fmt.Errorf("%w: nvmlInit: %s", ErrUnavailable, nvmlError(r))
+			nvmlErr = fmt.Errorf("%w: nvmlInit: %s", ErrUnavailable, msg)
 			return nil, nvmlErr
 		}
 		nvmlLoaded = true
