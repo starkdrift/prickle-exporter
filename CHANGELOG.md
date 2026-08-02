@@ -19,6 +19,27 @@ contributors something false.
 
 ### Fixed
 
+- **The release tarball now contains its systemd unit.** It shipped `prickle`,
+  `LICENSE`, `README.md` and `CHANGELOG.md` — while the README told you to
+  `install packaging/systemd/prickle.service`, a path that exists only in a git
+  clone. Anyone deploying from the release artifact, which is how a binary
+  normally reaches a server, had no unit to install. The README's systemd
+  section is now written against the tarball, and the release workflow asserts
+  the unit is present rather than assuming it.
+
+- **The headline Helm command no longer sets `serviceMonitor.enabled=true`.**
+  On a cluster without the Prometheus Operator's CRD that makes `helm install`
+  fail outright — correct behaviour from the chart, since a silently ignored
+  ServiceMonitor is a cluster that looks monitored and is not, but the wrong
+  thing to put in a line people copy. It is documented in the flag table
+  instead.
+
+  Both of the above were found by running every documented install method on
+  all fourteen DigitalOcean base images against the published 0.7.0 artifacts.
+  Both are the same shape as the `nvml.enabled=true` fix earlier in this
+  section: a copy-paste command carrying a flag or path that only works in some
+  environments. `docs/verification.md` records the full matrix.
+
 - **`capture-fixtures.sh` captured no Kubernetes cgroups at all on a
   cgroupfs-driver node.** Three places hardcoded
   `/sys/fs/cgroup/kubepods.slice`, which is the systemd driver's spelling; the

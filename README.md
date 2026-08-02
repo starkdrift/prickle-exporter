@@ -118,17 +118,29 @@ including the traps each one has, is in
 ### Standalone, with systemd
 
 ```sh
+V=0.7.0
+curl -fsSLO https://github.com/starkdrift/prickle-exporter/releases/download/v$V/prickle_v${V}_linux_amd64.tar.gz
+curl -fsSLO https://github.com/starkdrift/prickle-exporter/releases/download/v$V/SHA256SUMS
+grep prickle_v${V}_linux_amd64.tar.gz SHA256SUMS | sha256sum -c
+tar xzf prickle_v${V}_linux_amd64.tar.gz
+
 install -m 0755 prickle /usr/local/bin/prickle
-install -m 0644 packaging/systemd/prickle.service /etc/systemd/system/
+install -m 0644 prickle.service /etc/systemd/system/
 command -v restorecon >/dev/null && restorecon /etc/systemd/system/prickle.service
 systemctl daemon-reload && systemctl enable --now prickle
 ```
+
+The unit ships **inside the tarball**, so this needs nothing checked out. From a
+git clone it is `packaging/systemd/prickle.service` instead; the file is the
+same one.
 
 The unit runs under `DynamicUser` with `ProtectSystem=strict`, an empty
 capability set and a syscall allow-list — verified on live hosts as `CapEff
 0000000000000000`, and rated 1.5 by `systemd-analyze security`.
 
-Use `packaging/systemd/prickle-nvml.service` on NVIDIA hosts. **Do not skip the
+On NVIDIA hosts take the `prickle-nvml` tarball instead — it ships
+`prickle-nvml.service`, hardened identically but for the device access NVML
+needs. **Do not skip the
 `restorecon` line**: on an SELinux host a unit file with the wrong label is
 invisible to systemd, which then reports `Unit prickle.service not found` for a
 file that is plainly there.
@@ -137,8 +149,7 @@ file that is plainly there.
 
 ```sh
 helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace \
-  --set collectors.podNames.enabled=true \
-  --set serviceMonitor.enabled=true
+  --set collectors.podNames.enabled=true
 ```
 
 A DaemonSet, a headless Service, and an optional ServiceMonitor. **No
@@ -147,16 +158,24 @@ never the Kubernetes API, so there is nothing for a token to be for.
 
 That runs on **every node in any cluster**, GPU or not: it mounts nothing from
 the host beyond `/proc` and `/sys`, so there is no node it can fail to start on.
-Both flags are off by default and each is a deliberate trade:
+
+Three optional flags, all off by default. The command above sets the first;
+the other two are left out of it because each needs something of the cluster
+that not every cluster has, and `helm install` fails rather than degrades:
 
 | Flag | What it buys | What it costs |
 |---|---|---|
 | `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | `CAP_DAC_READ_SEARCH`, which bypasses file-read checks host-wide — [read this first](#pod-names-and-what-they-cost) |
-| `serviceMonitor.enabled` | Prometheus Operator discovers the DaemonSet on its own | Needs the `ServiceMonitor` CRD installed. Without the Operator, scrape it with a static config or pod discovery instead |
+| `serviceMonitor.enabled` | Prometheus Operator discovers the DaemonSet on its own | **Requires the Prometheus Operator's CRD.** Without it `helm install` fails outright rather than degrading — deliberately, since a silently-ignored ServiceMonitor is a cluster that looks monitored and is not. Scrape with a static config or pod discovery instead |
+| `nvml.enabled` | NVIDIA GPU metrics | Requires a driver on the node — [see below](#kubernetes-gpu-nodes) |
 
-Drop either one and the install is still valid — plain `helm install prickle
-packaging/helm/prickle-exporter -n monitoring --create-namespace` gives you
-every host and container metric, unprivileged, with pods identified by UID.
+Drop `collectors.podNames.enabled` too and the install is still valid — plain
+`helm install prickle packaging/helm/prickle-exporter -n monitoring
+--create-namespace` gives you every host and container metric, unprivileged,
+with pods identified by UID.
+
+Verified on a kubeadm cluster at 0.7.0: 220 series, 24 containers, every pod
+name resolved, all three QoS classes.
 
 ### Kubernetes, GPU nodes
 

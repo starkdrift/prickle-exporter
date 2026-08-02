@@ -145,12 +145,25 @@ jobs:
           }
 
           # Reproducible tarball: fixed order, no uid/gid, tag date as mtime.
+          #
+          # The systemd unit ships alongside its binary. Without it the tarball
+          # could not satisfy the README's own install instructions, which say
+          # to `install packaging/systemd/prickle.service` — a path that exists
+          # only in a git clone, while the tarball is how anyone actually gets a
+          # binary onto a server. Found by running the documented install on
+          # fourteen base images: all fourteen had no unit to install.
           package() {
             install -m 0644 LICENSE README.md CHANGELOG.md build/
+            install -m 0644 "packaging/systemd/${1}.service" build/
             tar --sort=name --owner=0 --group=0 --numeric-owner --mtime="$mtime" \
                 -czf "dist/${1}_${VERSION}_linux_${GOARCH}.tar.gz" \
-                -C build "$1" LICENSE README.md CHANGELOG.md
-            rm -f "build/$1"
+                -C build "$1" "${1}.service" LICENSE README.md CHANGELOG.md
+            # Assert rather than assume: a tarball that quietly loses the unit
+            # again would look identical from the outside.
+            tar tzf "dist/${1}_${VERSION}_linux_${GOARCH}.tar.gz" \
+              | grep -qx "${1}.service" \
+              || { echo "::error::${1}.service is missing from the release tarball"; exit 1; }
+            rm -f "build/$1" "build/${1}.service"
           }
 
           # 1. prickle — static, pure Go, nvidia-smi path.

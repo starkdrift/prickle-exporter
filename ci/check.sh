@@ -178,6 +178,9 @@ check_version README.md \
 check_version README.md \
   "the README's Status version" \
   "This is \`$series\`"
+check_version README.md \
+  "the README's systemd download line" \
+  "V=$ver"
 check_version packaging/helm/prickle-exporter/Chart.yaml \
   "the chart's appVersion" \
   "appVersion: \"$ver\""
