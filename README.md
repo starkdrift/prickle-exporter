@@ -118,7 +118,7 @@ including the traps each one has, is in
 ### Standalone, with systemd
 
 ```sh
-V=0.7.0
+V=0.7.1
 curl -fsSLO https://github.com/starkdrift/prickle-exporter/releases/download/v$V/prickle_v${V}_linux_amd64.tar.gz
 curl -fsSLO https://github.com/starkdrift/prickle-exporter/releases/download/v$V/SHA256SUMS
 grep prickle_v${V}_linux_amd64.tar.gz SHA256SUMS | sha256sum -c
@@ -216,7 +216,7 @@ with `skopeo copy --all`.
 ```sh
 docker run -d --name prickle --network=host \
   -v /proc:/host/proc:ro -v /sys:/host/sys:ro \
-  ghcr.io/starkdrift/prickle-exporter:0.7.0 -path.rootfs=/host
+  ghcr.io/starkdrift/prickle-exporter:0.7.1 -path.rootfs=/host
 ```
 
 `-path.rootfs=/host` is not optional — without it the exporter faithfully

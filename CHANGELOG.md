@@ -11,11 +11,15 @@ roadmap phase; `1.0.0` is where the metrics contract freezes.
 This file is written by hand. A metric change needs prose telling an operator
 what to do about it, which no commit-log generator writes.
 
-## [Unreleased]
+## [0.7.1] — 2026-08-02
 
-Nothing here changes a metric, a label or a flag. It is tooling, tests and
-documentation — recorded because two of the fixes are to things that told
-contributors something false.
+A packaging release. No metric, label or flag changes — a 0.7.0 scrape and a
+0.7.1 scrape are byte-identical on the same host.
+
+**If you install with systemd, take this one.** The 0.7.0 tarball did not
+contain `prickle.service`, so the README's own install instructions could not
+be followed from the release artifact. It is in the tarball now, and the
+release workflow fails if it ever goes missing again.
 
 ### Fixed
 
@@ -810,7 +814,8 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/starkdrift/prickle-exporter/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.4.0...v0.5.0
