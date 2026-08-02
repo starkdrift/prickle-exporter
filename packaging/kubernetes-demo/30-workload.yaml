@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Something for the Container Resources dashboard to draw. Without a workload
+# the demo comes up correct and empty, which reads as broken.
+#
+# The throttled pod asks for a quarter of a CPU and then burns as much as it
+# can, so the throttling panels show real stalls rather than flat zero — the
+# thing no fixture could ever supply.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-throttled
+  namespace: prickle-demo
+  labels: {app: prickle-demo-workload}
+spec:
+  containers:
+    - name: burn
+      image: busybox:1.37
+      command: ["sh", "-c", "while true; do :; done"]
+      resources:
+        requests: {cpu: 250m, memory: 32Mi}
+        limits: {cpu: 250m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-idle
+  namespace: prickle-demo
+  labels: {app: prickle-demo-workload}
+spec:
+  containers:
+    - name: sleeper
+      image: busybox:1.37
+      command: ["sh", "-c", "while true; do sleep 1; done"]
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}

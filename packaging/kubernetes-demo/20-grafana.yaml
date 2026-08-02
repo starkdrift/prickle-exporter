@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Grafana with the datasource and all four dashboards already provisioned, so
+# `kubectl apply` is the whole setup. Same posture as the compose demo:
+# anonymous admin and no login form, because a quickstart with a password step
+# is a quickstart nobody finishes.
+#
+# It is a demonstration, not a deployment. There is no Ingress on purpose —
+# reach it with `kubectl port-forward` so it is never exposed by accident.
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: grafana-provisioning, namespace: prickle-demo}
+data:
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        uid: prickle-prometheus
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: prickle
+        orgId: 1
+        folder: Prickle
+        type: file
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: grafana, namespace: prickle-demo}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: grafana}}
+  template:
+    metadata: {labels: {app: grafana}}
+    spec:
+      securityContext: {runAsNonRoot: true, runAsUser: 472, fsGroup: 472}
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.5.1@sha256:5781759b3d27734d4d548fcbaf60b1180dbf4290e708f01f292faa6ae764c5e6
+          env:
+            - {name: GF_AUTH_ANONYMOUS_ENABLED, value: "true"}
+            - {name: GF_AUTH_ANONYMOUS_ORG_ROLE, value: Admin}
+            - {name: GF_AUTH_DISABLE_LOGIN_FORM, value: "true"}
+            - {name: GF_USERS_DEFAULT_THEME, value: dark}
+          ports: [{containerPort: 3000, name: http}]
+          volumeMounts:
+            # Split so each provisioning subdirectory exists: Grafana logs an
+            # error for every one it cannot open, and a read-only mount cannot
+            # create them.
+            - {name: provisioning, mountPath: /etc/grafana/provisioning/datasources/datasource.yaml, subPath: datasource.yaml}
+            - {name: provisioning, mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml, subPath: dashboards.yaml}
+            - {name: dashboards, mountPath: /var/lib/grafana/dashboards}
+      volumes:
+        - {name: provisioning, configMap: {name: grafana-provisioning}}
+        - {name: dashboards, configMap: {name: prickle-dashboards}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: grafana, namespace: prickle-demo}
+spec:
+  selector: {app: grafana}
+  ports: [{port: 3000, targetPort: http, name: http}]

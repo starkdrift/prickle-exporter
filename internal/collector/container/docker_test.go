@@ -77,9 +77,9 @@ func TestDockerEnrichment(t *testing.T) {
 
 	// The three Docker containers in the capture, with the names the API gave.
 	for _, want := range []string{
-		`container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",pod="",pod_name="",runtime="docker",qos="",name="fixture-nginx",image="nginx:alpine"`,
-		`container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",pod="",pod_name="",runtime="docker",qos="",name="fixture-sleeper",image="busybox"`,
-		`container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",pod="",pod_name="",runtime="docker",qos="",name="fixture-redis",image="redis:alpine"`,
+		`container="48c2b913843a172adff5fb81b2e0a0d1e4916f03c3b0c47d6b746875465c9d74",pod="",pod_name="",namespace="",runtime="docker",qos="",name="fixture-nginx",image="nginx:alpine"`,
+		`container="8d09d3c34a61c442f29773b0d7f9278273cc9ad0c6bba7338469ff531bd1e48b",pod="",pod_name="",namespace="",runtime="docker",qos="",name="fixture-sleeper",image="busybox"`,
+		`container="f705060e0a39b2f27fb84e358e140c56e348b7db8a203950078282c298e44dd2",pod="",pod_name="",namespace="",runtime="docker",qos="",name="fixture-redis",image="redis:alpine"`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("prickle_container_info is missing %s", want)

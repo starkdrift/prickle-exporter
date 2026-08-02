@@ -30,8 +30,8 @@ prickle_container_cpu_weight{node="fixture",container="5990b0f7b874c5c4272ee2e64
 prickle_container_cpu_weight{node="fixture",container="c2208d482c73cc50c6a7ad93ef17d9721ad85fd5e68c1a9d56e6d4c9cfed8001"} 100
 # HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
 # TYPE prickle_container_info gauge
-prickle_container_info{node="fixture",container="5990b0f7b874c5c4272ee2e6463a90eb7b2239e9b42e2e7cdf9c9e6c88002006",pod="",pod_name="",runtime="containerd",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="c2208d482c73cc50c6a7ad93ef17d9721ad85fd5e68c1a9d56e6d4c9cfed8001",pod="",pod_name="",runtime="containerd",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="5990b0f7b874c5c4272ee2e6463a90eb7b2239e9b42e2e7cdf9c9e6c88002006",pod="",pod_name="",namespace="",runtime="containerd",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="c2208d482c73cc50c6a7ad93ef17d9721ad85fd5e68c1a9d56e6d4c9cfed8001",pod="",pod_name="",namespace="",runtime="containerd",qos="",name="",image=""} 1
 # HELP prickle_container_memory_anon_bytes Anonymous memory: heap and stack, not backed by a file, reclaimable only to swap.
 # TYPE prickle_container_memory_anon_bytes gauge
 prickle_container_memory_anon_bytes{node="fixture",container="5990b0f7b874c5c4272ee2e6463a90eb7b2239e9b42e2e7cdf9c9e6c88002006"} 274432

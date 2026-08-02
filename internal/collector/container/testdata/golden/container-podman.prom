@@ -37,9 +37,9 @@ prickle_container_cpu_weight{node="fixture",container="b4261511f06d109075ef9fc43
 prickle_container_cpu_weight{node="fixture",container="de43fb3a036fd7b249db02680a63f7fd7991e5da835fad72ef9c1d9971e16a4f"} 100
 # HELP prickle_container_info Container identity: constant 1, carrying the descriptive attributes to join on.
 # TYPE prickle_container_info gauge
-prickle_container_info{node="fixture",container="021f9ed3c01a0f896781d785633a9983523b0a184c224aa779d51b8154c9fb3a",pod="",pod_name="",runtime="podman",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="b4261511f06d109075ef9fc4313af8cfb2588f849167adce9598dca2fbebb79f",pod="",pod_name="",runtime="podman",qos="",name="",image=""} 1
-prickle_container_info{node="fixture",container="de43fb3a036fd7b249db02680a63f7fd7991e5da835fad72ef9c1d9971e16a4f",pod="",pod_name="",runtime="podman",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="021f9ed3c01a0f896781d785633a9983523b0a184c224aa779d51b8154c9fb3a",pod="",pod_name="",namespace="",runtime="podman",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="b4261511f06d109075ef9fc4313af8cfb2588f849167adce9598dca2fbebb79f",pod="",pod_name="",namespace="",runtime="podman",qos="",name="",image=""} 1
+prickle_container_info{node="fixture",container="de43fb3a036fd7b249db02680a63f7fd7991e5da835fad72ef9c1d9971e16a4f",pod="",pod_name="",namespace="",runtime="podman",qos="",name="",image=""} 1
 # HELP prickle_container_io_discarded_bytes_total Bytes discarded.
 # TYPE prickle_container_io_discarded_bytes_total counter
 prickle_container_io_discarded_bytes_total{node="fixture",container="b4261511f06d109075ef9fc4313af8cfb2588f849167adce9598dca2fbebb79f",device="vda"} 0

@@ -20,6 +20,18 @@
 
 ---
 
+## Contents
+
+- [What it is](#what-it-is)
+- [Status](#status)
+- [Quick start](#quick-start)
+- [Deploying](#deploying) — [systemd](#standalone-with-systemd) · [Kubernetes](#kubernetes-with-helm) · [container](#container-directly)
+- [Try it: Prometheus and Grafana](#try-it-prometheus-and-grafana) — [Docker Compose](#with-docker-compose) · [Kubernetes](#on-kubernetes)
+- [Pod names, and what they cost](#pod-names-and-what-they-cost)
+- [Configuration](#configuration)
+- [Documentation](#documentation)
+- [License](#license)
+
 ## What it is
 
 `prickle-exporter` builds one binary, `prickle`, that exposes Prometheus metrics
@@ -161,6 +173,15 @@ A DaemonSet, a headless Service, and an optional ServiceMonitor. **No
 ServiceAccount and no RBAC** — the exporter reads the node's filesystem and
 never the Kubernetes API, so there is nothing for a token to be for.
 
+On Kubernetes you almost certainly want **pod names**, which are off by default
+because of what they cost — read
+[the next section](#pod-names-and-what-they-cost) before enabling it:
+
+```sh
+helm install prickle packaging/helm/prickle-exporter -n monitoring --create-namespace \
+  --set collectors.podNames.enabled=true
+```
+
 Images are published to `ghcr.io/starkdrift/prickle-exporter` as
 multi-architecture manifest lists, so an air-gapped registry can mirror them
 with `skopeo copy --all`.
@@ -176,7 +197,9 @@ docker run -d --name prickle --network=host \
 `-path.rootfs=/host` is not optional — without it the exporter faithfully
 reports the metrics of its own container.
 
-## Try it: Prometheus and Grafana in one command
+## Try it: Prometheus and Grafana
+
+### With Docker Compose
 
 ```sh
 cd packaging/compose && docker compose up -d
@@ -197,6 +220,71 @@ containers.
 
 It is a demonstration, not a deployment — Grafana runs with anonymous admin so
 there is no password step. Do not put it on a network you do not own.
+
+## Pod names, and what they cost
+
+By default a container in a pod is identified by the pod's **UID**, not its
+name:
+
+```
+prickle_container_info{pod="537209ed-f2d7-423a-8e0a-ec05d6280092", pod_name="", ...}
+```
+
+That is not a limitation of the exporter so much as of where it looks. The
+cgroup tree carries a pod's UID and never its name — the kernel only ever sees
+the UID. Most people want the name, and `-collector.container.pod-names` gets
+it:
+
+```
+prickle_container_info{pod="537209ed-…", pod_name="web-frontend", namespace="default", ...}
+```
+
+It works by listing `/var/log/pods/<namespace>_<pod>_<uid>/`, which the
+**kubelet** creates on every CRI runtime. One directory listing, no API call,
+no second exporter, and nothing inside those directories is read — the names
+*are* the directory names, so workload log content is never opened.
+
+**The cost, stated plainly.** `/var/log/pods` is `root:root 0750`. Reading it
+needs either root or `CAP_DAC_READ_SEARCH`, and that capability bypasses file
+read and directory search checks **everywhere on the host** — in the same test
+that proved it reads `/var/log/pods`, it also read `/etc/shadow`. For a process
+whose only power is reading files, that is close to the whole of root. The
+exporter otherwise runs with `CapEff 0000000000000000` and no ServiceAccount,
+which is a property worth knowing you are spending.
+
+So the decision is genuinely yours, and it is not obvious:
+
+| | Default | With `pod-names` |
+|---|---|---|
+| Pod identified by | UID | name and namespace |
+| Capabilities | none | `CAP_DAC_READ_SEARCH` |
+| Can read any file on the host | no | **yes** |
+| Container metrics | all of them | all of them |
+
+**Nothing else changes.** Every container is reported either way, with every
+metric; only the labels differ. If you leave it off and later want names in
+dashboards, a join against `kube_pod_info` from kube-state-metrics gets you
+there without granting anything.
+
+Enabling it:
+
+```sh
+# Kubernetes
+helm install prickle packaging/helm/prickle-exporter -n monitoring \
+  --set collectors.podNames.enabled=true
+
+# systemd — a drop-in, so the shipped unit stays unprivileged
+systemctl edit prickle
+#   [Service]
+#   ExecStart=
+#   ExecStart=/usr/local/bin/prickle -collector.container.pod-names
+#   AmbientCapabilities=CAP_DAC_READ_SEARCH
+#   CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+```
+
+If you enable it without granting the privilege, nothing breaks: the exporter
+logs `open /var/log/pods: permission denied` once per pass, reports every
+container as usual, and leaves `pod_name` empty.
 
 ## Configuration
 

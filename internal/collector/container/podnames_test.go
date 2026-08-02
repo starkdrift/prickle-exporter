@@ -122,8 +122,18 @@ func TestPodNamesAbsentWithoutTheFlag(t *testing.T) {
 	if strings.Contains(out, `pod_name="web-frontend"`) {
 		t.Error("a pod name appeared without -collector.container.pod-names")
 	}
-	if strings.Contains(out, "namespace=") {
-		t.Error("a namespace label appeared without the flag; hot series gained a key")
+	// Specifically the *hot* series. prickle_container_info carries the key
+	// unconditionally, empty, exactly as it does for pod_name, name and image —
+	// a companion gauge with a varying label set would be worse to query than
+	// one with an empty value. What must not happen without the flag is a hot
+	// series gaining a key, because SPEC.md §Versioning counts that as a major
+	// for breaking every aggregation written without `by`.
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, prefix) &&
+			!strings.HasPrefix(line, prefix+"info{") &&
+			strings.Contains(line, "namespace=") {
+			t.Errorf("a hot series gained a namespace key without the flag: %s", line)
+		}
 	}
 	if !strings.Contains(out, `pod="537209ed-f2d7-423a-8e0a-ec05d6280092"`) {
 		t.Error("the pod UID should still be reported")

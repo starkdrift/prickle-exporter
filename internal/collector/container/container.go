@@ -160,7 +160,15 @@ func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
 // enrichment is configured and the container is a Docker one.
 //
 // pod_name and namespace are empty unless -collector.container.pod-names is on
-// and the kubelet's log directory was readable. `pod` continues to carry the
+// and the kubelet's log directory was readable.
+//
+// `namespace` appears here as well as on the hot series, which looks like
+// duplication and is not. The dashboards enumerate their dropdown values with
+// label_values(prickle_container_info, …), so a label that exists only on hot
+// series has no source to populate a namespace picker from — found by bringing
+// the Kubernetes demo up and watching that dropdown stay empty while the hot
+// series plainly carried the label. `pod` is on this gauge for the same
+// reason. `pod` continues to carry the
 // UID either way: it is the join key every existing rule was written against,
 // and changing what a label means is the one thing SPEC.md §Versioning calls a
 // major even when the new meaning is better.
@@ -171,6 +179,7 @@ func (c *Collector) collectInfo(out *exposition.Set, cg cgroup, dm dockerMeta, p
 			exposition.L("container", cg.id),
 			exposition.L("pod", cg.pod),
 			exposition.L("pod_name", pm.name),
+			exposition.L("namespace", pm.namespace),
 			exposition.L("runtime", cg.runtime),
 			exposition.L("qos", cg.qos),
 			exposition.L("name", dm.name),
