@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Closes pull requests opened from forks, politely. .github/CONTRIBUTING.md is
+# the policy and the reasoning; this file is only its enforcement, so that an
+# unread PR does not sit open for weeks looking like it is under consideration.
+#
+# pull_request_target, which ci.yml is at pains to avoid — the exception is
+# deliberate and narrow. A fork's pull_request event carries a read-only token
+# by design, so a workflow triggered by one cannot comment or close; only
+# pull_request_target runs in the base repository's context with write access.
+# The danger of that trigger is running the PR's code with those permissions, so
+# this workflow runs none of it: no actions/checkout, no build, no script from
+# the PR, nothing but two REST calls. The only PR-controlled value that reaches
+# the job is the author's login, and it is passed to the API as data rather than
+# interpolated into a shell command or a ${{ }} expression.
+#
+# Permissions are pull-requests: write and nothing else — declared at the top
+# level, so every job in the file starts from none for every other scope.
+name: close-prs
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    name: close
+    runs-on: ubuntu-24.04
+    # Internal branches are exempt, so the maintainer and Dependabot can still
+    # use a PR to get a CI run before merging. A fork is the only thing this
+    # closes, and head.repo.full_name is the only reliable way to tell them
+    # apart: a Dependabot PR is not a fork PR, and closing one would silently
+    # stop the action SHA pins from ever advancing.
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            const body = [
+              `Thank you for this, @${pr.user.login} — genuinely, and sorry for`,
+              `the automated reply.`,
+              ``,
+              `**This repository does not accept pull requests**, so this one is`,
+              `being closed unread. That is a blanket policy and not a judgement`,
+              `on your change: \`prickle-exporter\` is written by a single`,
+              `maintainer against a frozen contract in \`SPEC.md\`, and its`,
+              `zero-dependency and read-only guarantees are checked over the tree`,
+              `as a whole rather than patch by patch. The full reasoning is in`,
+              `[CONTRIBUTING.md](https://github.com/${owner}/${repo}/blob/main/.github/CONTRIBUTING.md).`,
+              ``,
+              `Issues, though, are genuinely welcome and do get read. If you would`,
+              `like this change considered, please`,
+              `[open one](https://github.com/${owner}/${repo}/issues/new)`,
+              `describing the problem it solves — that is the route that works`,
+              `here, and it is how \`SPEC.md\` changes.`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body,
+            });
+
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: pr.number,
+              state: 'closed',
+            });
