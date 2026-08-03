@@ -41,6 +41,25 @@ what to do about it, which no commit-log generator writes.
   identified as `<node>/<gpu-index>/<gpu_uuid>`. A UUID alone does not say which
   machine or which slot a card is in.
 
+### Changed
+
+- **All four dashboards drop their dropdowns and keep the `contains`
+  textboxes.** A dashboard's controls are now the datasource and one `<label>
+  contains` box per identity label. Type a fragment, press enter, and the panels
+  filter — one action instead of typing into a box and then opening the dropdown
+  it filtered. The boxes combine, so `namespace contains kube` with `container
+  contains api` narrows to both. SPEC.md §Distribution was amended to match
+  before the generator was touched; it specified the paired control.
+
+  Two things this gives up, deliberately. **Nothing enumerates the values any
+  more** — the chained dropdowns were also how you discovered that a namespace
+  existed, and pod UIDs especially are not guessable, so a value now comes off a
+  panel legend rather than out of a list. And the typed string reaches PromQL as
+  `.*input.*` **unescaped**, which makes it a regex rather than a literal:
+  `web-0[12]` is a working filter, an unbalanced `[` errors the panel instead of
+  matching nothing. Escaping would have cost the first of those to prevent the
+  second.
+
 ### Fixed
 
 - **Per-process GPU attribution produced nothing in a container, silently.**

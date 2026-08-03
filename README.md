@@ -239,10 +239,10 @@ dashboards already provisioned — **GPU Tenancy**, **Node Overview**,
 - Prometheus <http://localhost:9090>
 - Raw metrics <http://localhost:10047/metrics>
 
-Each dashboard carries a textbox paired with a dropdown for every identity
-label: type a fragment and the dropdown filters to substring matches, and the
-dropdowns chain so choosing a node narrows the namespaces, then pods, then
-containers.
+Each dashboard carries a `contains` textbox for every identity label and no
+dropdowns: type a fragment, press enter, and the panels filter to substring
+matches. The boxes combine, so `namespace contains kube` and `container
+contains api` narrow to both.
 
 It is a demonstration, not a deployment — Grafana runs with anonymous admin so
 there is no password step. Do not put it on a network you do not own.

@@ -57,7 +57,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "count(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})",
+          "expr": "count(prickle_container_info{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -98,7 +98,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum(prickle_container_memory_usage_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})",
+          "expr": "sum(prickle_container_memory_usage_bytes{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -139,7 +139,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum(rate(prickle_container_cpu_usage_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))",
+          "expr": "sum(rate(prickle_container_cpu_usage_seconds_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]))",
           "instant": true,
           "refId": "A"
         }
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "count(rate(prickle_container_cpu_throttled_periods_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]) > 0) or vector(0)",
+          "expr": "count(rate(prickle_container_cpu_throttled_periods_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]) > 0) or vector(0)",
           "instant": true,
           "refId": "A"
         }
@@ -288,7 +288,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_usage_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_usage_seconds_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}}",
           "refId": "A"
         }
@@ -341,7 +341,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_seconds_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_seconds_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}} stalled",
           "refId": "A"
         },
@@ -350,7 +350,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_periods_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (rate(prickle_container_cpu_throttled_periods_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}} periods",
           "refId": "B"
         }
@@ -416,7 +416,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_usage_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_usage_bytes{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"})) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}}",
           "refId": "A"
         },
@@ -425,7 +425,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_limit_bytes{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"})) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container) (prickle_container_memory_limit_bytes{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"})) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}} limit",
           "refId": "B"
         }
@@ -478,7 +478,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_read_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_read_bytes_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}} {{device}} r",
           "refId": "A"
         },
@@ -487,7 +487,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_written_bytes_total{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
+          "expr": "label_replace(label_join(label_replace(label_replace(label_replace((sum by (pod, container, device) (rate(prickle_container_io_written_bytes_total{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}[5m]))) * on (container) group_left(pod_name) max by (container, pod_name) (prickle_container_info), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"display\", \"/\", \"pshort\", \"cshort\"), \"display\", \"$1\", \"display\", \"^/(.+)$\")",
           "legendFormat": "{{display}} {{device}} w",
           "refId": "B"
         }
@@ -532,7 +532,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}",
+          "expr": "prickle_container_info{node=~\".*$node_search.*\",namespace=~\".*$namespace_search.*\",pod=~\".*$pod_search.*\",container=~\".*$container_search.*\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -586,34 +586,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "node",
-        "multi": true,
-        "name": "node",
-        "query": {
-          "query": "label_values(prickle_collector_series, node)",
-          "refId": "node-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$node_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -624,34 +596,6 @@
         "name": "namespace_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "namespace",
-        "multi": true,
-        "name": "namespace",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\"}, namespace)",
-          "refId": "namespace-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$namespace_search.*/",
-        "sort": 1,
-        "type": "query"
       },
       {
         "current": {
@@ -666,34 +610,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "pod",
-        "multi": true,
-        "name": "pod",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\"}, pod)",
-          "refId": "pod-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$pod_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -704,34 +620,6 @@
         "name": "container_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "container",
-        "multi": true,
-        "name": "container",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\"}, container)",
-          "refId": "container-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$container_search.*/",
-        "sort": 1,
-        "type": "query"
       },
       {
         "current": {
@@ -746,34 +634,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "gpu_uuid",
-        "multi": true,
-        "name": "gpu",
-        "query": {
-          "query": "label_values(prickle_gpu_info{node=~\"$node\"}, gpu_uuid)",
-          "refId": "gpu-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$gpu_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -784,34 +644,6 @@
         "name": "mig_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "mig_uuid",
-        "multi": true,
-        "name": "mig",
-        "query": {
-          "query": "label_values(prickle_gpu_mig_info{node=~\"$node\",gpu_uuid=~\"$gpu\"}, mig_uuid)",
-          "refId": "mig-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$mig_search.*/",
-        "sort": 1,
-        "type": "query"
       }
     ]
   },
