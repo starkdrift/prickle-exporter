@@ -58,7 +58,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "count(prickle_gpu_info{node=~\"$node\",gpu_uuid=~\"$gpu\"})",
+          "expr": "count(prickle_gpu_info{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -100,7 +100,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "count(prickle_gpu_mig_info{node=~\"$node\",gpu_uuid=~\"$gpu\",mig_uuid=~\"$mig\"}) or vector(0)",
+          "expr": "count(prickle_gpu_mig_info{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\",mig_uuid=~\".*$mig_search.*\"}) or vector(0)",
           "instant": true,
           "refId": "A"
         }
@@ -141,7 +141,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum(prickle_gpu_memory_used_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"})",
+          "expr": "sum(prickle_gpu_memory_used_bytes{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -182,7 +182,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum(prickle_gpu_power_watts{node=~\"$node\",gpu_uuid=~\"$gpu\"})",
+          "expr": "sum(prickle_gpu_power_watts{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -223,7 +223,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "max(prickle_gpu_temperature_celsius{node=~\"$node\",gpu_uuid=~\"$gpu\"})",
+          "expr": "max(prickle_gpu_temperature_celsius{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -331,7 +331,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_join((prickle_gpu_utilization_ratio{node=~\"$node\",gpu_uuid=~\"$gpu\"} * 100) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+          "expr": "label_join((prickle_gpu_utilization_ratio{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"} * 100) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
           "legendFormat": "{{gpu}}",
           "refId": "A"
         }
@@ -384,7 +384,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_join((prickle_gpu_memory_used_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"}) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+          "expr": "label_join((prickle_gpu_memory_used_bytes{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"}) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
           "legendFormat": "{{gpu}}",
           "refId": "A"
         },
@@ -393,7 +393,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_join((prickle_gpu_memory_total_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"}) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+          "expr": "label_join((prickle_gpu_memory_total_bytes{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"}) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
           "legendFormat": "{{gpu}} total",
           "refId": "B"
         }
@@ -410,176 +410,8 @@
         "y": 14
       },
       "panels": [],
-      "title": "MIG partitions",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS}"
-      },
-      "description": "A separate family from the card's memory: an instance's memory is a partition of its parent's, and one family holding both would double-count under sum().",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "fillOpacity": 12,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "stacking": {
-              "mode": "none"
-            }
-          },
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 15
-      },
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS}"
-          },
-          "expr": "prickle_gpu_mig_memory_used_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\",mig_uuid=~\"$mig\"}",
-          "legendFormat": "{{mig_uuid}}",
-          "refId": "A"
-        }
-      ],
-      "title": "MIG memory used",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS}"
-      },
-      "description": "profile comes from the driver's compute-instance name, the same string nvidia-smi -L prints. Deriving it from memory was wrong on every H200 profile.",
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 15
-      },
-      "options": {
-        "showHeader": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS}"
-          },
-          "expr": "prickle_gpu_mig_info{node=~\"$node\",gpu_uuid=~\"$gpu\",mig_uuid=~\"$mig\"}",
-          "format": "table",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "MIG topology",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "Value": true,
-              "__name__": true,
-              "instance": true,
-              "job": true
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 23
-      },
-      "panels": [],
       "title": "Per-process (opt-in)",
       "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS}"
-      },
-      "description": "Which pod is holding which card, as <node>/<gpu-index>/<pod>/<container>. The container comes from the GPU process's own /proc/<pid>/cgroup and the pod is joined from prickle_container_info, so a process outside a container reads `host` in both positions rather than leaving a blank segment. Requires -collector.gpu.per-process, which on Kubernetes also needs CAP_SYS_PTRACE: reading a foreign process's exe link is a PTRACE_MODE_READ operation and Yama ptrace_scope=1 is the default on Debian and Ubuntu.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "fillOpacity": 40,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "stacking": {
-              "mode": "normal"
-            }
-          },
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 24
-      },
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS}"
-          },
-          "expr": "label_join(label_replace(label_replace(label_replace(label_replace(label_replace(((sum by (node, gpu_uuid, container) (prickle_gpu_process_memory_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"})) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info)) * on (container) group_left(pod, pod_name) max by (container, pod, pod_name) (prickle_container_info), \"cshort\", \"host\", \"container\", \"^$\"), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"host\", \"container\", \"^$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"workload\", \"/\", \"node\", \"index\", \"pshort\", \"cshort\")",
-          "legendFormat": "{{workload}}",
-          "refId": "A"
-        }
-      ],
-      "title": "GPU memory by pod and container",
-      "type": "timeseries"
     },
     {
       "datasource": {
@@ -605,7 +437,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 15
       },
       "options": {
         "legend": {
@@ -627,13 +459,182 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "label_join((sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{node=~\"$node\",gpu_uuid=~\"$gpu\"})) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
+          "expr": "label_join((sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"})) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info), \"gpu\", \"/\", \"node\", \"index\", \"gpu_uuid\")",
           "legendFormat": "{{gpu}} / {{command}}",
           "refId": "A"
         }
       ],
       "title": "GPU memory by command",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "Which pod is holding which card, as <node>/<gpu-index>/<pod>/<container>. The container comes from the GPU process's own /proc/<pid>/cgroup and the pod is joined from prickle_container_info, so a process outside a container reads `host` in both positions rather than leaving a blank segment. Requires -collector.gpu.per-process, which on Kubernetes also needs CAP_SYS_PTRACE: reading a foreign process's exe link is a PTRACE_MODE_READ operation and Yama ptrace_scope=1 is the default on Debian and Ubuntu.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 40,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "label_join(label_replace(label_replace(label_replace(label_replace(label_replace(((sum by (node, gpu_uuid, container) (prickle_gpu_process_memory_bytes{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\"})) * on (gpu_uuid) group_left(index) max by (gpu_uuid, index) (prickle_gpu_info)) * on (container) group_left(pod, pod_name) max by (container, pod, pod_name) (prickle_container_info), \"cshort\", \"host\", \"container\", \"^$\"), \"cshort\", \"$1\", \"container\", \"^(.{1,12}).*$\"), \"pshort\", \"host\", \"container\", \"^$\"), \"pshort\", \"$1\", \"pod\", \"^(.{1,8}).*$\"), \"pshort\", \"$1\", \"pod_name\", \"^(.+)$\"), \"workload\", \"/\", \"node\", \"index\", \"pshort\", \"cshort\")",
+          "legendFormat": "{{workload}}",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU memory by pod and container",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "description": "A separate family from the card's memory: an instance's memory is a partition of its parent's, and one family holding both would double-count under sum().",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "fillOpacity": 12,
+                "lineWidth": 1,
+                "showPoints": "never",
+                "stacking": {
+                  "mode": "none"
+                }
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 32
+          },
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS}"
+              },
+              "expr": "prickle_gpu_mig_memory_used_bytes{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\",mig_uuid=~\".*$mig_search.*\"}",
+              "legendFormat": "{{mig_uuid}}",
+              "refId": "A"
+            }
+          ],
+          "title": "MIG memory used",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "description": "profile comes from the driver's compute-instance name, the same string nvidia-smi -L prints. Deriving it from memory was wrong on every H200 profile.",
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 32
+          },
+          "options": {
+            "showHeader": true
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS}"
+              },
+              "expr": "prickle_gpu_mig_info{node=~\".*$node_search.*\",gpu_uuid=~\".*$gpu_search.*\",mig_uuid=~\".*$mig_search.*\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "title": "MIG topology",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "Value": true,
+                  "__name__": true,
+                  "instance": true,
+                  "job": true
+                }
+              }
+            }
+          ],
+          "type": "table"
+        }
+      ],
+      "title": "MIG partitions",
+      "type": "row"
     }
   ],
   "refresh": "30s",
@@ -666,34 +667,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "node",
-        "multi": true,
-        "name": "node",
-        "query": {
-          "query": "label_values(prickle_collector_series, node)",
-          "refId": "node-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$node_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -704,34 +677,6 @@
         "name": "namespace_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "namespace",
-        "multi": true,
-        "name": "namespace",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\"}, namespace)",
-          "refId": "namespace-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$namespace_search.*/",
-        "sort": 1,
-        "type": "query"
       },
       {
         "current": {
@@ -746,34 +691,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "pod",
-        "multi": true,
-        "name": "pod",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\"}, pod)",
-          "refId": "pod-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$pod_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -784,34 +701,6 @@
         "name": "container_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "container",
-        "multi": true,
-        "name": "container",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\"}, container)",
-          "refId": "container-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$container_search.*/",
-        "sort": 1,
-        "type": "query"
       },
       {
         "current": {
@@ -826,34 +715,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "gpu_uuid",
-        "multi": true,
-        "name": "gpu",
-        "query": {
-          "query": "label_values(prickle_gpu_info{node=~\"$node\"}, gpu_uuid)",
-          "refId": "gpu-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$gpu_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -864,34 +725,6 @@
         "name": "mig_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "mig_uuid",
-        "multi": true,
-        "name": "mig",
-        "query": {
-          "query": "label_values(prickle_gpu_mig_info{node=~\"$node\",gpu_uuid=~\"$gpu\"}, mig_uuid)",
-          "refId": "mig-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$mig_search.*/",
-        "sort": 1,
-        "type": "query"
       }
     ]
   },

@@ -57,7 +57,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "count(count by (node) (prickle_collector_series{node=~\"$node\"}))",
+          "expr": "count(count by (node) (prickle_collector_series{node=~\".*$node_search.*\"}))",
           "instant": true,
           "refId": "A"
         }
@@ -99,7 +99,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "count(prickle_collector_success{node=~\"$node\"} == 0) or vector(0)",
+          "expr": "count(prickle_collector_success{node=~\".*$node_search.*\"} == 0) or vector(0)",
           "instant": true,
           "refId": "A"
         }
@@ -141,7 +141,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum(increase(prickle_collector_series_dropped_total{node=~\"$node\"}[1h])) or vector(0)",
+          "expr": "sum(increase(prickle_collector_series_dropped_total{node=~\".*$node_search.*\"}[1h])) or vector(0)",
           "instant": true,
           "refId": "A"
         }
@@ -182,7 +182,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "max(prickle_collector_duration_seconds{node=~\"$node\"})",
+          "expr": "max(prickle_collector_duration_seconds{node=~\".*$node_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -223,7 +223,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "max(time() - prickle_render_timestamp_seconds{node=~\"$node\"})",
+          "expr": "max(time() - prickle_render_timestamp_seconds{node=~\".*$node_search.*\"})",
           "instant": true,
           "refId": "A"
         }
@@ -289,7 +289,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "prickle_collector_duration_seconds{node=~\"$node\"}",
+          "expr": "prickle_collector_duration_seconds{node=~\".*$node_search.*\"}",
           "legendFormat": "{{node}} {{collector}}",
           "refId": "A"
         }
@@ -342,7 +342,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum by (collector) (increase(prickle_collector_errors_total{node=~\"$node\"}[5m]))",
+          "expr": "sum by (collector) (increase(prickle_collector_errors_total{node=~\".*$node_search.*\"}[5m]))",
           "legendFormat": "{{collector}}",
           "refId": "A"
         }
@@ -407,7 +407,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "prickle_collector_series{node=~\"$node\"}",
+          "expr": "prickle_collector_series{node=~\".*$node_search.*\"}",
           "legendFormat": "{{node}} {{collector}}",
           "refId": "A"
         }
@@ -460,7 +460,7 @@
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "expr": "sum by (node, collector) (increase(prickle_collector_series_dropped_total{node=~\"$node\"}[5m]))",
+          "expr": "sum by (node, collector) (increase(prickle_collector_series_dropped_total{node=~\".*$node_search.*\"}[5m]))",
           "legendFormat": "{{node}} {{collector}}",
           "refId": "A"
         }
@@ -559,34 +559,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "node",
-        "multi": true,
-        "name": "node",
-        "query": {
-          "query": "label_values(prickle_collector_series, node)",
-          "refId": "node-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$node_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -597,34 +569,6 @@
         "name": "namespace_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "namespace",
-        "multi": true,
-        "name": "namespace",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\"}, namespace)",
-          "refId": "namespace-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$namespace_search.*/",
-        "sort": 1,
-        "type": "query"
       },
       {
         "current": {
@@ -639,34 +583,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "pod",
-        "multi": true,
-        "name": "pod",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\"}, pod)",
-          "refId": "pod-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$pod_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -677,34 +593,6 @@
         "name": "container_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "container",
-        "multi": true,
-        "name": "container",
-        "query": {
-          "query": "label_values(prickle_container_info{node=~\"$node\",namespace=~\"$namespace\",pod=~\"$pod\"}, container)",
-          "refId": "container-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$container_search.*/",
-        "sort": 1,
-        "type": "query"
       },
       {
         "current": {
@@ -719,34 +607,6 @@
         "type": "textbox"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "gpu_uuid",
-        "multi": true,
-        "name": "gpu",
-        "query": {
-          "query": "label_values(prickle_gpu_info{node=~\"$node\"}, gpu_uuid)",
-          "refId": "gpu-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$gpu_search.*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
         "current": {
           "text": "",
           "value": ""
@@ -757,34 +617,6 @@
         "name": "mig_search",
         "query": "",
         "type": "textbox"
-      },
-      {
-        "allValue": ".*",
-        "current": {
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS}"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "mig_uuid",
-        "multi": true,
-        "name": "mig",
-        "query": {
-          "query": "label_values(prickle_gpu_mig_info{node=~\"$node\",gpu_uuid=~\"$gpu\"}, mig_uuid)",
-          "refId": "mig-values"
-        },
-        "refresh": 2,
-        "regex": "/.*$mig_search.*/",
-        "sort": 1,
-        "type": "query"
       }
     ]
   },

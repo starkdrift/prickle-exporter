@@ -8,7 +8,7 @@ build step between a clone and a working quickstart. ci/check.sh re-runs this
 and fails if the tree differs, so the two cannot drift.
 
 Four dashboards of hand-written JSON would be some thousands of lines with the
-same eleven template variables copied into each. The variables are the part
+same seven template variables copied into each. The variables are the part
 SPEC.md is specific about, so they are defined once here and shared.
 
     python3 scripts/make-dashboards.py            # write
@@ -22,62 +22,61 @@ import sys
 
 OUT = pathlib.Path(__file__).resolve().parent.parent / "packaging" / "grafana" / "dashboards"
 
-# SPEC.md §Metrics contract's closed set of identity labels, plus `command`.
-# Each gets a textbox to type in and a dropdown that the textbox filters —
-# "paired textbox + chained-dropdown template variables per identity label".
+# SPEC.md §Metrics contract's closed set of identity labels. Each gets one
+# textbox — "contains-search textbox template variables per identity label" —
+# and the typed string filters the panels directly.
 #
-# The chain is deliberate: picking a node narrows the namespaces, which narrows
-# the pods, which narrows the containers. Each level's query carries the levels
-# above it, so a dropdown never offers a value that cannot exist given what is
-# already selected.
+# There were paired dropdowns here until 2026-08-03, chained so that picking a
+# node narrowed the namespaces, then the pods, then the containers. They are
+# gone: the box that fed the dropdown is the whole control now, so a filter
+# takes one action instead of two.
 IDENTITY = [
-    # (name, label, metric the values come from, labels that constrain it)
-    ("node",      "node",      "prickle_collector_series", []),
-    ("namespace", "namespace", "prickle_container_info",   ["node"]),
-    ("pod",       "pod",       "prickle_container_info",   ["node", "namespace"]),
-    ("container", "container", "prickle_container_info",   ["node", "namespace", "pod"]),
-    ("gpu",       "gpu_uuid",  "prickle_gpu_info",         ["node"]),
-    ("mig",       "mig_uuid",  "prickle_gpu_mig_info",     ["node", "gpu_uuid"]),
+    # (variable name, the label it filters)
+    ("node",      "node"),
+    ("namespace", "namespace"),
+    ("pod",       "pod"),
+    ("container", "container"),
+    ("gpu",       "gpu_uuid"),
+    ("mig",       "mig_uuid"),
 ]
 
 
 def selector(constraints, extra=""):
-    """Build a PromQL label selector from the chained variables."""
-    parts = [f'{lbl}=~"${name}"' for name, lbl, _, _ in IDENTITY
-             for c in [lbl] if c in constraints]
+    """Build a PromQL label selector from the textbox variables.
+
+    Each box is read directly and wrapped as `.*<input>.*`, which is exactly how
+    the dropdown's filter regex wrapped it before the dropdowns were removed —
+    so an empty box still means "everything" and the default state is no filter.
+
+    The wrapped input is a **regex, not a literal**: it reaches PromQL
+    unescaped, so `pod-1` matches as a substring but an unbalanced `[` makes the
+    panel error rather than match nothing. SPEC.md §Distribution accepts that,
+    because escaping it would also take away `web-0[12]` from the operator who
+    typed that on purpose.
+    """
+    parts = [f'{lbl}=~".*${name}_search.*"'
+             for name, lbl in IDENTITY if lbl in constraints]
     if extra:
         parts.append(extra)
     return "{" + ",".join(parts) + "}" if parts else ""
 
 
 def variables():
-    """The templating list: a datasource, then a textbox+dropdown per label."""
+    """The templating list: a datasource, then one contains-textbox per label."""
     out = [{
         "name": "DS", "label": "Data source", "type": "datasource",
         "query": "prometheus", "current": {}, "hide": 0, "refresh": 1,
     }]
-    for name, label, metric, constraints in IDENTITY:
-        # The textbox. SPEC.md §Distribution: input is wrapped as .*<input>.*
-        # so typing `gpu-` finds `node-gpu-04`. An empty box wraps to `.**`,
-        # which matches everything — so the default state is "no filter"
-        # rather than "nothing selected", and the dashboard is useful before
-        # anyone types.
+    for name, label in IDENTITY:
+        # SPEC.md §Distribution: input is wrapped as .*<input>.* so typing
+        # `gpu-` finds `node-gpu-04`. An empty box wraps to `.**`, which matches
+        # everything — so the default state is "no filter" rather than "nothing
+        # selected", and the dashboard is useful before anyone types.
         out.append({
             "name": f"{name}_search", "label": f"{label} contains",
             "type": "textbox", "query": "", "hide": 0,
             "current": {"text": "", "value": ""},
             "description": f"Substring match on {label}. Wrapped as .*input.* — leave empty for all.",
-        })
-        # The dropdown, filtered by the textbox and chained to its parents.
-        out.append({
-            "name": name, "label": label, "type": "query",
-            "datasource": {"type": "prometheus", "uid": "${DS}"},
-            "query": {"query": f"label_values({metric}{selector(constraints)}, {label})",
-                      "refId": f"{name}-values"},
-            "regex": f'/.*${name}_search.*/',
-            "multi": True, "includeAll": True, "allValue": ".*",
-            "current": {"text": ["All"], "value": ["$__all"]},
-            "refresh": 2, "sort": 1, "hide": 0,
         })
     return out
 
@@ -203,9 +202,17 @@ def table(title, expr, gp, desc=None):
     }
 
 
-def row(title, y):
+def row(title, y, collapsed=False, panels=None):
+    """A row header. `panels` belong to it only when it is collapsed.
+
+    Grafana stores the two states differently and does not accept a mix: an
+    expanded row is a header followed by its panels as siblings, a collapsed one
+    is a header carrying them in its own `panels` array. Putting a collapsed
+    row's children in the top-level list would render them as always-visible
+    panels above the row and leave the row itself empty when opened.
+    """
     return {"type": "row", "title": title, "gridPos": {"h": 1, "w": 24, "x": 0, "y": y},
-            "collapsed": False, "panels": []}
+            "collapsed": collapsed, "panels": panels or []}
 
 
 def dashboard(uid, title, description, panels):
@@ -315,25 +322,24 @@ def gpu_tenancy():
             (gpu_qualified(f"prickle_gpu_memory_total_bytes{g}"), "{{gpu}} total")],
            {"h": 8, "w": 12, "x": 12, "y": 6}, unit="bytes"),
 
-        row("MIG partitions", 14),
-        ts("MIG memory used",
-           [(f"prickle_gpu_mig_memory_used_bytes{mig}", "{{mig_uuid}}")],
-           {"h": 8, "w": 12, "x": 0, "y": 15}, unit="bytes",
-           desc="A separate family from the card's memory: an instance's "
-                "memory is a partition of its parent's, and one family holding "
-                "both would double-count under sum()."),
-        table("MIG topology",
-              f"prickle_gpu_mig_info{mig}", {"h": 8, "w": 12, "x": 12, "y": 15},
-              desc="profile comes from the driver's compute-instance name, the "
-                   "same string nvidia-smi -L prints. Deriving it from memory "
-                   "was wrong on every H200 profile."),
-
-        row("Per-process (opt-in)", 23),
+        row("Per-process (opt-in)", 14),
+        # By command first: it needs only the per-process flag, where the panel
+        # below it additionally needs a pod to join against and the `container`
+        # label. The one that draws under the weaker precondition goes first.
+        ts("GPU memory by command",
+           [(gpu_qualified(f"sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{g})"),
+             "{{gpu}} / {{command}}")],
+           {"h": 8, "w": 24, "x": 0, "y": 15}, unit="bytes", stack=True,
+           desc="Requires -collector.gpu.per-process. Keyed on `command`, the "
+                "basename of the exe symlink — never a PID, which SPEC.md "
+                "§Metrics contract forbids anywhere. Empty unless the flag is "
+                "set. Under the nvidia-smi source these carry gpu_uuid only: "
+                "that source cannot attribute a process to a MIG instance."),
         ts("GPU memory by pod and container",
            [(gpu_workload_qualified(
                 f"sum by (node, gpu_uuid, container) (prickle_gpu_process_memory_bytes{g})"),
              "{{workload}}")],
-           {"h": 8, "w": 24, "x": 0, "y": 24}, unit="bytes", stack=True,
+           {"h": 8, "w": 24, "x": 0, "y": 23}, unit="bytes", stack=True,
            desc="Which pod is holding which card, as "
                 "<node>/<gpu-index>/<pod>/<container>. The container comes from "
                 "the GPU process's own /proc/<pid>/cgroup and the pod is joined "
@@ -343,15 +349,24 @@ def gpu_tenancy():
                 "Kubernetes also needs CAP_SYS_PTRACE: reading a foreign "
                 "process's exe link is a PTRACE_MODE_READ operation and Yama "
                 "ptrace_scope=1 is the default on Debian and Ubuntu."),
-        ts("GPU memory by command",
-           [(gpu_qualified(f"sum by (node, command, gpu_uuid) (prickle_gpu_process_memory_bytes{g})"),
-             "{{gpu}} / {{command}}")],
-           {"h": 8, "w": 24, "x": 0, "y": 32}, unit="bytes", stack=True,
-           desc="Requires -collector.gpu.per-process. Keyed on `command`, the "
-                "basename of the exe symlink — never a PID, which SPEC.md "
-                "§Metrics contract forbids anywhere. Empty unless the flag is "
-                "set. Under the nvidia-smi source these carry gpu_uuid only: "
-                "that source cannot attribute a process to a MIG instance."),
+
+        # Last, and collapsed. Most cards are not partitioned, so for most
+        # operators this row is two permanently empty panels — and an empty
+        # panel above the ones that do have data reads as something broken.
+        # Collapsed it costs a click on a MIG host and nothing anywhere else.
+        row("MIG partitions", 31, collapsed=True, panels=[
+            ts("MIG memory used",
+               [(f"prickle_gpu_mig_memory_used_bytes{mig}", "{{mig_uuid}}")],
+               {"h": 8, "w": 12, "x": 0, "y": 32}, unit="bytes",
+               desc="A separate family from the card's memory: an instance's "
+                    "memory is a partition of its parent's, and one family "
+                    "holding both would double-count under sum()."),
+            table("MIG topology",
+                  f"prickle_gpu_mig_info{mig}", {"h": 8, "w": 12, "x": 12, "y": 32},
+                  desc="profile comes from the driver's compute-instance name, "
+                       "the same string nvidia-smi -L prints. Deriving it from "
+                       "memory was wrong on every H200 profile."),
+        ]),
     ]
     return dashboard("prickle-gpu-tenancy", "GPU Tenancy",
                      "Which workload is on which accelerator. Starkdrift · prickle-exporter.", p)

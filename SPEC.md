@@ -260,9 +260,22 @@ library path and `/dev/nvidiactl`. Docker one-liner; Helm chart
 `prickle-exporter` with ServiceMonitor; `docker compose`
 quickstart bundling prickle, Prometheus, and pre-provisioned Grafana. Four
 dashboards ship with it — GPU Tenancy, Node Overview, Container Resources,
-Fleet Health — using paired textbox + chained-dropdown template variables per
-identity label, wrapping input as `.*<input>.*` for contains-search, filtering
+Fleet Health — wrapping input as `.*<input>.*` for contains-search, filtering
 on `command` (never PID). Dashboards carry Starkdrift branding.
+
+All four use **contains-search textbox** template variables per identity label
+(amended 2026-08-03; they were paired textbox + chained dropdowns before). A
+dashboard's only controls are the datasource and one `<label> contains` textbox
+per identity label, and the typed string goes straight into the panels' PromQL.
+Filtering is one action rather than two, and there is no second control holding
+a stale selection.
+
+Two consequences are accepted rather than worked around. Input is a **regex, not
+a literal**: it reaches PromQL unescaped, so an unbalanced `[` makes the panel
+error rather than match nothing — escaping it would also take `web-0[12]` away
+from the operator who typed that deliberately. And **the values are no longer
+enumerated**, so an operator who does not already know a fragment of a pod UID
+has nothing to browse; the panel legends are where values are discovered now.
 
 ## Versioning
 
