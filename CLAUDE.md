@@ -79,11 +79,45 @@ behind the `nvidiaSource` interface and unit tests use a fake source.
 
 ## Contribution policy
 
-External PRs are not accepted — never add contribution-welcoming language or
-PR-based workflows. [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) is the
-policy; `.github/workflows/close-prs.yml` enforces it on fork PRs only, so
-internal and Dependabot branches can still use a PR for CI. Issues are welcome
-and should stay that way.
+External PRs are not accepted — never add contribution-welcoming language, and
+never describe a PR route in anything a contributor reads.
+[.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) is the policy;
+`.github/workflows/close-prs.yml` enforces it on fork PRs only. Issues are
+welcome and should stay that way.
+
+## How work lands on `main`
+
+**Through an internal pull request, never a direct push** (decided
+2026-08-03). This is the maintainer's own route and contradicts nothing above:
+`close-prs.yml` skips any PR whose head is this repository, so internal and
+Dependabot branches use a PR purely to get CI.
+
+```sh
+git checkout -b <topic> && git commit ...
+git push -u origin <topic>
+gh pr create --fill        # needs a write token; GH_TOKEN is read-only
+gh pr checks --watch       # the four required contexts, plus CodeQL
+gh pr merge --merge        # by hand, once they are green
+```
+
+**Auto-merge is deliberately disabled repository-wide** — do not turn it on or
+pass `--auto`. Merging is the moment a conflict or a surprising check result
+surfaces, and it is meant to be a decision someone takes rather than something
+that happens the instant the last check goes green.
+
+The reason is the `main protection` ruleset, which requires `check (amd64)`,
+`check (arm64)`, `build (amd64)` and `build (arm64)` on whatever lands. Those
+contexts come from `ci.yml`, which runs on `push` to `main` and on
+`pull_request` — **not on a push to a topic branch**. So a locally created merge
+commit arrives at `main` as a SHA nothing has ever built, the rule cannot be
+satisfied, and the push only succeeds by **bypassing branch protection**, which
+it will report as `Bypassed rule violations`. That happened on 2026-08-03 and is
+what this section exists to prevent. Merging the PR instead lets GitHub evaluate
+the rule against the PR head, which CI has already built.
+
+`--merge`, not `--squash` or `--rebase`: the history here is `Merge: <summary>`
+commits over a topic branch, and squashing would flatten the SPEC-then-code
+split that CLAUDE.md requires for a contract change.
 
 ## Naming discipline
 
