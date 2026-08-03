@@ -87,16 +87,23 @@ welcome and should stay that way.
 
 ## How work lands on `main`
 
-**Through an internal pull request with auto-merge, never a direct push**
-(decided 2026-08-03). This is the maintainer's own route and contradicts
-nothing above: `close-prs.yml` skips any PR whose head is this repository, so
-internal and Dependabot branches use a PR purely to get CI.
+**Through an internal pull request, never a direct push** (decided
+2026-08-03). This is the maintainer's own route and contradicts nothing above:
+`close-prs.yml` skips any PR whose head is this repository, so internal and
+Dependabot branches use a PR purely to get CI.
 
 ```sh
 git checkout -b <topic> && git commit ...
 git push -u origin <topic>
-gh pr create --fill && gh pr merge --auto --merge   # needs a write token
+gh pr create --fill        # needs a write token; GH_TOKEN is read-only
+gh pr checks --watch       # the four required contexts, plus CodeQL
+gh pr merge --merge        # by hand, once they are green
 ```
+
+**Auto-merge is deliberately disabled repository-wide** — do not turn it on or
+pass `--auto`. Merging is the moment a conflict or a surprising check result
+surfaces, and it is meant to be a decision someone takes rather than something
+that happens the instant the last check goes green.
 
 The reason is the `main protection` ruleset, which requires `check (amd64)`,
 `check (arm64)`, `build (amd64)` and `build (arm64)` on whatever lands. Those
