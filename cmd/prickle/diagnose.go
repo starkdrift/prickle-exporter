@@ -323,27 +323,13 @@ func describeGPUs(w io.Writer, cfg config) {
 	c := gpu.New(cfg.gpuOptions())
 	defer c.Close()
 
-	if name := c.SourceName(); name != "" {
-		fmt.Fprintf(w, "  live source: %s\n", name)
-	} else {
-		fmt.Fprintln(w, "  live source: none — no NVIDIA metrics will be exposed.")
-		if err := c.SelectionError(); err != nil {
-			for _, line := range strings.Split(err.Error(), "\n") {
-				fmt.Fprintf(w, "    %s\n", line)
-			}
-		}
-		// Only true of automatic selection. Saying it after an operator forced
-		// a source that this build or host cannot provide reads as "you have no
-		// GPU" on a machine that has one — which is the opposite of the answer
-		// they came for.
-		if cfg.nvidiaSource == gpu.SourceAuto {
-			describeNVIDIAPresence(w, cfg)
-		} else {
-			fmt.Fprintf(w, "  -collector.gpu.nvidia-source=%s forced this source; %s selects one automatically.\n",
-				cfg.nvidiaSource, gpu.SourceAuto)
-		}
-		return
-	}
+	// Narration only. This used to return when no NVIDIA source loaded, which
+	// was right while NVIDIA was the only implementation and became wrong the
+	// moment AMD arrived: an AMD host has no NVIDIA source by definition, so the
+	// early return skipped the collection on precisely the machines the AMD
+	// collector was written for, and `prickle diagnose` reported nothing about
+	// two cards it could see.
+	describeNVIDIASource(w, cfg, c)
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
@@ -362,10 +348,52 @@ func describeGPUs(w io.Writer, cfg config) {
 	if !cfg.gpuPerProcess {
 		fmt.Fprintln(w, "  per-process attribution: off (-collector.gpu.per-process turns it on).")
 	}
-	fmt.Fprintln(w, "  AMD is SPEC.md §Collectors scope but unimplemented: no capture")
-	fmt.Fprintln(w, "  exists for it, so an AMD host reports nothing. Intel is out of")
-	fmt.Fprintln(w, "  scope. See")
+	// AMD is read from sysfs and needs no source selection, so the only thing
+	// worth stating is whether any card was found — and, when none was, that
+	// this is a complete answer rather than an unimplemented one.
+	// countMatching anchors at the start of a line, which suits a metric name
+	// and not a label buried in one.
+	if amd := strings.Count(rendered, `vendor="amd"`); amd > 0 {
+		fmt.Fprintf(w, "  AMD: %d card(s), read from sysfs and DRM fdinfo. No\n", amd)
+		fmt.Fprintln(w, "  subprocess is spawned: rocm-smi and amd-smi are not sources.")
+	} else {
+		fmt.Fprintln(w, "  AMD: no amdgpu card on this host. The collector is implemented,")
+		fmt.Fprintln(w, "  so this is an absence rather than a gap.")
+	}
+	fmt.Fprintln(w, "  Intel is out of scope. See")
 	fmt.Fprintln(w, "  internal/collector/gpu/testdata/README.md §Coverage gaps.")
+}
+
+// describeNVIDIASource reports which NVIDIA implementation is live and, when
+// none is, why — SPEC.md §Collectors requires exactly that of `prickle
+// diagnose`. "NVML failed to load" and "there is no GPU here" need different
+// responses from an operator, and an empty section distinguishes neither.
+//
+// It reports and returns. Whether an NVIDIA source loaded says nothing about
+// whether this host has an AMD card, so it must not decide whether the rest of
+// the GPU section runs.
+func describeNVIDIASource(w io.Writer, cfg config, c *gpu.Collector) {
+	if name := c.SourceName(); name != "" {
+		fmt.Fprintf(w, "  live source: %s\n", name)
+		return
+	}
+
+	fmt.Fprintln(w, "  live source: none — no NVIDIA metrics will be exposed.")
+	if err := c.SelectionError(); err != nil {
+		for _, line := range strings.Split(err.Error(), "\n") {
+			fmt.Fprintf(w, "    %s\n", line)
+		}
+	}
+	// Only true of automatic selection. Saying it after an operator forced a
+	// source that this build or host cannot provide reads as "you have no GPU"
+	// on a machine that has one — which is the opposite of the answer they came
+	// for.
+	if cfg.nvidiaSource == gpu.SourceAuto {
+		describeNVIDIAPresence(w, cfg)
+	} else {
+		fmt.Fprintf(w, "  -collector.gpu.nvidia-source=%s forced this source; %s selects one automatically.\n",
+			cfg.nvidiaSource, gpu.SourceAuto)
+	}
 }
 
 // describeSMITimeout explains the one nvidia-smi failure that looks like a bug

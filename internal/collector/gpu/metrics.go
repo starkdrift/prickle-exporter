@@ -21,8 +21,9 @@ func (c *Collector) emitDevices(out *exposition.Set, devices []device) {
 		gpu := exposition.L("gpu_uuid", d.UUID)
 
 		out.Gauge(prefix+"info",
-			"GPU identity: constant 1, carrying the model name and the driver's device index.").
+			"GPU identity: constant 1, carrying the vendor, the model name and the driver's device index.").
 			Add(1, gpu,
+				exposition.L("vendor", d.Vendor),
 				exposition.L("name", d.Name),
 				exposition.L("index", strconv.Itoa(d.Index)))
 
@@ -48,13 +49,33 @@ func (c *Collector) emitDevices(out *exposition.Set, devices []device) {
 				Add(d.PowerWatts, gpu)
 		}
 
-		migEnabled := 0.0
-		if d.MIGEnabled {
-			migEnabled = 1
+		// MIG is an NVIDIA feature, so the family is absent on a card that has
+		// no such concept rather than reported as 0 — the same rule SPEC.md
+		// §Hard constraints #4 applies to PSI on cgroup v1, and that
+		// utilization_ratio already follows under MIG. A 0 here would assert
+		// that an AMD card is an unpartitioned NVIDIA one.
+		if d.Vendor == vendorNVIDIA {
+			migEnabled := 0.0
+			if d.MIGEnabled {
+				migEnabled = 1
+			}
+			out.Gauge(prefix+"mig_enabled",
+				"1 when the GPU is partitioned into MIG instances, 0 when it is in Default mode. NVIDIA only.").
+				Add(migEnabled, gpu)
 		}
-		out.Gauge(prefix+"mig_enabled",
-			"1 when the GPU is partitioned into MIG instances, 0 when it is in Default mode.").
-			Add(migEnabled, gpu)
+
+		// AMD's analogue, and deliberately a separate family rather than a
+		// reuse of the MIG one: the modes are named differently (SPX/CPX,
+		// NPS1/NPS4), a card is always in one of them rather than switched
+		// on or off, and the memory partitioning is a second axis MIG has no
+		// equivalent of.
+		if d.ComputePartition != "" || d.MemoryPartition != "" {
+			out.Gauge(prefix+"amd_partition_info",
+				"AMD partitioning mode: constant 1, carrying the compute and memory partition the card is in.").
+				Add(1, gpu,
+					exposition.L("compute_partition", d.ComputePartition),
+					exposition.L("memory_partition", d.MemoryPartition))
+		}
 
 		c.emitMIG(out, gpu, d.MIG)
 	}

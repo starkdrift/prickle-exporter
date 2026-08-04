@@ -57,6 +57,9 @@ type sourceCandidate struct {
 
 // candidates returns the implementations to try, in order.
 func candidates(opts Options) []sourceCandidate {
+	if opts.nvidiaCandidates != nil {
+		return opts.nvidiaCandidates(opts)
+	}
 	nvml := sourceCandidate{SourceNVML, newNVMLSource}
 	smi := sourceCandidate{SourceSMI, newSMISource}
 

@@ -237,20 +237,50 @@ each contradicts an assumption that was reasonable before the capture:
 
 | Gap | Status |
 |---|---|
-| ~~**AMD — sysfs + DRM fdinfo**~~ | **Captured**, not yet implemented. `mi300x-2gpu-20260804` closes the fixture half of the gap: SPEC.md §Testing rules no longer blocks an AMD collector, and what it must read is [above](#amd-mi300x-2gpu-20260804). The code is still unwritten, so an AMD host still reports nothing. |
+| ~~**AMD — sysfs + DRM fdinfo**~~ | **Closed.** Captured *and* implemented, on the same day and against the same host. [amd.go](../amd.go) is developed against this tree and [amd_test.go](../amd_test.go) pins it, including a golden file. It was then run on the capture host itself and the two agree series for series — see [Hardware verification](#hardware-verification). |
 | **Intel — DRM fdinfo** | **Out of scope** as of SPEC.md §Collectors: no capture host is obtainable, and a parser developed against a layout nobody has captured is forbidden by §Testing rules. Reopening it costs a capture, not a redesign — Intel rides the same DRM fdinfo path AMD needs. |
 | NVML — the whole path | Still not fixture-testable: a C call, not a file read (SPEC.md §Testing rules). **No longer unverified** — see [Hardware verification](#hardware-verification) below. Unit tests drive the shared emission code through a fake source; `nvml_hardware_test.go` re-checks the real one wherever a GPU is present. |
 | ~~A card in Default mode (MIG off)~~ | **Closed** by `h100-default-20260729`. The hand-written `-L` override in `TestDefaultModeCardHasNoMIG` is kept: it is now the *unit* of that behaviour, with the capture as the integration case. |
 | A multi-GPU host | **Half closed.** `mi300x-2gpu-20260804` is two cards, with one process holding memory on both at once — but it is AMD, so it proves nothing about the NVIDIA parsers. Those still key on UUID rather than position specifically so a second card cannot silently attach its partitions to the first, and no NVIDIA capture demonstrates it. |
 | `[Not Supported]` / `[Unknown Error]` tokens | Only `[N/A]` appears in the capture. The others are handled by the same bracket-shape rule and covered in `TestBracketedTokensAreAbsentNotErrors`. |
 
-The AMD gap has changed shape rather than closed. It was a hardware gap and is
-now an implementation one: a third of what SPEC.md §Collectors assigns to Phase
-3 is still unwritten, but it is no longer blocked on a capture, and §Testing
-rules is satisfied for whoever writes it. Intel remains where it was — the same
-DRM fdinfo path, still with no host.
+The AMD gap is closed in both halves: captured, and written against the
+capture. Intel remains where it was — the same DRM fdinfo path, still with no
+host, and now with a working reader of that format sitting next to it.
+
+What replaces it are two narrower rows above, and they are worth reading as a
+pair. Neither is a design question; both are one capture away, and both are
+about a *combination* no single machine has offered yet — a bare-metal AMD card
+that can actually be repartitioned, and a host holding cards from both vendors
+at once.
 
 ## Hardware verification
+
+### AMD, 2026-08-04
+
+The AMD collector was run on the host its fixtures came from, while the fixtures
+were still true of it — the static `CGO_ENABLED=0` build, on the 2× MI300X,
+with the same HIP kernel still loading both cards.
+
+`prickle diagnose` reported both cards, and a full scrape produced the same
+series as the golden file, including the four per-process values to the byte:
+`1225003008` and `1224998912` for the host process, `688119808` and `688123904`
+for the containerised one. That is the strongest check available to this
+collector and it is weaker than it sounds — the fixture and the live host are
+the same machine minutes apart, so it proves the reader agrees with sysfs, not
+that sysfs looks like this anywhere else. The `nvidia_hardware_test.go`
+equivalent, two independent implementations agreeing, has no AMD analogue:
+there is only one way to read these files.
+
+One thing it did establish that no fixture could. **Per-process attribution is
+silently partial when the exporter cannot read other users' `fdinfo`.** Run as
+an ordinary user, the scrape showed only the host process and omitted the
+containerised one entirely — no error, no gap, just two series where there
+should be four. Run under `sudo`, all four appeared. On a Kubernetes node the
+processes that go missing are exactly the ones in containers, which is the ones
+worth measuring.
+
+### NVIDIA
 
 SPEC.md §Testing rules requires that the two NVIDIA sources emit identical
 output for the same GPU, and that **a hardware test asserts it**. That test is

@@ -382,11 +382,14 @@ The container collector reads **both cgroup hierarchies**, both cgroup drivers,
 and four runtimes: Docker, containerd (through the CRI and through nerdctl),
 CRI-O and podman.
 
-Two gaps remain, both for want of hardware rather than design: **AMD is
-specified but not written** — no capture exists, and SPEC §Testing rules
-forbids a parser written against a layout nobody has captured — and
-**multi-GPU hosts are unverified**, every card reached so far being one per
-host. Intel is out of scope (SPEC §Collectors).
+The GPU collector reads **NVIDIA and AMD**. Both gaps that stood here closed
+together on 2026-08-04, on one host: AMD is captured, implemented and verified
+live against 2× MI300X, which is also the first multi-GPU machine this exporter
+has read. Intel is out of scope (SPEC §Collectors).
+
+What is unexercised is narrower now. Those cards are SR-IOV virtual functions,
+so AMD's compute partitioning has only ever been seen fixed at `SPX` by a
+hypervisor, and no host with **both** vendors' cards in it has been scraped.
 
 This is `0.7.x`, deliberately not `1.0`: that freezes the metrics contract, and
 the contract is still moving.
@@ -395,7 +398,7 @@ the contract is still moving.
 |---|---|---|
 | 1 | Host — CPU, memory, disks, network, load, PSI, filesystems | **shipped** |
 | 2 | Containers — cgroup v2 and v1, Docker/containerd/CRI-O/podman/Kubernetes | **shipped** |
-| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **NVIDIA shipped**; AMD unimplemented, Intel out of scope |
+| 3 | GPU — NVIDIA (NVML + `nvidia-smi`), AMD sysfs + DRM fdinfo | **shipped**; Intel out of scope |
 | 4 | Per-collector timeouts, cardinality caps, self-instrumentation | **shipped** |
 | 5 | Distribution — systemd, images, Helm, dashboards | **shipped** |
 

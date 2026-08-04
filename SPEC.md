@@ -199,7 +199,32 @@ mandatory from Phase 4.
   and `pod_name` joins the `_info` gauge as a descriptive attribute. `pod`
   continues to hold the **UID**, unchanged, so existing joins keep working —
   renaming what that label means would break every rule built on it.
-- **GPU (Phase 3):** AMD via sysfs + DRM fdinfo. **Intel is out of scope.** No
+- **GPU (Phase 3):** AMD via sysfs + DRM fdinfo, captured and implemented
+  2026-08-04 against 2× MI300X.
+
+  Identity is `unique_id`, which is the only stable per-card value sysfs
+  publishes and which matches amd-smi's `ASIC_SERIAL`; where a generation lacks
+  it the PCI address stands in. A card is recognised by its uevent
+  `DRIVER=amdgpu` and **not** by PCI class: an MI300X reports `0x120000`, a
+  processing accelerator, so the display-class test the NVIDIA presence check
+  uses would find nothing. hwmon sensors are located by their `*_label` files
+  rather than by index, because the indices differ per card — an MI300X has no
+  `temp1_input` at all.
+
+  Per-process attribution reads `drm-total-vram` from DRM fdinfo. fdinfo names
+  a GPU by `drm-pdev`, its PCI address, and carries no UUID, so processes are
+  joined back to cards through that address.
+
+  **`rocm-smi` and `amd-smi` are not sources and are never spawned.** §Hard
+  constraints #2 permits exactly one subprocess and it is `nvidia-smi`. The
+  cost is that AMD sysfs publishes no marketing name, so `prickle_gpu_info`
+  carries a small capture-verified lookup keyed on the PCI ID and falls back to
+  the ID itself. The two vendors' output does not fork: same families, same
+  units, same labels. MIG is NVIDIA's and is **absent** on an AMD card rather
+  than reported as 0 — the rule §Hard constraints #4 applies to PSI on cgroup
+  v1 — while AMD's own partitioning gets `prickle_gpu_amd_partition_info`.
+
+  **Intel is out of scope.** No
   capture host is obtainable, and §Testing rules forbids developing a parser
   against a layout nobody has captured — so listing it would be scope on paper
   and an empty scrape in practice, which is the worse of the two failures. This
@@ -324,11 +349,17 @@ with Phase 5 shipping as `0.5.0`.
 
 The freeze happens when the contract has stopped moving, and it has not: this
 session alone brought cgroup v1 into scope, added podman and standalone
-containerd, and left `runtime` empty on layouts that do not encode one. Two
-collectors named in §Collectors are also still unbuilt or unproven — AMD is
-specified and unwritten, and no multi-GPU host has ever been read. Freezing
-around those would promise stability over a surface nobody has exercised.
-Continue at `0.5.x`, `0.6.x` and so on until that is no longer true.
+containerd, and left `runtime` empty on layouts that do not encode one.
+
+**Two of the gaps that argued against freezing closed on 2026-08-04**: AMD is
+captured and implemented, and a multi-GPU host has now been read — the same
+one, 2× MI300X. That is progress toward a freeze rather than an argument for
+it, because closing them moved the contract again: `prickle_gpu_info` gained a
+`vendor` label and `prickle_gpu_amd_partition_info` is a new family. What is
+still unexercised is narrower and worth naming — no *bare-metal* AMD host has
+been read, so AMD's compute partitioning has only ever been observed fixed at
+`SPX` by a hypervisor, and no host with both vendors' cards in it has ever been
+scraped. Continue at `0.5.x`, `0.6.x` and so on until that is no longer true.
 
 From 1.0.0 on, a metric that must change is emitted under both the old and new
 names for one full minor, with the old name marked deprecated in its `# HELP`

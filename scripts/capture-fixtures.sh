@@ -610,7 +610,12 @@ cmd_capture() {
   local card dev hw f found_amd=0
   # gpu_metrics, pp_table and the resource* files are deliberately absent: they
   # are binary blobs, not text, and `grab` would write mojibake.
-  local AMD_DEV_FILES="unique_id vendor device class revision
+  # uevent first: it is the one file that makes the mirrored tree self-
+  # sufficient. It carries DRIVER=amdgpu — a driver test that survives `grab`
+  # flattening the driver symlink — and PCI_SLOT_NAME, which is the address DRM
+  # fdinfo's drm-pdev must be joined against. Without it a fixture tree can
+  # neither identify the driver nor tie a process to a card.
+  local AMD_DEV_FILES="uevent unique_id vendor device class revision
       subsystem_vendor subsystem_device numa_node board_info vbios_version
       current_compute_partition current_memory_partition
       gpu_busy_percent mem_busy_percent
@@ -671,8 +676,19 @@ cmd_capture() {
     if [[ $hit -eq 1 ]]; then
       gpu_pids=$((gpu_pids+1)); grab "$pid_dir/cgroup"; grab "$pid_dir/comm"
       mkdir -p "$OUT_DIR$pid_dir"
-      readlink "$pid_dir/exe" 2>/dev/null > "$OUT_DIR$pid_dir/exe.link" \
-        || echo '<unreadable>' > "$OUT_DIR$pid_dir/exe.link"
+      # Both spellings, deliberately. exe.link is the readable record of what
+      # the symlink pointed at; `exe` is a real symlink recreated with the same
+      # target, because that is what /proc has and the collector resolves a
+      # command with os.Readlink. A fixture carrying only the .txt form cannot
+      # be read by the code it exists to test — the target is almost always a
+      # path that does not exist on the machine unpacking the capture, but a
+      # dangling symlink readlink()s correctly, which is all this needs.
+      if tgt=$(readlink "$pid_dir/exe" 2>/dev/null); then
+        printf '%s\n' "$tgt" > "$OUT_DIR$pid_dir/exe.link"
+        ln -sfn "$tgt" "$OUT_DIR$pid_dir/exe"
+      else
+        echo '<unreadable>' > "$OUT_DIR$pid_dir/exe.link"
+      fi
     fi
   done
   note "processes with GPU fds: $gpu_pids (drm-* keys present: $drm_keys)"
