@@ -1,0 +1,5 @@
+capture_date: 2026-08-04T03:13:21+00:00
+hostname: enc1-gpuvm005
+kernel: 6.8.0-124-generic
+uname: Linux enc1-gpuvm005 6.8.0-124-generic #124-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 13:00:45 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+cgroup_fstype: cgroup2fs

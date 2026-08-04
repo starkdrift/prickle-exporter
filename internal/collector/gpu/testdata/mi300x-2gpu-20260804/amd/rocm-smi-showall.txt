@@ -1,0 +1,261 @@
+
+
+============================ ROCm System Management Interface ============================
+============================== Version of System Component ===============================
+Driver version: 6.16.13
+==========================================================================================
+=========================================== ID ===========================================
+GPU[0]		: Device Name: 		AMD Instinct MI300X VF
+GPU[0]		: Device ID: 		0x74b5
+GPU[0]		: Device Rev: 		0x00
+GPU[0]		: Subsystem ID: 	0x74a1
+GPU[0]		: GUID: 		54554
+GPU[1]		: Device Name: 		AMD Instinct MI300X VF
+GPU[1]		: Device ID: 		0x74b5
+GPU[1]		: Device Rev: 		0x00
+GPU[1]		: Subsystem ID: 	0x74a1
+GPU[1]		: GUID: 		46235
+==========================================================================================
+======================================= Unique ID ========================================
+GPU[0]		: Unique ID: 0x594afe08e1ab3ae6
+GPU[1]		: Unique ID: 0x25a594c05f2eb594
+==========================================================================================
+========================================= VBIOS ==========================================
+GPU[0]		: VBIOS version: 113-M3000108-103
+GPU[1]		: VBIOS version: 113-M3000108-103
+==========================================================================================
+====================================== Temperature =======================================
+GPU[0]		: Temperature (Sensor junction) (C): 70.0
+GPU[0]		: Temperature (Sensor memory) (C): 43.0
+GPU[1]		: Temperature (Sensor junction) (C): 70.0
+GPU[1]		: Temperature (Sensor memory) (C): 42.0
+==========================================================================================
+=============================== Current clock frequencies ================================
+GPU[0]		: fclk clock level: 2: (1800Mhz)
+GPU[0]		: mclk clock level: 2: (1300Mhz)
+GPU[0]		: sclk clock level: 1: (2061Mhz)
+GPU[0]		: socclk clock level: S: (37Mhz)
+GPU[1]		: fclk clock level: 2: (1800Mhz)
+GPU[1]		: mclk clock level: 2: (1300Mhz)
+GPU[1]		: sclk clock level: 1: (2079Mhz)
+GPU[1]		: socclk clock level: S: (38Mhz)
+==========================================================================================
+=================================== Current Fan Metric ===================================
+GPU[0]		: Not supported
+GPU[1]		: Not supported
+==========================================================================================
+================================= Show Performance Level =================================
+GPU[0]		: Performance Level: auto
+GPU[1]		: Performance Level: auto
+==========================================================================================
+==================================== OverDrive Level =====================================
+GPU[0]		: get_overdrive_level_sclk, Not supported on the given system
+GPU[1]		: get_overdrive_level_sclk, Not supported on the given system
+==========================================================================================
+==================================== OverDrive Level =====================================
+GPU[0]		: get_mem_overdrive_level_mclk, Not supported on the given system
+GPU[1]		: get_mem_overdrive_level_mclk, Not supported on the given system
+==========================================================================================
+======================================= Power Cap ========================================
+GPU[0]		: Max Graphics Package Power (W): 750.0
+GPU[1]		: Max Graphics Package Power (W): 750.0
+==========================================================================================
+================================== Show Power Profiles ===================================
+GPU[0]		: get_power_profiles, Not supported on the given system
+GPU[1]		: get_power_profiles, Not supported on the given system
+==========================================================================================
+=================================== Power Consumption ====================================
+GPU[0]		: Current Socket Graphics Package Power (W): 631.0
+GPU[1]		: Current Socket Graphics Package Power (W): 645.0
+==========================================================================================
+============================== Supported clock frequencies ===============================
+GPU[0]		: 
+GPU[0]		: Supported fclk frequencies on GPU0
+GPU[0]		: 0: 1300Mhz
+GPU[0]		: 1: 1550Mhz
+GPU[0]		: 2: 1800Mhz *
+GPU[0]		: 
+GPU[0]		: Supported mclk frequencies on GPU0
+GPU[0]		: 0: 900Mhz
+GPU[0]		: 1: 1100Mhz
+GPU[0]		: 2: 1300Mhz *
+GPU[0]		: 
+GPU[0]		: Supported sclk frequencies on GPU0
+GPU[0]		: 0: 500Mhz
+GPU[0]		: 1: 2061Mhz *
+GPU[0]		: 2: 2100Mhz
+GPU[0]		: 
+GPU[0]		: Supported socclk frequencies on GPU0
+GPU[0]		: S: 38Mhz *
+GPU[0]		: 0: 889Mhz
+GPU[0]		: 1: 1000Mhz
+GPU[0]		: 2: 1143Mhz
+GPU[0]		: 
+GPU[0]		: 
+------------------------------------------------------------------------------------------
+GPU[1]		: 
+GPU[1]		: Supported fclk frequencies on GPU1
+GPU[1]		: 0: 1300Mhz
+GPU[1]		: 1: 1550Mhz
+GPU[1]		: 2: 1800Mhz *
+GPU[1]		: 
+GPU[1]		: Supported mclk frequencies on GPU1
+GPU[1]		: 0: 900Mhz
+GPU[1]		: 1: 1100Mhz
+GPU[1]		: 2: 1300Mhz *
+GPU[1]		: 
+GPU[1]		: Supported sclk frequencies on GPU1
+GPU[1]		: 0: 500Mhz
+GPU[1]		: 1: 2079Mhz *
+GPU[1]		: 2: 2100Mhz
+GPU[1]		: 
+GPU[1]		: Supported socclk frequencies on GPU1
+GPU[1]		: S: 41Mhz *
+GPU[1]		: 0: 889Mhz
+GPU[1]		: 1: 1000Mhz
+GPU[1]		: 2: 1143Mhz
+GPU[1]		: 
+GPU[1]		: 
+------------------------------------------------------------------------------------------
+==========================================================================================
+=================================== % time GPU is busy ===================================
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 98
+==========================================================================================
+=================================== Current Memory Use ===================================
+GPU[0]		: GPU Memory Allocated (VRAM%): 1
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 1
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+==========================================================================================
+===================================== Memory Vendor ======================================
+GPU[0]		: GPU memory vendor: micron
+GPU[1]		: GPU memory vendor: micron
+==========================================================================================
+================================== PCIe Replay Counter ===================================
+GPU[0]		: PCIe Replay Count, Not supported on the given system
+GPU[1]		: PCIe Replay Count, Not supported on the given system
+==========================================================================================
+===================================== Serial Number ======================================
+GPU[0]		: get_serial_number, Not supported on the given system
+GPU[0]		: Serial Number: N/A
+GPU[1]		: get_serial_number, Not supported on the given system
+GPU[1]		: Serial Number: N/A
+==========================================================================================
+===================================== KFD Processes ======================================
+KFD process information:
+PID 	PROCESS NAME	GPU(s)	VRAM USED 	SDMA USED	CU OCCUPANCY	
+8038	gpu-spin    	2     	3193659392	0        	0           	
+9163	gpu-spin    	2     	2119917568	0        	0           	
+==========================================================================================
+================================== GPUs Indexed by PID ===================================
+PID 8038 is using 2 DRM device(s):
+0 1 
+PID 9163 is using 2 DRM device(s):
+0 1 
+==========================================================================================
+======================= GPU Memory clock frequencies and voltages ========================
+GPU[0]		: OD_SCLK:
+GPU[0]		: 0: 500Mhz
+GPU[0]		: 1: 2100Mhz
+GPU[0]		: OD_MCLK:
+GPU[0]		: 0: 900Mhz
+GPU[0]		: 1: 1300Mhz
+GPU[1]		: OD_SCLK:
+GPU[1]		: 0: 500Mhz
+GPU[1]		: 1: 2100Mhz
+GPU[1]		: OD_MCLK:
+GPU[1]		: 0: 900Mhz
+GPU[1]		: 1: 1300Mhz
+==========================================================================================
+==================================== Current voltage =====================================
+GPU[0]		: get_volt_metric, Not supported on the given system
+GPU[1]		: get_volt_metric, Not supported on the given system
+==========================================================================================
+======================================= PCI Bus ID =======================================
+GPU[0]		: PCI Bus: 0000:FD:00.0
+GPU[1]		: PCI Bus: 0000:FF:00.0
+==========================================================================================
+================================== Firmware Information ==================================
+GPU[0]		: MEC firmware version: 	32960
+GPU[0]		: MEC2 firmware version: 	32960
+GPU[0]		: RLC firmware version: 	69
+GPU[0]		: RLC SRLC firmware version: 	4
+GPU[0]		: RLC SRLG firmware version: 	4
+GPU[0]		: RLC SRLS firmware version: 	4
+GPU[0]		: SDMA firmware version: 	25
+GPU[0]		: SDMA2 firmware version: 	25
+GPU[0]		: SMC firmware version: 	00.85.130.02
+GPU[0]		: TA RAS firmware version: 	27.54.02.26
+GPU[0]		: TA XGMI firmware version: 	32.00.00.20
+GPU[0]		: VCN firmware version: 	0x0911801a
+GPU[1]		: MEC firmware version: 	32960
+GPU[1]		: MEC2 firmware version: 	32960
+GPU[1]		: RLC firmware version: 	69
+GPU[1]		: RLC SRLC firmware version: 	4
+GPU[1]		: RLC SRLG firmware version: 	4
+GPU[1]		: RLC SRLS firmware version: 	4
+GPU[1]		: SDMA firmware version: 	25
+GPU[1]		: SDMA2 firmware version: 	25
+GPU[1]		: SMC firmware version: 	00.85.130.02
+GPU[1]		: TA RAS firmware version: 	27.54.02.26
+GPU[1]		: TA XGMI firmware version: 	32.00.00.20
+GPU[1]		: VCN firmware version: 	0x0911801a
+==========================================================================================
+====================================== Product Info ======================================
+GPU[0]		: Card Series: 		AMD Instinct MI300X VF
+GPU[0]		: Card Model: 		0x74b5
+GPU[0]		: Card Vendor: 		Advanced Micro Devices, Inc. [AMD/ATI]
+GPU[0]		: Card SKU: 		M3000108
+GPU[0]		: Subsystem ID: 	0x74a1
+GPU[0]		: Device Rev: 		0x00
+GPU[0]		: Node ID: 		2
+GPU[0]		: GUID: 		54554
+GPU[0]		: GFX Version: 		gfx942
+GPU[1]		: Card Series: 		AMD Instinct MI300X VF
+GPU[1]		: Card Model: 		0x74b5
+GPU[1]		: Card Vendor: 		Advanced Micro Devices, Inc. [AMD/ATI]
+GPU[1]		: Card SKU: 		M3000108
+GPU[1]		: Subsystem ID: 	0x74a1
+GPU[1]		: Device Rev: 		0x00
+GPU[1]		: Node ID: 		3
+GPU[1]		: GUID: 		46235
+GPU[1]		: GFX Version: 		gfx942
+==========================================================================================
+======================================= Pages Info =======================================
+==========================================================================================
+================================= Show Valid sclk Range ==================================
+GPU[0]		: Valid sclk range: 500Mhz - 2100Mhz
+GPU[1]		: Valid sclk range: 500Mhz - 2100Mhz
+==========================================================================================
+================================= Show Valid mclk Range ==================================
+GPU[0]		: Valid mclk range: 900Mhz - 1300Mhz
+GPU[1]		: Valid mclk range: 900Mhz - 1300Mhz
+WARNING: GPU[0]	: Voltage curve regions unsupported.
+WARNING: GPU[1]	: Voltage curve regions unsupported.
+==========================================================================================
+================================ Show Valid voltage Range ================================
+==========================================================================================
+================================== Voltage Curve Points ==================================
+==========================================================================================
+==================================== Consumed Energy =====================================
+GPU[0]		: % Energy Counter, Unexpected data received
+GPU[1]		: % Energy Counter, Unexpected data received
+==========================================================================================
+=============================== Current Compute Partition ================================
+GPU[0]		: Compute Partition: SPX
+GPU[1]		: Compute Partition: SPX
+==========================================================================================
+================================ Current Memory Partition ================================
+GPU[0]		: Memory Partition: NPS1
+GPU[1]		: Memory Partition: NPS1
+==========================================================================================
+====================================== GPU Metrics =======================================
+GPU[0]		: Failed to retrieve GPU metrics, metric version may not be supported for this device.
+GPU[1]		: Failed to retrieve GPU metrics, metric version may not be supported for this device.
+==========================================================================================
+================================== End of ROCm SMI Log ===================================

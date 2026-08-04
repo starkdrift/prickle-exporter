@@ -96,11 +96,26 @@ kubepods_pod_count() {
   find "$root" -maxdepth 3 -type d \( -name 'pod*' -o -name '*pod*.slice' \) \
        2>/dev/null | wc -l
 }
-nvidia_present()      { have nvidia-smi; }
-nvidia_mig_capable()  { nvidia-smi mig -lgip >/dev/null 2>&1; }
+# `have nvidia-smi` is not enough to conclude there is an NVIDIA driver here.
+# The AMD capture host (2026-08-04) ships /usr/bin/nvidia-smi as a two-line
+# shell script that prints "nvidia-smi not found. This is AMD country." and
+# **exits 0**, which made every exit-code probe below report success: the
+# preflight announced a driver, declared the card MIG-capable but disabled, and
+# counted the joke line as one running compute app. Three of its four gaps were
+# fiction on a host with no NVIDIA hardware at all.
+#
+# So presence is decided by output rather than by status: a real --query-gpu=uuid
+# prints one GPU-<uuid> per card, and nothing else does.
+nvidia_present() {
+  have nvidia-smi || return 1
+  nvidia-smi --query-gpu=uuid --format=csv,noheader 2>/dev/null \
+    | grep -qE '^(GPU|MIG)-'
+}
+nvidia_mig_capable()  { nvidia-smi mig -lgip 2>/dev/null | grep -q 'MIG '; }
 nvidia_mig_enabled()  { nvidia-smi -L 2>/dev/null | grep -q 'MIG '; }
 nvidia_compute_apps() {
-  nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c .
+  nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null \
+    | grep -cE '^[0-9]+$'
 }
 # Echoes the first card's utilization as the driver prints it: a number, or
 # [N/A] whenever MIG is enabled.
@@ -575,18 +590,69 @@ cmd_capture() {
       && gap "utilization.gpu captured as 0 with a process resident — see 'check'"
   else note "no nvidia-smi"; fi
 
-  say "AMD sysfs + rocm-smi"
+  # The file list below is what an MI300X actually exposes, replacing a guess.
+  # The first AMD capture (2026-08-04) found the previous three-file list
+  # missing the identity the metrics contract needs and the hwmon list naming
+  # two files that do not exist on a datacenter card:
+  #
+  #   * unique_id is the only stable per-GPU identity in sysfs, and it matches
+  #     amd-smi's ASIC_SERIAL. Without it there is no source for `gpu_uuid`.
+  #   * hwmon named temp1_input and power1_average. An MI300X has neither: it
+  #     publishes temp2_input (junction), temp3_input (mem) and power1_input,
+  #     so the old list captured only power1_cap and name. Sensor numbering is
+  #     not stable across cards, which is why every regular file in the hwmon
+  #     directory is taken now — the tempN_label / power1_label files are what
+  #     say which sensor is which, and a fixed index list cannot be right on
+  #     both a consumer card and an OAM module.
+  #   * current_compute_partition / current_memory_partition (SPX, NPS1) are
+  #     AMD's partitioning, the analogue of the MIG topology captured above.
+  say "AMD sysfs"
   local card dev hw f found_amd=0
+  # gpu_metrics, pp_table and the resource* files are deliberately absent: they
+  # are binary blobs, not text, and `grab` would write mojibake.
+  local AMD_DEV_FILES="unique_id vendor device class revision
+      subsystem_vendor subsystem_device numa_node board_info vbios_version
+      current_compute_partition current_memory_partition
+      gpu_busy_percent mem_busy_percent
+      mem_info_vram_used mem_info_vram_total mem_info_vram_vendor
+      mem_info_vis_vram_used mem_info_vis_vram_total
+      mem_info_gtt_used mem_info_gtt_total
+      pp_dpm_sclk pp_dpm_mclk pp_dpm_socclk pp_dpm_fclk
+      power_dpm_force_performance_level power_state
+      current_link_speed current_link_width max_link_speed max_link_width"
   for card in /sys/class/drm/card[0-9]*; do
     dev="$card/device"; [[ -e $dev/gpu_busy_percent ]] || continue
     found_amd=1
-    for f in gpu_busy_percent mem_info_vram_used mem_info_vram_total; do grab "$dev/$f"; done
+    for f in $AMD_DEV_FILES; do [[ -e $dev/$f ]] && grab "$dev/$f"; done
     for hw in "$dev"/hwmon/hwmon*; do
-      for f in temp1_input power1_average power1_cap name; do
-        [[ -e $hw/$f ]] && grab "$hw/$f"; done; done
+      [[ -d $hw ]] || continue
+      for f in "$hw"/*; do [[ -f $f && -r $f ]] && grab "$f"; done
+    done
   done
+
+  # card<N>/device is a symlink to the PCI device, and its basename is the only
+  # place the card's PCI address appears. DRM fdinfo identifies a GPU by
+  # `drm-pdev` and by nothing else, so without this map a captured fdinfo
+  # cannot be tied to the card it belongs to and the per-process fixtures are
+  # unusable. `grab` follows the symlink and flattens it, so it is recorded
+  # here explicitly rather than inferred from the mirrored tree.
   if [[ $found_amd -eq 1 ]]; then
-    have rocm-smi && rocm-smi --showall > "$OUT_DIR/meta/rocm-smi.txt" 2>&1
+    mkdir -p "$OUT_DIR/amd"
+    { for card in /sys/class/drm/card[0-9]*; do
+        [[ -e $card/device/gpu_busy_percent ]] || continue
+        printf '%s\t%s\t%s\n' "${card##*/}" \
+          "$(basename "$(readlink -f "$card/device")")" \
+          "$(cd "$card/device/drm" 2>/dev/null && echo render*)"
+      done; } > "$OUT_DIR/amd/drm-map.txt"
+    CAPTURED=$((CAPTURED+1))
+
+    have rocm-smi && rocm-smi --showall > "$OUT_DIR/amd/rocm-smi-showall.txt" 2>&1
+    have amd-smi  && amd-smi static     > "$OUT_DIR/amd/amd-smi-static.txt" 2>&1
+    have amd-smi  && amd-smi metric     > "$OUT_DIR/amd/amd-smi-metric.txt" 2>&1
+    if [[ $(cat /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null \
+            | sort -u | tr -d '\n0') == "" ]]; then
+      gap "every AMD gpu_busy_percent captured as 0 — no workload was running, and a 0 in the fixture cannot be told from a card the collector failed to read"
+    fi
   else note "no AMD GPUs (fine on NVIDIA hosts)"; fi
 
   say "Per-process GPU fdinfo"
