@@ -248,10 +248,10 @@ rebuild, and the digest you mirror is the digest you verify:
 
 ```sh
 skopeo copy --all \
-  docker://ghcr.io/starkdrift/prickle-exporter:0.7.1 \
-  docker://registry.internal/prickle-exporter:0.7.1
+  docker://ghcr.io/starkdrift/prickle-exporter:0.8.0 \
+  docker://registry.internal/prickle-exporter:0.8.0
 # or
-crane copy ghcr.io/starkdrift/prickle-exporter:0.7.1 registry.internal/prickle-exporter:0.7.1
+crane copy ghcr.io/starkdrift/prickle-exporter:0.8.0 registry.internal/prickle-exporter:0.8.0
 ```
 
 `--all` matters: without it you copy one architecture and the manifest list is
@@ -262,7 +262,7 @@ Then point the chart at the mirror:
 ```sh
 helm install prickle packaging/helm/prickle-exporter -n monitoring \
   --set image.repository=registry.internal/prickle-exporter \
-  --set image.tag=0.7.1@sha256:<digest>
+  --set image.tag=0.8.0@sha256:<digest>
 ```
 
 Pinning by digest is the point of a mirror: it survives a tag being re-pushed
@@ -273,6 +273,6 @@ Provenance is attested to the manifest-list digest and pushed to the registry
 alongside the image, so it can be verified after mirroring:
 
 ```sh
-gh attestation verify oci://registry.internal/prickle-exporter:0.7.1 \
+gh attestation verify oci://registry.internal/prickle-exporter:0.8.0 \
   --repo starkdrift/prickle-exporter
 ```

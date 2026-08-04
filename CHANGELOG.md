@@ -11,7 +11,18 @@ roadmap phase; `1.0.0` is where the metrics contract freezes.
 This file is written by hand. A metric change needs prose telling an operator
 what to do about it, which no commit-log generator writes.
 
-## [Unreleased]
+## [0.8.0] — 2026-08-04
+
+The AMD release, and the one that makes "which pod is holding this card"
+answerable. Two label keys join existing series, which SPEC.md §Versioning
+calls a major and permits a pre-1.0 minor to do: `vendor` on
+`prickle_gpu_info`, and `container` on `prickle_gpu_process_memory_bytes`.
+**A query that aggregates either series without a `by` clause changes shape.**
+
+An AMD card now reports the same families, units and labels as an NVIDIA one —
+the contract does not fork by vendor. The dashboards lose their dropdowns for a
+single contains-textbox per label, and the Helm chart stops asking for a
+capability that measurement showed it never used.
 
 ### Added
 
@@ -69,26 +80,6 @@ what to do about it, which no commit-log generator writes.
   GPU by PCI address and never by UUID, hwmon sensors are labelled rather than
   numbered, and an MI300X's PCI class is `0x120000` rather than a display class.
 
-### Fixed
-
-- **`scripts/capture-fixtures.sh` captured the wrong AMD files and believed a
-  fake `nvidia-smi`.** Both were found by running it on a real AMD host for the
-  first time.
-
-  Its AMD section asked for three sysfs files and four hwmon files by name. The
-  hwmon pair it wanted — `temp1_input` and `power1_average` — do not exist on an
-  MI300X, which publishes `temp2_input`, `temp3_input` and `power1_input`, so
-  the capture would have contained no temperature and no power reading at all.
-  It now takes every regular file in the hwmon directory, and a sysfs list that
-  includes `unique_id`, the partition mode and the other two memory pools.
-
-  Separately, the capture host shipped `/usr/bin/nvidia-smi` as a shell script
-  printing `nvidia-smi not found. This is AMD country.` and exiting **0**. The
-  preflight's probes tested exit status only, so it reported an NVIDIA driver, a
-  MIG-capable card with MIG disabled, and one running compute app — on a machine
-  with no NVIDIA hardware. Three of its four reported gaps were fiction. The
-  probes now test output shape rather than exit status.
-
 - **`prickle_gpu_process_memory_bytes` carries a `container` label**, so a GPU
   process can be joined to `prickle_container_info` and through it to a pod
   name, a namespace and an image. "Which pod is holding this card" was
@@ -135,6 +126,24 @@ what to do about it, which no commit-log generator writes.
   second.
 
 ### Fixed
+
+- **`scripts/capture-fixtures.sh` captured the wrong AMD files and believed a
+  fake `nvidia-smi`.** Both were found by running it on a real AMD host for the
+  first time.
+
+  Its AMD section asked for three sysfs files and four hwmon files by name. The
+  hwmon pair it wanted — `temp1_input` and `power1_average` — do not exist on an
+  MI300X, which publishes `temp2_input`, `temp3_input` and `power1_input`, so
+  the capture would have contained no temperature and no power reading at all.
+  It now takes every regular file in the hwmon directory, and a sysfs list that
+  includes `unique_id`, the partition mode and the other two memory pools.
+
+  Separately, the capture host shipped `/usr/bin/nvidia-smi` as a shell script
+  printing `nvidia-smi not found. This is AMD country.` and exiting **0**. The
+  preflight's probes tested exit status only, so it reported an NVIDIA driver, a
+  MIG-capable card with MIG disabled, and one running compute app — on a machine
+  with no NVIDIA hardware. Three of its four reported gaps were fiction. The
+  probes now test output shape rather than exit status.
 
 - **`prickle diagnose` was silent about pod names, including when they were
   all missing.** The subcommand exists to answer "what can this host be read
@@ -1020,7 +1029,8 @@ Phase 1: the host collector, and the machinery underneath it.
 - `/proc/loadavg`'s fourth and fifth fields are not exposed. The fifth is a
   PID, and SPEC.md §Metrics contract forbids PIDs everywhere.
 
-[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/starkdrift/prickle-exporter/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/starkdrift/prickle-exporter/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/starkdrift/prickle-exporter/compare/v0.5.0...v0.6.0
