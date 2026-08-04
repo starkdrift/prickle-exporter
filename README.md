@@ -119,7 +119,7 @@ including the traps each one has, is in
 ### Standalone, with systemd
 
 ```sh
-V=0.7.1
+V=0.8.0
 curl -fsSLO https://github.com/starkdrift/prickle-exporter/releases/download/v$V/prickle_v${V}_linux_amd64.tar.gz
 curl -fsSLO https://github.com/starkdrift/prickle-exporter/releases/download/v$V/SHA256SUMS
 grep prickle_v${V}_linux_amd64.tar.gz SHA256SUMS | sha256sum -c
@@ -217,7 +217,7 @@ with `skopeo copy --all`.
 ```sh
 docker run -d --name prickle --network=host \
   -v /proc:/host/proc:ro -v /sys:/host/sys:ro \
-  ghcr.io/starkdrift/prickle-exporter:0.7.1 -path.rootfs=/host
+  ghcr.io/starkdrift/prickle-exporter:0.8.0 -path.rootfs=/host
 ```
 
 `-path.rootfs=/host` is not optional — without it the exporter faithfully
@@ -391,7 +391,7 @@ What is unexercised is narrower now. Those cards are SR-IOV virtual functions,
 so AMD's compute partitioning has only ever been seen fixed at `SPX` by a
 hypervisor, and no host with **both** vendors' cards in it has been scraped.
 
-This is `0.7.x`, deliberately not `1.0`: that freezes the metrics contract, and
+This is `0.8.x`, deliberately not `1.0`: that freezes the metrics contract, and
 the contract is still moving.
 
 | Phase | Scope | State |
