@@ -4,9 +4,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -165,7 +167,7 @@ func describeContainers(w io.Writer, cfg config) error {
 	// The _info gauge carries one sample per container found, with the runtime
 	// it was identified by and the name enrichment did or did not supply.
 	runtimes := map[string]int{}
-	var total, named int
+	var total, named, inPod, podNamed int
 	for _, line := range strings.Split(set.String(), "\n") {
 		if !strings.HasPrefix(line, "prickle_container_info{") {
 			continue
@@ -173,6 +175,16 @@ func describeContainers(w io.Writer, cfg config) error {
 		total++
 		if !strings.Contains(line, `name=""`) {
 			named++
+		}
+		// `pod` is the UID the cgroup walk produced; a container outside a pod
+		// carries an empty one. `pod_name` exists on the series only while
+		// -collector.container.pod-names is on, so an absent label and an
+		// empty one both mean "not resolved" and both are counted the same.
+		if !strings.Contains(line, `pod=""`) {
+			inPod++
+			if strings.Contains(line, `pod_name="`) && !strings.Contains(line, `pod_name=""`) {
+				podNamed++
+			}
 		}
 		for _, r := range knownRuntimes {
 			if strings.Contains(line, `runtime="`+r+`"`) {
@@ -217,7 +229,82 @@ func describeContainers(w io.Writer, cfg config) error {
 		fmt.Fprintf(w, "  Docker enrichment: %s, %d of %d Docker containers named\n",
 			cfg.dockerSocket, named, runtimes["docker"])
 	}
+
+	describePodNames(w, cfg, readPodLogs(roots), inPod, podNamed)
 	return nil
+}
+
+// podLogs is what diagnose could learn about the kubelet's pod log directory.
+// Split from the reporting so the reporting is testable without a filesystem
+// that can produce an EACCES — which a test running as root cannot arrange.
+type podLogs struct {
+	path string
+	err  error
+	dirs int
+}
+
+// readPodLogs lists the pod log directory, exactly as the collector does.
+func readPodLogs(roots fsroot.Roots) podLogs {
+	st := podLogs{path: roots.PodLogsPath()}
+	entries, err := os.ReadDir(st.path)
+	if err != nil {
+		st.err = err
+		return st
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			st.dirs++
+		}
+	}
+	return st
+}
+
+// describePodNames reports whether pod-name resolution is on and, when it is
+// on and producing nothing, why.
+//
+// This section exists because that failure is otherwise **completely silent**.
+// An unreadable pod log directory is deliberately not a collection error — the
+// container metrics are unaffected and only the names are missing, so raising
+// prickle_collector_errors_total forever would be wrong — with the result that
+// every container is still reported, every one of them identified by UID, and
+// nothing anywhere says the privilege is missing. Measured on 2026-08-04:
+// forcing the chart's pod to gid 65532 left 18 of 18 containers unnamed while
+// this subcommand printed an entirely healthy report.
+func describePodNames(w io.Writer, cfg config, st podLogs, inPod, podNamed int) {
+	if !cfg.podNames {
+		fmt.Fprintln(w, "  pod names: off. A container in a pod is identified by the pod's UID;")
+		fmt.Fprintln(w, "  -collector.container.pod-names resolves the name and namespace.")
+		return
+	}
+
+	switch {
+	case errors.Is(st.err, fs.ErrPermission):
+		fmt.Fprintf(w, "  pod names: ON, AND READING NOTHING — %s: permission denied.\n", st.path)
+		fmt.Fprintf(w, "  Running as uid=%d gid=%d. That directory is 0750 root:root, so\n", os.Getuid(), os.Getgid())
+		fmt.Fprintln(w, "  reading it needs uid 0, membership of group root (the Helm chart")
+		fmt.Fprintln(w, "  sets runAsGroup: 0), or — under systemd only — ambient")
+		fmt.Fprintln(w, "  CAP_DAC_READ_SEARCH. A capability added to a non-root uid on")
+		fmt.Fprintln(w, "  Kubernetes lands in the bounding set alone and does nothing.")
+		fmt.Fprintf(w, "  Every container is still reported: %d of them are in a pod and\n", inPod)
+		fmt.Fprintln(w, "  carry a UID with no name.")
+	case errors.Is(st.err, fs.ErrNotExist):
+		fmt.Fprintf(w, "  pod names: on, but %s does not exist. Expected on a host that is\n", st.path)
+		fmt.Fprintln(w, "  not a Kubernetes node — the kubelet is what creates it. Containers")
+		fmt.Fprintln(w, "  started by hand are in no pod and have no name to resolve.")
+	case st.err != nil:
+		fmt.Fprintf(w, "  pod names: on, but %s could not be listed: %v\n", st.path, st.err)
+	case inPod == 0:
+		fmt.Fprintf(w, "  pod names: on, %s holds %d pod directories, and no container found\n", st.path, st.dirs)
+		fmt.Fprintln(w, "  here is in a pod — so there is nothing to resolve.")
+	case podNamed < inPod:
+		fmt.Fprintf(w, "  pod names: on — %d of %d containers in a pod resolved, from %s.\n",
+			podNamed, inPod, st.path)
+		fmt.Fprintln(w, "  The rest are pods the kubelet has no log directory for, usually")
+		fmt.Fprintln(w, "  because it was pruned after the pod exited.")
+	default:
+		fmt.Fprintf(w, "  pod names: on — %d of %d containers in a pod resolved, from %s.\n",
+			podNamed, inPod, st.path)
+	}
 }
 
 // describeGPUs reports which NVIDIA implementation is live and, when none is,
