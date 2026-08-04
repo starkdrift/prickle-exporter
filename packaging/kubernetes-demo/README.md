@@ -48,11 +48,12 @@ burns everything it can, so the throttling panels show real stalls.
 ## Pod names
 
 `--set collectors.podNames.enabled=true` is what turns
-`pod="537209ed-f2d7-…"` into `pod_name="demo-throttled"`, and it grants the
-container `CAP_DAC_READ_SEARCH` to read the kubelet's `/var/log/pods`. That
-capability bypasses file-read checks host-wide — read
+`pod="537209ed-f2d7-…"` into `pod_name="demo-throttled"`. It runs the container
+as uid 65532 in **group root** (`runAsGroup: 0`), which is what reads the
+kubelet's `0750 root:root` `/var/log/pods` — read
 [the README section](../../README.md#pod-names-and-what-they-cost) before
-enabling it outside a demo.
+enabling it outside a demo. It granted `CAP_DAC_READ_SEARCH` until 0.8.0, which
+was measured to do nothing at all on Kubernetes.
 
 Verified on a single-node kubeadm cluster: 26 containers, 14 pod names, three
 namespaces, and both dashboard dropdowns populating. It needs **0.7.0 or

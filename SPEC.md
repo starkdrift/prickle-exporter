@@ -175,11 +175,24 @@ mandatory from Phase 4.
 
   The price is that `/var/log/pods` is `root:root` `0750` and so are the two
   alternatives (`/var/lib/kubelet/pods`, containerd's per-container state
-  directory). `CAP_DAC_READ_SEARCH` is enough and full root is not required,
-  but for a process whose only capability is reading files, "read any file" is
-  not meaningfully smaller than root — it is this program's entire risk
-  surface. So it is **off by default**, the shipped units and chart stay
-  unprivileged, and enabling it is a deliberate trade an operator makes.
+  directory). **What satisfies that mode differs by how the exporter is run,
+  and the two costs are not equal** (measured 2026-08-04; this paragraph
+  previously stated the capability was the mechanism in both):
+
+  - **Under systemd**, `AmbientCapabilities=CAP_DAC_READ_SEARCH` works — the
+    ambient set makes the capability real for a non-root `DynamicUser`. It is
+    also the expensive route: for a process whose only capability is reading
+    files, "read any file" is not meaningfully smaller than root, and it is this
+    program's entire risk surface.
+  - **On Kubernetes**, that capability is unusable and must not be relied on: a
+    capability added to a non-root uid lands in the bounding set alone, leaving
+    the permitted, effective and ambient sets empty. The chart instead runs as
+    uid 65532 with **`runAsGroup: 0`** and reads the directory through its group
+    bits, which reaches files owned by group root and nothing further.
+
+  Either way it is **off by default** and enabling it is a deliberate trade an
+  operator makes. Both routes assume the `0750`-with-group-root mode these hosts
+  ship; where `/var/log/pods` is `0700`, only uid 0 can read it.
 
   When enabled: `namespace` joins the hot series, which the closed identity set
   already permits and which is what makes filtering by namespace work at all;

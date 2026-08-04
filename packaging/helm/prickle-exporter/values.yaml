@@ -54,11 +54,24 @@ collectors:
   # why it is off by default: it widens the pod's view of the node.
   perProcess: false
   # Resolve a pod's UID to its namespace and name by listing the kubelet's
-  # /var/log/pods. That path is root:root 0750, so enabling this adds
-  # CAP_DAC_READ_SEARCH and mounts the directory read-only. The capability
-  # bypasses file-read permission checks host-wide, which for a read-only
-  # exporter is close to the whole of root — off unless the names are worth it.
-  # Without it every container is still reported, identified by pod UID.
+  # /var/log/pods, which is mounted read-only when this is on.
+  #
+  # That path is 0750 root:root, and what reads it is **group root**: the pod
+  # runs as uid 65532 with `runAsGroup: 0`, so the directory's group bits let it
+  # in. Enabling this therefore costs group-root membership and nothing more.
+  #
+  # It used to add CAP_DAC_READ_SEARCH, which was measured on 2026-08-04 to do
+  # nothing at all: Kubernetes puts a capability added to a **non-root** uid in
+  # the bounding set only, so CapPrm, CapEff and CapAmb are all zero and it is
+  # unusable. The feature worked anyway because `runAsGroup` was unset and the
+  # process inherited gid 0 — an accident that a routine hardening pass would
+  # have silently reverted. The capability is gone and the group is now explicit.
+  # (Under systemd the same capability *does* work, because AmbientCapabilities=
+  # sets the ambient set. Kubernetes exposes no equivalent.)
+  #
+  # Without this, every container is still reported, identified by pod UID.
+  # Note 0750-with-group-root is what these hosts ship; a node whose
+  # /var/log/pods is 0700 needs the exporter to run as uid 0 instead.
   podNames:
     enabled: false
     hostPath: /var/log/pods

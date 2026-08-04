@@ -166,7 +166,7 @@ that not every cluster has, and `helm install` fails rather than degrades:
 
 | Flag | What it buys | What it costs |
 |---|---|---|
-| `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | `CAP_DAC_READ_SEARCH`, which bypasses file-read checks host-wide — [read this first](#pod-names-and-what-they-cost) |
+| `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | runs the pod in group root (`runAsGroup: 0`) to read `/var/log/pods` — [read this first](#pod-names-and-what-they-cost) |
 | `serviceMonitor.enabled` | Prometheus Operator discovers the DaemonSet on its own | **Requires the Prometheus Operator's CRD.** Without it `helm install` fails outright rather than degrading — deliberately, since a silently-ignored ServiceMonitor is a cluster that looks monitored and is not. Scrape with a static config or pod discovery instead |
 | `nvml.enabled` | NVIDIA GPU metrics | Requires a driver on the node — [see below](#kubernetes-gpu-nodes) |
 
@@ -270,22 +270,35 @@ It works by listing `/var/log/pods/<namespace>_<pod>_<uid>/`, which the
 no second exporter, and nothing inside those directories is read — the names
 *are* the directory names, so workload log content is never opened.
 
-**The cost, stated plainly.** `/var/log/pods` is `root:root 0750`. Reading it
-needs either root or `CAP_DAC_READ_SEARCH`, and that capability bypasses file
-read and directory search checks **everywhere on the host** — in the same test
-that proved it reads `/var/log/pods`, it also read `/etc/shadow`. For a process
-whose only power is reading files, that is close to the whole of root. The
-exporter otherwise runs with `CapEff 0000000000000000` and no ServiceAccount,
-which is a property worth knowing you are spending.
+**The cost, stated plainly — and it differs by how you run it.**
+`/var/log/pods` is `root:root 0750`, so something has to satisfy that mode.
+
+On **Kubernetes** the chart runs the pod as uid 65532 with `runAsGroup: 0`, and
+the directory's *group* bits are the entire grant. It costs group-root
+membership: the exporter can read files that are group-readable and owned by
+group root, and nothing else. It adds **no capability**, because a capability
+added to a non-root uid is unusable — Kubernetes puts it in the bounding set
+only, leaving `CapPrm`, `CapEff` and `CapAmb` all zero. The chart asked for
+`CAP_DAC_READ_SEARCH` until 0.8.0 and never once used it.
+
+On **systemd** the drop-in below sets `AmbientCapabilities=CAP_DAC_READ_SEARCH`,
+which does work — systemd sets the ambient set, so the non-root `DynamicUser`
+really holds the capability. That is the more expensive of the two: it bypasses
+file-read and directory-search checks **everywhere on the host**, and in the
+same test that proved it reads `/var/log/pods` it also read `/etc/shadow`.
 
 So the decision is genuinely yours, and it is not obvious:
 
-| | Default | With `pod-names` |
-|---|---|---|
-| Pod identified by | UID | name and namespace |
-| Capabilities | none | `CAP_DAC_READ_SEARCH` |
-| Can read any file on the host | no | **yes** |
-| Container metrics | all of them | all of them |
+| | Default | `pod-names` on Kubernetes | `pod-names` under systemd |
+|---|---|---|---|
+| Pod identified by | UID | name and namespace | name and namespace |
+| Capabilities | none | none | `CAP_DAC_READ_SEARCH` |
+| Extra reach | none | files readable by group root | **any file on the host** |
+| Container metrics | all of them | all of them | all of them |
+
+Both routes assume `/var/log/pods` is `0750` with group root, which is what
+these hosts ship. A node that ships it `0700` leaves running as uid 0 as the
+only way, and on such a node the group-root route silently yields no names.
 
 **Nothing else changes.** Every container is reported either way, with every
 metric; only the labels differ. If you leave it off and later want names in
