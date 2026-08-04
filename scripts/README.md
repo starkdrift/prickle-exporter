@@ -111,7 +111,7 @@ failures are reported as `[skip]` and the run continues.
 |---|---|---|
 | 1 — Host | `/proc/{stat,meminfo,diskstats,loadavg,uptime,mounts}`, `/proc/net/dev`, `/proc/pressure/{cpu,memory,io}` | direct read |
 | 2 — Containers | `docker-*.scope` and `/sys/fs/cgroup/docker/*` cgroup files, the full `kubepods.slice` tree, `GET /containers/json` off the Docker socket | cgroup v2 tree + Docker API |
-| 3 — GPU | `nvidia-smi -L`, `--query-gpu`, `--query-compute-apps`, `mig -lgip/-lgi/-lci`; AMD `gpu_busy_percent`, `mem_info_vram_{used,total}`, `hwmon/*`; `rocm-smi --showall`; per-process DRM/NVIDIA `fdinfo` plus that process's `cgroup`, `comm` and `exe` symlink target | vendor tools + sysfs + `/proc/<pid>/fdinfo` |
+| 3 — GPU | `nvidia-smi -L`, `--query-gpu`, `--query-compute-apps`, `mig -lgip/-lgi/-lci`; AMD identity (`unique_id`, `board_info`, `vbios_version`), utilisation, the three memory pools, partition mode, and **every** file in `hwmon/hwmon*` — sensor numbering differs per card, so the `*_label` files are what name them; `amd/drm-map.txt`; `rocm-smi --showall`, `amd-smi static`/`metric`; per-process DRM/NVIDIA `fdinfo` plus that process's `cgroup`, `comm` and `exe` symlink target | vendor tools + sysfs + `/proc/<pid>/fdinfo` |
 
 Per-cgroup files captured: `cgroup.type`, `cpu.stat`, `cpu.max`,
 `cpu.weight`, `cpu.pressure`, `memory.{current,max,min,low,high,stat,pressure}`,
@@ -133,8 +133,12 @@ Nothing, for the container collector. Eleven captures now cover both cgroup
 hierarchies, both cgroup drivers and four runtimes, and the coverage-gap table
 in
 [internal/collector/container/testdata/README.md](../internal/collector/container/testdata/README.md#coverage-gaps)
-has no open rows. What remains needs hardware nobody has yet: an AMD GPU, and a
-host with more than one card.
+has no open rows. Both hardware gaps that remained — an AMD GPU, and a host with
+more than one card — were closed together on 2026-08-04 by a 2× MI300X capture
+(`internal/collector/gpu/testdata/mi300x-2gpu-20260804`). What is still missing
+is a **bare-metal** AMD host: those cards are SR-IOV virtual functions, so
+compute partitioning is fixed at `SPX` in the guest and AMD's analogue of a
+MIG-on/MIG-off fixture pair cannot be taken there.
 
 Two things to know if you are arranging a capture anyway.
 
@@ -206,15 +210,34 @@ since a symlink into a fixture tree would dangle.
 
 #### AMD
 
+Confirmed against a real host on 2026-08-04; the notes below are what that run
+established rather than what was expected of it.
+
 - Prefer bare metal or a full VM. A container or a paravirtualised slice can
   give you a partial or synthetic `amdgpu` sysfs tree, which is worse than none.
+  **An SR-IOV virtual function is the case to watch for**: `amd-smi static`
+  names it (`MI300X VF`), the sysfs tree is otherwise complete, and the one
+  thing it costs is partition mode — `current_compute_partition` is `0444` in a
+  guest, so the CPX/SPX pair that would mirror the MIG fixtures is unobtainable.
 - The `amdgpu` driver *does* emit `drm-*` fdinfo keys, so a ROCm workload must be
   running during capture — the NVIDIA-empty / AMD-populated pair is precisely
   the contrast the Phase 3 parser tests are built on. `prep` handles Docker and
   k3s here but **cannot** start a ROCm workload for you; any ROCm PyTorch loop
-  works. `check` will tell you if the keys are missing.
-- No script changes are needed for AMD — the sysfs and `rocm-smi` sections
-  engage automatically when `gpu_busy_percent` is present.
+  works, as does a dozen-line HIP kernel built with the `hipcc` a ROCm host
+  already has. `check` will tell you if the keys are missing.
+  Run one copy on the host and one in a container: the container copy is the
+  only thing that exercises attributing a GPU process to a `container` label.
+- The fdinfo keys identify a card by `drm-pdev` and carry no UUID, so the
+  capture also writes `amd/drm-map.txt` — card ↔ PCI address ↔ render node.
+  `grab` flattens the `card<N>/device` symlink that would otherwise carry the
+  address, and without that map the per-process files cannot be tied to a card.
+- **Do not trust `/usr/bin/nvidia-smi` on an AMD box.** The capture host shipped
+  a two-line shell script by that name which prints `nvidia-smi not found. This
+  is AMD country.` and exits **0**. Every exit-code probe in this script
+  believed it: the preflight reported an NVIDIA driver, a MIG-capable card with
+  MIG disabled, and one running compute app, on a host with no NVIDIA hardware.
+  The probes now test the *output* — a real `--query-gpu=uuid` prints
+  `GPU-<uuid>` — and three of those four gaps disappeared.
 
 #### Intel
 

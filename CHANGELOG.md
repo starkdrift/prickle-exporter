@@ -15,6 +15,40 @@ what to do about it, which no commit-log generator writes.
 
 ### Added
 
+- **The first AMD capture, and the first multi-GPU capture of any vendor.**
+  `internal/collector/gpu/testdata/mi300x-2gpu-20260804` is 2× AMD Instinct
+  MI300X under load, with a GPU process on the host and a second inside a
+  container holding memory on both cards. SPEC.md §Testing rules forbids writing
+  a parser against a layout nobody has captured, which is what had kept the AMD
+  collector unwritten; that block is now lifted. **No behaviour changes** — an
+  AMD host still reports nothing, because the collector itself is still
+  unwritten. What the capture establishes is in the
+  [fixture README](internal/collector/gpu/testdata/README.md#amd-mi300x-2gpu-20260804),
+  and four of its findings contradict what the code would reasonably have
+  assumed: `unique_id` is the only stable per-card identity, DRM fdinfo names a
+  GPU by PCI address and never by UUID, hwmon sensors are labelled rather than
+  numbered, and an MI300X's PCI class is `0x120000` rather than a display class.
+
+### Fixed
+
+- **`scripts/capture-fixtures.sh` captured the wrong AMD files and believed a
+  fake `nvidia-smi`.** Both were found by running it on a real AMD host for the
+  first time.
+
+  Its AMD section asked for three sysfs files and four hwmon files by name. The
+  hwmon pair it wanted — `temp1_input` and `power1_average` — do not exist on an
+  MI300X, which publishes `temp2_input`, `temp3_input` and `power1_input`, so
+  the capture would have contained no temperature and no power reading at all.
+  It now takes every regular file in the hwmon directory, and a sysfs list that
+  includes `unique_id`, the partition mode and the other two memory pools.
+
+  Separately, the capture host shipped `/usr/bin/nvidia-smi` as a shell script
+  printing `nvidia-smi not found. This is AMD country.` and exiting **0**. The
+  preflight's probes tested exit status only, so it reported an NVIDIA driver, a
+  MIG-capable card with MIG disabled, and one running compute app — on a machine
+  with no NVIDIA hardware. Three of its four reported gaps were fiction. The
+  probes now test output shape rather than exit status.
+
 - **`prickle_gpu_process_memory_bytes` carries a `container` label**, so a GPU
   process can be joined to `prickle_container_info` and through it to a pod
   name, a namespace and an image. "Which pod is holding this card" was

@@ -1,0 +1,34 @@
+total 0
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card0 -> ../../devices/pci0000:fc/0000:fc:00.0/0000:fd:00.0/drm/card0
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card1 -> ../../devices/platform/amdgpu_xcp_0/drm/card1
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card10 -> ../../devices/platform/amdgpu_xcp_8/drm/card10
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card11 -> ../../devices/platform/amdgpu_xcp_9/drm/card11
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card12 -> ../../devices/platform/amdgpu_xcp_10/drm/card12
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card13 -> ../../devices/platform/amdgpu_xcp_11/drm/card13
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card14 -> ../../devices/platform/amdgpu_xcp_12/drm/card14
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card15 -> ../../devices/platform/amdgpu_xcp_13/drm/card15
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card2 -> ../../devices/platform/amdgpu_xcp_1/drm/card2
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card3 -> ../../devices/platform/amdgpu_xcp_2/drm/card3
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card4 -> ../../devices/platform/amdgpu_xcp_3/drm/card4
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card5 -> ../../devices/platform/amdgpu_xcp_4/drm/card5
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card6 -> ../../devices/platform/amdgpu_xcp_5/drm/card6
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card7 -> ../../devices/platform/amdgpu_xcp_6/drm/card7
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card8 -> ../../devices/pci0000:fe/0000:fe:00.0/0000:ff:00.0/drm/card8
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 card9 -> ../../devices/platform/amdgpu_xcp_7/drm/card9
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD128 -> ../../devices/pci0000:fc/0000:fc:00.0/0000:fd:00.0/drm/renderD128
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD129 -> ../../devices/platform/amdgpu_xcp_0/drm/renderD129
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD130 -> ../../devices/platform/amdgpu_xcp_1/drm/renderD130
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD131 -> ../../devices/platform/amdgpu_xcp_2/drm/renderD131
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD132 -> ../../devices/platform/amdgpu_xcp_3/drm/renderD132
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD133 -> ../../devices/platform/amdgpu_xcp_4/drm/renderD133
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD134 -> ../../devices/platform/amdgpu_xcp_5/drm/renderD134
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD135 -> ../../devices/platform/amdgpu_xcp_6/drm/renderD135
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD136 -> ../../devices/pci0000:fe/0000:fe:00.0/0000:ff:00.0/drm/renderD136
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD137 -> ../../devices/platform/amdgpu_xcp_7/drm/renderD137
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD138 -> ../../devices/platform/amdgpu_xcp_8/drm/renderD138
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD139 -> ../../devices/platform/amdgpu_xcp_9/drm/renderD139
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD140 -> ../../devices/platform/amdgpu_xcp_10/drm/renderD140
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD141 -> ../../devices/platform/amdgpu_xcp_11/drm/renderD141
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD142 -> ../../devices/platform/amdgpu_xcp_12/drm/renderD142
+lrwxrwxrwx 1 root root    0 Aug  3 19:45 renderD143 -> ../../devices/platform/amdgpu_xcp_13/drm/renderD143
+-r--r--r-- 1 root root 4096 Aug  4 03:04 version

@@ -1,9 +1,12 @@
 # Phase 3 GPU fixtures
 
-Four `nvidia-smi` captures from two rentals, plus one sysfs capture of a third
-host that has a card and no driver. The first two differ in the one way that
-matters — whether the card is partitioned — and the last two are that same
-second card again, repartitioned:
+Four `nvidia-smi` captures from two rentals, one sysfs capture of a third host
+that has a card and no driver, and one sysfs + DRM fdinfo capture of an **AMD**
+host — the vendor SPEC.md §Collectors names and no capture had ever covered.
+The AMD tree is documented in [its own section](#amd-mi300x-2gpu-20260804); the
+NVIDIA trees follow. The first two differ in the one way that matters — whether
+the card is partitioned — and the last two are that same second card again,
+repartitioned:
 
 | Tree | Host | State | What only it can answer |
 |---|---|---|---|
@@ -168,21 +171,84 @@ they are not parsed because:
   a label NVML could fill and `nvidia-smi` could not would break the requirement
   in SPEC.md §Testing rules that both sources emit identical output.
 
+## AMD: `mi300x-2gpu-20260804/`
+
+The first AMD capture, and the first multi-GPU capture of any vendor. **2×
+AMD Instinct MI300X**, 192 GB each, on Ubuntu 24.04 / kernel 6.8.0-124, taken
+2026-08-04T03:13:21Z with both cards under a HIP kernel — `gpu_busy_percent`
+reads 100 and 98, not zero.
+
+Like `h100-nodriver-20260801` and unlike the four `nvidia-smi` trees, this
+**is** a mirrored filesystem layout and `fsroot` points straight at it. AMD is
+read from sysfs and `/proc/<pid>/fdinfo`, which are files, so nothing here
+needs a subprocess or an interface to stand in for one.
+
+| Part | What only it can answer |
+|---|---|
+| `sys/class/drm/card{0,8}/device/` | What an AMD card publishes: `gpu_busy_percent`, `mem_busy_percent`, the three memory pools (`vram`, `vis_vram`, `gtt`), and the identity below |
+| `.../device/hwmon/hwmon{0,1}/` | Power and temperature, and that the sensors are **self-describing** rather than fixed-index — see below |
+| `sys/bus/pci/devices/` | 30 devices, of which the two GPUs are the only `0x1002`. **No device on this host has a `0x03xx` display class at all** |
+| `proc/{8038,9163}/` | Two processes on two cards each: one on the host, one in a Docker container. `fdinfo/{7,8}`, `cgroup`, `comm`, `exe.link` |
+| `amd/drm-map.txt` | The card ↔ PCI-address ↔ render-node map that ties fdinfo to a card |
+| `amd/{rocm-smi-showall,amd-smi-static,amd-smi-metric}.txt` | Reference output to check the sysfs reading against. **Not a source** — SPEC.md §Hard constraints #2 permits spawning `nvidia-smi` and nothing else, so `rocm-smi` is never run by the exporter |
+
+Four things in it are load-bearing for a collector that does not exist yet, and
+each contradicts an assumption that was reasonable before the capture:
+
+- **`unique_id` is the identity, and it is the only one.** It matches amd-smi's
+  `ASIC_SERIAL` exactly (`594afe08e1ab3ae6` ↔ `0x594AFE08E1AB3AE6`) and is
+  readable from sysfs with no vendor tool. Nothing else in the tree is stable
+  and per-card: the two GPUs share a `device`, a `subsystem_device`, and a
+  `vbios_version`, and `card0`/`card8` are kernel enumeration order. This is
+  what `gpu_uuid` must come from.
+- **DRM fdinfo names a GPU by `drm-pdev` and by nothing else.** There is no
+  UUID in fdinfo, so per-process attribution is a join through the PCI address
+  — `0000:fd:00.0` → `card0` → `unique_id`. `card<N>/device` is a symlink whose
+  basename is that address, and a captured tree flattens symlinks, which is why
+  `amd/drm-map.txt` exists at all. Without it the fdinfo files are unusable.
+- **hwmon sensors are labelled, not numbered.** This card has no `temp1_input`
+  and no `power1_average` — it publishes `temp2_input` (`junction`),
+  `temp3_input` (`mem`) and `power1_input` (`PPT`), each named by a sibling
+  `*_label` file. The capture script asked for the first two by name and got
+  neither; it now takes every regular file in the directory. A collector must
+  read the labels rather than index the sensors.
+- **The PCI class is `0x120000`, "processing accelerator", not a display
+  class.** `pci.go`'s `displayBaseClass = "0x03"` is correct for NVIDIA — an
+  H100 reports `0x030200` — and would find zero GPUs here. An AMD presence
+  check needs its own class test, not a reuse of that one.
+
+### What this capture does not cover
+
+- **A second partition mode.** These cards are `SPX` / `NPS1`, and AMD's
+  compute partitioning (`CPX`, `DPX`, …) is the analogue of MIG — the one
+  variation the NVIDIA fixtures deliberately capture twice, on the grounds that
+  "the mode and not the host is what changes the output". It could not be done
+  here: `amd-smi` reports these as **MI300X VF**, SR-IOV virtual functions, and
+  `current_compute_partition` is mode `0444` in the guest. Partitioning is the
+  hypervisor's to set. A bare-metal MI300X would make this capturable.
+- **Per-process utilization.** The `amdgpu` driver on this kernel emits no
+  `drm-engine-*` keys, only memory ones, so fdinfo can say how much VRAM a
+  process holds and not how busy it kept the card.
+- **A consumer Radeon.** Everything above is an OAM datacenter module
+  (`board_info: type : oam`). A desktop card is likely to differ in exactly the
+  hwmon indices this capture warns about.
+
 ## Coverage gaps
 
 | Gap | Status |
 |---|---|
-| **AMD — sysfs + DRM fdinfo** | **Not implemented.** SPEC.md §Collectors scope; the captured host is NVIDIA-only, so there is no `gpu_busy_percent`, no `mem_info_vram_*` and no `hwmon` tree to develop against. An AMD host reports nothing. |
+| ~~**AMD — sysfs + DRM fdinfo**~~ | **Captured**, not yet implemented. `mi300x-2gpu-20260804` closes the fixture half of the gap: SPEC.md §Testing rules no longer blocks an AMD collector, and what it must read is [above](#amd-mi300x-2gpu-20260804). The code is still unwritten, so an AMD host still reports nothing. |
 | **Intel — DRM fdinfo** | **Out of scope** as of SPEC.md §Collectors: no capture host is obtainable, and a parser developed against a layout nobody has captured is forbidden by §Testing rules. Reopening it costs a capture, not a redesign — Intel rides the same DRM fdinfo path AMD needs. |
 | NVML — the whole path | Still not fixture-testable: a C call, not a file read (SPEC.md §Testing rules). **No longer unverified** — see [Hardware verification](#hardware-verification) below. Unit tests drive the shared emission code through a fake source; `nvml_hardware_test.go` re-checks the real one wherever a GPU is present. |
 | ~~A card in Default mode (MIG off)~~ | **Closed** by `h100-default-20260729`. The hand-written `-L` override in `TestDefaultModeCardHasNoMIG` is kept: it is now the *unit* of that behaviour, with the capture as the integration case. |
-| A multi-GPU host | Single card. The parsers key on UUID rather than position specifically so a second card cannot silently attach its partitions to the first, but nothing captured proves it. |
+| A multi-GPU host | **Half closed.** `mi300x-2gpu-20260804` is two cards, with one process holding memory on both at once — but it is AMD, so it proves nothing about the NVIDIA parsers. Those still key on UUID rather than position specifically so a second card cannot silently attach its partitions to the first, and no NVIDIA capture demonstrates it. |
 | `[Not Supported]` / `[Unknown Error]` tokens | Only `[N/A]` appears in the capture. The others are handled by the same bracket-shape rule and covered in `TestBracketedTokensAreAbsentNotErrors`. |
 
-The AMD gap is now the significant one: it is a third of what SPEC.md
-§Collectors assigns to Phase 3, and closing it needs a capture from an AMD host
-with a ROCm workload running — `capture-fixtures.sh check` already reports
-whether a host would produce usable `drm-*` fdinfo keys.
+The AMD gap has changed shape rather than closed. It was a hardware gap and is
+now an implementation one: a third of what SPEC.md §Collectors assigns to Phase
+3 is still unwritten, but it is no longer blocked on a capture, and §Testing
+rules is satisfied for whoever writes it. Intel remains where it was — the same
+DRM fdinfo path, still with no host.
 
 ## Hardware verification
 
