@@ -62,6 +62,25 @@ what to do about it, which no commit-log generator writes.
 
 ### Fixed
 
+- **`prickle diagnose` was silent about pod names, including when they were
+  all missing.** The subcommand exists to answer "what can this host be read
+  from", and it said nothing about the one path that depends on a privilege: on
+  a node where every container came back unnamed it printed a wholly healthy
+  report. Found while verifying the chart change below, using the same forced
+  misconfiguration.
+
+  Phase 2 now always ends with a `pod names:` line. Off, it says so and names
+  the flag. On and working, it reports how many of the containers in a pod
+  resolved. On and reading nothing, it says so loudly and prints the running
+  uid and gid, the directory's mode, and the three things that satisfy it —
+  which is the fact that turns a puzzling empty label into a one-line fix.
+
+  The silence was a consequence of a deliberate choice that stays: an unreadable
+  pod log directory is **not** a collection error, because the container metrics
+  are unaffected and only the names are lost, so raising
+  `prickle_collector_errors_total` on every pass forever would be wrong. That
+  makes `diagnose` the only place the failure can surface, and it now does.
+
 - **The chart asked for `CAP_DAC_READ_SEARCH` and never used it.** Measured on
   2026-08-04: Kubernetes puts a capability added to a **non-root** uid in the
   bounding set alone, so `CapPrm`, `CapEff` and `CapAmb` were all zero and the
