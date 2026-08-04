@@ -11,6 +11,41 @@ roadmap phase; `1.0.0` is where the metrics contract freezes.
 This file is written by hand. A metric change needs prose telling an operator
 what to do about it, which no commit-log generator writes.
 
+## [Unreleased]
+
+### Fixed
+
+- **Per-process GPU attribution was silently empty on any AppArmor node.** The
+  chart granted `hostPID`, uid 0 and `SYS_PTRACE` — everything documented as
+  necessary — and `prickle_gpu_process_memory_bytes` still never appeared.
+  containerd applies `cri-containerd.apparmor.d` by default on Ubuntu, and that
+  profile denies the ptrace-class access needed to read another process's
+  `/proc/<pid>`. There is no error, no log line and no failed collector:
+  `prickle diagnose` reports the GPUs and says nothing is wrong, so it reads as
+  a bug in the exporter.
+
+  `collectors.appArmorUnconfined` (default true, and only rendered when
+  `perProcess` is on) sets the pod's `appArmorProfile` to `Unconfined`. Set it
+  false where AppArmor is not in use — it is then a no-op — or where policy
+  forbids `Unconfined`, and expect per-process attribution to go with it.
+
+  **This hits AMD far harder than NVIDIA**, which is why it survived the NVIDIA
+  cluster testing. NVML and `nvidia-smi` read per-process memory from the driver
+  and touch `/proc` only for `exe` and `cgroup`; the AMD path has no driver API
+  and must read **every** process's `fdinfo`, which is what the profile guards
+  most tightly. Measured on a kubeadm 1.34 node with 2× MI300X.
+
+- **GPU Tenancy's "Live source" panel read "No data" on an AMD host.** It
+  queried `prickle_gpu_nvidia_source_info` alone — correct when NVIDIA was the
+  only vendor, and never revisited when 0.8.0 shipped AMD. The one answer it
+  gave was the wrong one: that the exporter could not say, on a node where it
+  was reading two cards perfectly well.
+
+  It now reports `sysfs` for AMD alongside `nvml`/`smi` for NVIDIA, so a mixed
+  fleet shows both. The value counts **nodes** rather than cards on both sides;
+  counting the AMD `_info` series directly would have made an eight-GPU box
+  report eight where its NVIDIA neighbour reported one.
+
 ## [0.8.0] — 2026-08-04
 
 The AMD release, and the one that makes "which pod is holding this card"

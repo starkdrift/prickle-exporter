@@ -53,6 +53,28 @@ collectors:
   # never a PID. Needs hostPID to see other processes' /proc entries, which is
   # why it is off by default: it widens the pod's view of the node.
   perProcess: false
+  # Run the pod AppArmor-unconfined. Only takes effect with perProcess above.
+  #
+  # Reading another process's /proc/<pid> is a ptrace-class operation, and
+  # containerd's default profile — `cri-containerd.apparmor.d`, applied
+  # automatically on Ubuntu — denies it for processes outside the container.
+  # The result, measured on a kubeadm 1.34 node on 2026-08-04, is that
+  # prickle_gpu_process_memory_bytes comes back **completely empty** while
+  # hostPID, uid 0 and SYS_PTRACE are all correctly in place. No error, no log
+  # line, no failed collector: `prickle diagnose` reports the GPUs and says
+  # nothing is wrong. It looks exactly like a bug in the exporter.
+  #
+  # It is separate from perProcess, and defaults on with it, because the
+  # failure is silent: a node that needs this and does not have it is
+  # indistinguishable from a node with no GPU processes. Set it false where
+  # AppArmor is not in use (it is then a no-op) or where policy forbids
+  # Unconfined — and expect per-process attribution to go with it.
+  #
+  # **AMD needs this and NVIDIA usually does not.** NVML and nvidia-smi read
+  # per-process memory from the driver and touch /proc only for `exe` and
+  # `cgroup`; the AMD path has no driver API and must read every process's
+  # `fdinfo`, which is what the profile guards most tightly.
+  appArmorUnconfined: true
   # Resolve a pod's UID to its namespace and name by listing the kubelet's
   # /var/log/pods, which is mounted read-only when this is on.
   #

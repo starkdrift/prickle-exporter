@@ -36,6 +36,17 @@ spec:
       # Only for per-process GPU attribution: the exe symlink of another
       # process is not visible without the host PID namespace.
       hostPID: true
+      {{- if .Values.collectors.appArmorUnconfined }}
+      securityContext:
+        # The host PID namespace makes other processes *visible*; it does not
+        # make them *readable*. containerd's default AppArmor profile denies
+        # the ptrace-class access that reading another process's /proc/<pid>
+        # requires, so without this the per-process family is empty on an
+        # AppArmor node even though hostPID, uid 0 and SYS_PTRACE are all set —
+        # silently, with nothing logged. See values.yaml for the measurement.
+        appArmorProfile:
+          type: Unconfined
+      {{- end }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
