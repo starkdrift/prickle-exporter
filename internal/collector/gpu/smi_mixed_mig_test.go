@@ -49,6 +49,7 @@ func collectMixedMIG(t *testing.T, mutate ...func(*Options)) string {
 	opts := Options{
 		NVIDIASource: SourceSMI,
 		runner:       newFixtureRunnerAt(t, mixedMIGDir),
+		Roots:        hermeticRoots(t),
 	}
 	for _, m := range mutate {
 		m(&opts)

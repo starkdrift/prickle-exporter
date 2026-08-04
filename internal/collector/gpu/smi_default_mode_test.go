@@ -35,6 +35,7 @@ func collectDefaultMode(t *testing.T, mutate ...func(*Options)) string {
 	opts := Options{
 		NVIDIASource: SourceSMI,
 		runner:       newFixtureRunnerAt(t, defaultModeDir),
+		Roots:        hermeticRoots(t),
 	}
 	for _, m := range mutate {
 		m(&opts)
