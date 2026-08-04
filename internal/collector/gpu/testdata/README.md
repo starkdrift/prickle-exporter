@@ -272,6 +272,19 @@ that sysfs looks like this anywhere else. The `nvidia_hardware_test.go`
 equivalent, two independent implementations agreeing, has no AMD analogue:
 there is only one way to read these files.
 
+**Running the suite itself on the host found a defect no CI run could.** The
+NVIDIA fixture tests built their `Options` without `Roots`, and a zero
+`fsroot.Roots` resolves to the live `/sys` and `/proc` — which mattered not at
+all while the only collector was NVIDIA and its source was a fake
+`commandRunner`, and started mattering the moment a collector read sysfs
+directly. On this host the NVIDIA tests collected the two real MI300X: the
+cards joined the golden comparison, the real GPU processes joined the
+per-command summing, and `TestSameCommandIsOneSummedSeries` counted four series
+for a fixture describing two. Six tests failed on hardware and none had ever
+failed anywhere else, because no CI runner has a GPU and no developer machine
+here has an AMD one. They now take `hermeticRoots(t)`, an empty tree, so they
+describe their fixture whatever is plugged into the machine underneath.
+
 One thing it did establish that no fixture could. **Per-process attribution is
 silently partial when the exporter cannot read other users' `fdinfo`.** Run as
 an ordinary user, the scrape showed only the host process and omitted the

@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/starkdrift/prickle-exporter/internal/exposition"
+	"github.com/starkdrift/prickle-exporter/internal/fsroot"
 )
 
 var updateGolden = flag.Bool("update-golden", false, "rewrite testdata/golden/*.prom")
@@ -112,11 +113,35 @@ func (r *fixtureRunner) Run(_ context.Context, _ string, args ...string) ([]byte
 	return body, nil
 }
 
+// hermeticRoots points a collector at an empty tree, so it reads the fixture
+// under test and nothing else.
+//
+// Every nvidia-smi fixture test needs this, and needs it for a reason that is
+// not tidiness. The zero fsroot.Roots resolves to the live /sys and /proc, and
+// the AMD reader takes its cards from there — so on a host that actually has an
+// AMD GPU, these NVIDIA tests collected it. The real cards joined the golden
+// comparison and the real GPU processes joined the per-command summing, which
+// is how TestSameCommandIsOneSummedSeries came to count four series for a
+// fixture describing two.
+//
+// It was invisible everywhere it had ever been run. No CI runner has a GPU, and
+// no developer machine here has an AMD one; it surfaced the first time the suite
+// was run on the 2× MI300X capture host. An empty tree makes these tests
+// describe their fixture whatever the machine underneath them has plugged in.
+func hermeticRoots(t *testing.T) fsroot.Roots {
+	t.Helper()
+	return fsroot.At(t.TempDir())
+}
+
 // newFixtureCollector returns a collector wired to the captured output.
 func newFixtureCollector(t *testing.T, mutate ...func(*Options)) (*Collector, *fixtureRunner) {
 	t.Helper()
 	runner := newFixtureRunner(t)
-	opts := Options{NVIDIASource: SourceSMI, runner: runner}
+	opts := Options{
+		NVIDIASource: SourceSMI,
+		runner:       runner,
+		Roots:        hermeticRoots(t),
+	}
 	for _, m := range mutate {
 		m(&opts)
 	}
@@ -425,10 +450,18 @@ func TestNoDeviceQueryIsFatal(t *testing.T) {
 }
 
 // TestNoGPUIsNotAnError checks the common case on the nodes this exporter also
-// watches for host and container metrics: no NVIDIA hardware at all, which
-// must produce no samples and no error.
+// watches for host and container metrics: no GPU hardware at all, which must
+// produce no samples and no error.
+//
+// "No GPU" now means neither vendor, so the empty tree is what makes the case
+// real rather than incidental — without it the AMD reader walks the live /sys
+// and the test asserts the absence of a card on whatever host is running it.
 func TestNoGPUIsNotAnError(t *testing.T) {
-	c := New(Options{NVIDIASource: SourceSMI, SMICommand: "prickle-nvidia-smi-that-does-not-exist"})
+	c := New(Options{
+		NVIDIASource: SourceSMI,
+		SMICommand:   "prickle-nvidia-smi-that-does-not-exist",
+		Roots:        hermeticRoots(t),
+	})
 
 	if c.SourceName() != "" {
 		t.Errorf("a source loaded without nvidia-smi present: %q", c.SourceName())
