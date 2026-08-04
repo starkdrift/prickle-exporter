@@ -8,12 +8,15 @@ CrashLoopBackOffs with "address already in use". Run one or the other.
   kubectl -n {{ .Release.Namespace }} port-forward ds/{{ include "prickle.fullname" . }} {{ .Values.service.port }}
   curl -s localhost:{{ .Values.service.port }}/metrics | head
 
-Run the diagnostic on any node to see what it can and cannot read there. The
--path.rootfs is not optional: exec starts a fresh process that does not inherit
-the DaemonSet's args, so without it the diagnostic reports on the container's
-own /proc and /sys and says "no containers found" on a busy node.
+Run the diagnostic on any node to see what it can and cannot read there. exec
+starts a fresh process that does not inherit the DaemonSet's args, so every
+flag has to be repeated — the line below already carries the ones this release
+was installed with. Without -path.rootfs the diagnostic reports on the
+container's own /proc and /sys and says "no containers found" on a busy node;
+without the collector flags it reports on its own configuration rather than on
+the exporter's, and will tell you a feature is off while it is running on.
 
-  kubectl -n {{ .Release.Namespace }} exec ds/{{ include "prickle.fullname" . }} -- /prickle diagnose -path.rootfs=/host
+  kubectl -n {{ .Release.Namespace }} exec ds/{{ include "prickle.fullname" . }} -- /prickle diagnose -path.rootfs=/host{{ if not .Values.collectors.container }} -collector.container=false{{ end }}{{ if not .Values.collectors.gpu }} -collector.gpu=false{{ end }}{{ if .Values.collectors.podNames.enabled }} -collector.container.pod-names{{ end }}{{ if .Values.collectors.perProcess }} -collector.gpu.per-process{{ end }}{{ if .Values.collectors.dockerSocket }} -collector.container.docker-socket={{ .Values.collectors.dockerSocket }}{{ end }}
 
 {{ if .Values.serviceMonitor.enabled -}}
 A ServiceMonitor was created. Check your Prometheus picked it up:

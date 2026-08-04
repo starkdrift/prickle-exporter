@@ -56,6 +56,19 @@ what to do about it, which no commit-log generator writes.
   any multi-core host — so the axis stays opt-in in `scripts/make-dashboards.py`
   rather than applying to everything carrying a `percent` unit.
 
+- **The chart's own diagnostic command reported the wrong configuration.**
+  `helm install` prints a `kubectl exec … /prickle diagnose -path.rootfs=/host`
+  line, and `exec` starts a fresh process that inherits none of the DaemonSet's
+  args — the NOTES said so about `-path.rootfs` and then omitted every collector
+  flag. Following it on a release installed with
+  `collectors.podNames.enabled=true` printed `pod names: off` while the exporter
+  beside it was resolving all 18 of them.
+
+  The command now carries the flags the release was installed with, templated
+  from the same values the DaemonSet uses. Found by running the 0.8.0 acceptance
+  sweep: the diagnostic line is documentation, and documentation is only tested
+  by following it.
+
 ## [0.8.0] — 2026-08-04
 
 The AMD release, and the one that makes "which pod is holding this card"
