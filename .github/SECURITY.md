@@ -45,9 +45,10 @@ worth attention is narrower than the code size suggests:
   `/sys` and cgroups is a stated guarantee, and a violation of it is a
   vulnerability even without an exploit path.
 - **Leaking a privilege upward** — most of all around
-  `-collector.container.pod-names`, which needs `CAP_DAC_READ_SEARCH`. The
-  README is explicit that this capability can read any file on the host; a bug
-  that widens what reaches the metrics endpoint while it is granted is serious.
+  `-collector.container.pod-names`, which is run with extra file-read reach:
+  group root on Kubernetes, or ambient `CAP_DAC_READ_SEARCH` under a systemd
+  drop-in, which can read any file on the host. A bug that widens what reaches
+  the metrics endpoint while either is granted is serious.
 - **A PID, or anything else the contract forbids, appearing in output.**
   [SPEC.md](../SPEC.md) §Metrics contract treats that as a correctness
   guarantee, not a preference.

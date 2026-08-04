@@ -62,6 +62,34 @@ what to do about it, which no commit-log generator writes.
 
 ### Fixed
 
+- **The chart asked for `CAP_DAC_READ_SEARCH` and never used it.** Measured on
+  2026-08-04: Kubernetes puts a capability added to a **non-root** uid in the
+  bounding set alone, so `CapPrm`, `CapEff` and `CapAmb` were all zero and the
+  grant was inert. Pod names resolved anyway — because `runAsGroup` was unset,
+  the process inherited **gid 0**, and the group bits of `0750 root:root`
+  `/var/log/pods` are what let it in. The feature worked by accident, and the
+  accident was one hardening pass away from disappearing with nothing logged.
+
+  The capability is gone and `runAsGroup: 0` is now set explicitly when
+  `collectors.podNames.enabled` is on. This is a **reduction** in privilege, not
+  a trade: group-root membership reaches files owned by group root, where the
+  capability, had it ever worked, would have bypassed file-read checks host-wide.
+
+  Measured one variable at a time, on `/var/log/pods`: uid 65532 + gid 0 reads
+  it **with or without** the capability; uid 65532 + gid 65532 is **denied even
+  with it**; uid 0 reads it with every capability dropped, via the owner bits.
+
+  **The 0.7.0 changelog and the README were right about systemd and wrong about
+  Kubernetes**, and both are corrected. Under systemd the documented drop-in
+  sets `AmbientCapabilities=CAP_DAC_READ_SEARCH`, and ambient capabilities
+  genuinely work for a non-root `DynamicUser` — verified: `CapPrm=CapEff=CapAmb`
+  all `0x4` and the read succeeds, where the same user without the drop-in is
+  denied. Kubernetes exposes no ambient-capability field, which is the whole of
+  the difference.
+
+  Operators on a node whose `/var/log/pods` is `0700` rather than `0750` need
+  uid 0; the group-root route yields no names there, silently.
+
 - **Per-process GPU attribution produced nothing in a container, silently.**
   Naming a process reads its `exe` link, a `PTRACE_MODE_READ` operation, and
   Yama `ptrace_scope=1` — the default on Debian and Ubuntu — permits that only

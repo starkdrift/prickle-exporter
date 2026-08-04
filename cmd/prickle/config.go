@@ -133,9 +133,11 @@ func (c *config) register(fs *flag.FlagSet) {
 		"Resolve a pod's UID to its namespace and name by listing the kubelet's "+
 			"pod log directory. Adds `pod_name` to prickle_container_info and "+
 			"`namespace` to container series. OFF BY DEFAULT because "+
-			"/var/log/pods is root-only: enabling it needs root or "+
+			"/var/log/pods is 0750 root:root: reading it needs uid 0, "+
+			"membership of group root, or — under systemd only — ambient "+
 			"CAP_DAC_READ_SEARCH, which for a read-only exporter is close to "+
-			"the same grant. Without it a pod is identified by UID, as before.")
+			"the same grant as root. Without it a pod is identified by UID, "+
+			"as before.")
 	fs.DurationVar(&c.dockerTimeout, "collector.container.docker-timeout",
 		container.DefaultDockerTimeout,
 		"Deadline for that request. A wedged daemon costs the names, not the metrics.")

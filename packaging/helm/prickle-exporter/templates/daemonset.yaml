@@ -100,19 +100,22 @@ spec:
             # rather than the code promising it.
             runAsNonRoot: {{ not .Values.collectors.perProcess }}
             runAsUser: {{ if .Values.collectors.perProcess }}0{{ else }}65532{{ end }}
+            {{- if and .Values.collectors.podNames.enabled (not .Values.collectors.perProcess) }}
+            # Group root, and this is load-bearing: it is what reads
+            # /var/log/pods. The directory is 0750 root:root, so its group bits
+            # are the whole grant — see values.yaml. Stated explicitly because
+            # leaving it unset produced gid 0 anyway and the feature worked by
+            # accident; anyone hardening this to 65532 would have silently
+            # turned pod names off with nothing logged.
+            runAsGroup: 0
+            {{- end }}
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             privileged: false
             capabilities:
               drop: ["ALL"]
-              {{- if or .Values.collectors.podNames.enabled .Values.collectors.perProcess }}
+              {{- if .Values.collectors.perProcess }}
               add:
-                {{- if .Values.collectors.podNames.enabled }}
-                # The one grant that buys pod names. Bypasses file-read checks
-                # host-wide; see values.yaml before enabling.
-                - DAC_READ_SEARCH
-                {{- end }}
-                {{- if .Values.collectors.perProcess }}
                 # Per-process GPU attribution reads /proc/<pid>/exe to name a
                 # process. That is a PTRACE_MODE_READ operation, so under Yama
                 # ptrace_scope=1 — the default on Ubuntu and Debian — a process
@@ -122,7 +125,6 @@ spec:
                 # dropped: prickle_gpu_process_memory_bytes simply never
                 # appears, with nothing logged. Verified on an H100.
                 - SYS_PTRACE
-                {{- end }}
               {{- end }}
             seccompProfile:
               type: RuntimeDefault
