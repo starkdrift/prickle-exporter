@@ -1539,7 +1539,7 @@ data:
             "type": "prometheus",
             "uid": "${DS}"
           },
-          "description": "nvml or smi. The two must report identically; this says which one answered.",
+          "description": "Which implementation answered, and on how many nodes: nvml or smi on NVIDIA, sysfs on AMD. The two NVIDIA sources must report identically. A mixed fleet shows both.",
           "fieldConfig": {
             "defaults": {
               "unit": "none"
@@ -1568,8 +1568,9 @@ data:
                 "type": "prometheus",
                 "uid": "${DS}"
               },
-              "expr": "count by (source) (prickle_gpu_nvidia_source_info)",
+              "expr": "count by (source) (prickle_gpu_nvidia_source_info) or count by (source) (label_replace(max by (node) (prickle_gpu_info{vendor=\"amd\"}), \"source\", \"sysfs\", \"\", \"\"))",
               "instant": true,
+              "legendFormat": "{{source}}",
               "refId": "A"
             }
           ],

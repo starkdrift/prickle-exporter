@@ -181,8 +181,13 @@ API is a smaller thing to trust.
 
 The container runs `runAsNonRoot`, `readOnlyRootFilesystem`, all capabilities
 dropped, `seccompProfile: RuntimeDefault`. Only `collectors.perProcess=true`
-relaxes that — it needs root and `hostPID` to read another process's `exe`
-symlink, which is why it is off by default.
+relaxes that — it needs root, `hostPID` and `SYS_PTRACE` to read another
+process's `/proc` entry, which is why it is off by default. It additionally
+runs the pod **AppArmor-unconfined**: containerd's default profile denies that
+same access, and denies it *silently*, so without this the per-process family
+is simply absent on an Ubuntu node with everything else set correctly. Turn it
+off with `collectors.appArmorUnconfined=false` where policy requires, and
+expect per-process attribution to stop with it.
 
 `nvml.enabled=true` selects the `-nvml` image and mounts the driver libraries
 read-only. The Service is **headless on purpose**: every pod reports about a

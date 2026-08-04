@@ -171,12 +171,18 @@ def ts(title, exprs, gp, unit=None, desc=None, stack=False):
     return p
 
 
-def stat(title, expr, gp, unit=None, desc=None, text=False):
+def stat(title, expr, gp, unit=None, desc=None, text=False, legend=None):
+    target = {"expr": expr, "refId": "A", "instant": True,
+              "datasource": {"type": "prometheus", "uid": "${DS}"}}
+    # Without a legendFormat a `by (label)` stat renders its series as the raw
+    # selector — `{source="sysfs"}` rather than `sysfs`. Only worth setting on
+    # the panels that group, which is why it is optional.
+    if legend:
+        target["legendFormat"] = legend
     p = {
         "type": "stat", "title": title, "gridPos": gp,
         "datasource": {"type": "prometheus", "uid": "${DS}"},
-        "targets": [{"expr": expr, "refId": "A", "instant": True,
-                     "datasource": {"type": "prometheus", "uid": "${DS}"}}],
+        "targets": [target],
         "fieldConfig": {"defaults": {"unit": unit or "none"}, "overrides": []},
         "options": {"reduceOptions": {"calcs": ["lastNotNull"]},
                     "textMode": "value_and_name" if text else "auto",
@@ -305,10 +311,30 @@ def gpu_tenancy():
              {"h": 4, "w": 4, "x": 12, "y": 1}, unit="watt"),
         stat("Hottest card", f"max(prickle_gpu_temperature_celsius{g})",
              {"h": 4, "w": 4, "x": 16, "y": 1}, unit="celsius"),
-        stat("Live source", f"count by (source) (prickle_gpu_nvidia_source_info)",
-             {"h": 4, "w": 4, "x": 20, "y": 1}, text=True,
-             desc="nvml or smi. The two must report identically; this says "
-                  "which one answered."),
+        # AMD has no equivalent of prickle_gpu_nvidia_source_info — there is
+        # only one way to read sysfs, so there is no selection to report — and
+        # this panel asked for that metric alone. On an AMD node it therefore
+        # read "No data", which is the one answer that is wrong: it says the
+        # exporter cannot tell you, on a host where it is reading two cards
+        # perfectly well. Written when NVIDIA was the only vendor, and 0.8.0
+        # shipped AMD without revisiting it.
+        #
+        # label_replace synthesises the source name AMD does not publish, so
+        # both vendors land on the same `source` label and the panel keeps its
+        # one meaning: which implementation answered.
+        #
+        # The value counts *nodes*, not cards. prickle_gpu_nvidia_source_info is
+        # one series per node, so counting it directly already meant that; the
+        # AMD side needs `max by (node)` first, or an eight-GPU box would report
+        # eight where its NVIDIA neighbour reports one.
+        stat("Live source",
+             "count by (source) (prickle_gpu_nvidia_source_info) or "
+             "count by (source) (label_replace(max by (node) "
+             '(prickle_gpu_info{vendor="amd"}), "source", "sysfs", "", ""))',
+             {"h": 4, "w": 4, "x": 20, "y": 1}, text=True, legend="{{source}}",
+             desc="Which implementation answered, and on how many nodes: nvml "
+                  "or smi on NVIDIA, sysfs on AMD. The two NVIDIA sources must "
+                  "report identically. A mixed fleet shows both."),
 
         row("Utilization", 5),
         ts("GPU utilization",

@@ -193,6 +193,19 @@ Four things worth knowing:
   empty command and is dropped, so the family is absent with nothing logged.
   The chart adds the capability when `collectors.perProcess` is set.
 
+  It also needs the pod to be **AppArmor-unconfined**, and this is a second,
+  separate gate that fails the same silent way. containerd applies
+  `cri-containerd.apparmor.d` by default on Ubuntu, and that profile denies
+  ptrace-class access to processes outside the container — so the family stays
+  empty with `hostPID`, uid 0 and `SYS_PTRACE` all correctly in place. The
+  chart sets `appArmorProfile: Unconfined` alongside the capability;
+  `collectors.appArmorUnconfined=false` turns it off where policy forbids it.
+
+  **AMD needs this more than NVIDIA.** NVML and `nvidia-smi` get per-process
+  memory from the driver and read `/proc` only for `exe` and `cgroup`; the AMD
+  path has no driver API and reads every process's `fdinfo`, which is what
+  AppArmor guards most tightly.
+
 - **An absent metric means the driver would not say.** `utilization_ratio`
   disappears for the whole card once MIG is enabled — the driver reports `[N/A]`,
   verified on H200 / driver 580. Emitting zero there would read as an idle GPU
