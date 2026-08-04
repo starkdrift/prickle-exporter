@@ -60,6 +60,7 @@ var minimalFamilies = []string{
 	`^prickle_gpu_(utilization_ratio|temperature_celsius|power_watts)$`,
 	`^prickle_gpu_memory_(used|total)_bytes$`,
 	`^prickle_gpu_mig_(info|memory_used_bytes)$`,
+	`^prickle_gpu_amd_partition_info$`,
 	`^prickle_gpu_nvidia_source_info$`,
 	`^prickle_gpu_process_memory_bytes$`,
 }

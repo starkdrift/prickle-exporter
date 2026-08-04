@@ -139,11 +139,16 @@ prickle_container_memory_usage_bytes
   * on (node, container) group_left (name, image, runtime) prickle_container_info
 ```
 
-### GPUs — Phase 3 (NVIDIA only)
+### GPUs — Phase 3 (NVIDIA and AMD)
 
-About 12 series for one MIG-partitioned card. NVIDIA is served by two
-interchangeable implementations behind one interface; **AMD is specified but
-not implemented and Intel is out of scope** — see [Coverage gaps](#coverage-gaps-1).
+About 12 series for one MIG-partitioned card, and about 9 for an AMD card.
+NVIDIA is served by two interchangeable implementations behind one interface;
+AMD is read from sysfs and DRM fdinfo. **Intel is out of scope** — see
+[Coverage gaps](#coverage-gaps-1).
+
+The two vendors do not fork the contract: the same families, units and labels
+on either, with `vendor` on `prickle_gpu_info` saying which stack a card came
+from. What differs is only what a platform genuinely does not have.
 
 | Source | Families |
 |---|---|
@@ -151,7 +156,26 @@ not implemented and Intel is out of scope** — see [Coverage gaps](#coverage-ga
 | `nvidia-smi -L` | `prickle_gpu_mig_enabled`, `mig_info` |
 | NVML only | `prickle_gpu_mig_memory_used_bytes`, `mig_memory_total_bytes`, `mig_utilization_ratio` |
 | `--query-compute-apps` | `prickle_gpu_process_memory_bytes{command,container}` — opt-in |
-| identity | `prickle_gpu_info`, `prickle_gpu_nvidia_source_info` |
+| AMD sysfs | the same five `--query-gpu` families, plus `prickle_gpu_amd_partition_info` |
+| AMD DRM fdinfo | `prickle_gpu_process_memory_bytes{command,container}` — opt-in |
+| identity | `prickle_gpu_info{vendor,name,index}`, `prickle_gpu_nvidia_source_info` |
+
+**The MIG families are absent on an AMD card, not zero**, and
+`prickle_gpu_amd_partition_info` is absent on an NVIDIA one. A
+`prickle_gpu_mig_enabled 0` would claim the card is an unpartitioned NVIDIA
+card, which is a specific and wrong statement rather than a missing one — the
+same rule that keeps the pressure family off cgroup v1.
+
+Two AMD-only caveats:
+
+- **`name` is a lookup, not a reading.** AMD sysfs publishes no marketing name,
+  and SPEC.md §Hard constraints #2 does not permit spawning `amd-smi` to ask.
+  Known PCI IDs resolve to a name; anything else reports the PCI ID itself.
+- **Per-process attribution needs to be able to read other users' `fdinfo`.**
+  An unprivileged exporter sees its own processes and silently omits the rest,
+  which on a Kubernetes node means the containers are the ones missing. This is
+  the same trade as `-collector.container.pod-names` and is why per-process is
+  opt-in.
 
 Four things worth knowing:
 
@@ -211,7 +235,9 @@ prickle_gpu_nvidia_source_info
 
 | Gap | Effect | What closes it |
 |---|---|---|
-| **AMD — sysfs + DRM fdinfo** | **No AMD metrics at all.** A third of what SPEC §Collectors assigns to Phase 3. | A capture from an AMD host with a ROCm workload running. `capture-fixtures.sh check` already reports whether one would produce usable `drm-*` fdinfo keys. |
+| ~~**AMD — sysfs + DRM fdinfo**~~ | **Closed 2026-08-04.** Captured and implemented against 2× MI300X, and verified live on that host: the fixture-derived golden output and the real scrape agree series for series. | — |
+| A **bare-metal** AMD host | The captured cards are SR-IOV virtual functions, so `current_compute_partition` is read-only in the guest and has only ever been observed at `SPX`. AMD's CPX/DPX partitioning is unexercised — the analogue of the MIG-on/MIG-off pair the NVIDIA fixtures have. | A capture from a bare-metal AMD host. |
+| A host with **both vendors' cards** | Both paths run in one pass and are rendered into one Set, but no machine has ever had both to prove it. | A capture, or a host with an NVIDIA and an AMD card in it. |
 | **Intel — DRM fdinfo** | **Out of scope** as of SPEC §Collectors: no capture host is obtainable, so listing it would be scope on paper and an empty scrape in practice. | A capture. Intel rides the same DRM fdinfo path AMD needs, so reopening it costs a fixture tree, not a redesign. |
 | ~~**NVML — the entire path**~~ | **Closed.** Verified on an H100 80GB / driver 580.173.02, Default and MIG mode, 2026-07-29; the hardware test that asserts the two sources agree ships in the package. Still not fixture-testable — a C call is not a file read — so it re-verifies only where a GPU is present. | — |
 | Per-MIG memory and utilization from `nvidia-smi` | Absent from that source. No CSV query publishes them, and the human-readable table is not parsed. | Nothing — this is a real limitation of the fallback. NVML supplies them. |
@@ -323,8 +349,9 @@ Phase 3 GPU
   live source: smi
   GPUs: 1, MIG instances: 2
   per-process attribution: off (-collector.gpu.per-process turns it on).
-  AMD is SPEC.md §Collectors scope but unimplemented: no capture
-  exists for it, so an AMD host reports nothing. Intel is out of scope.
+  AMD: no amdgpu card on this host. The collector is implemented,
+  so this is an absence rather than a gap.
+  Intel is out of scope.
 
 host collector: 278 series in 672µs
 container collector: 403 series in 1.4ms

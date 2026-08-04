@@ -15,6 +15,46 @@ what to do about it, which no commit-log generator writes.
 
 ### Added
 
+- **AMD GPUs are read.** SPEC.md §Collectors has assigned AMD to Phase 3 since
+  the beginning and nothing implemented it, because §Testing rules forbids
+  writing a parser against a layout nobody has captured. Both halves closed on
+  2026-08-04, against 2× MI300X: sysfs for the device metrics, DRM fdinfo for
+  per-process VRAM, and the collector verified on the host the fixtures came
+  from.
+
+  `gpu_uuid` is the card's sysfs `unique_id`. Everything else on an AMD card is
+  shared with its siblings — the two captured cards have the same device ID,
+  subsystem ID and vbios version — and the DRM node number is enumeration
+  order, so an identity taken from any of those would have merged two cards
+  into one series.
+
+  **The contract does not fork.** An AMD card reports the same families, units
+  and labels as an NVIDIA one. Two differences are genuine absences rather than
+  vendor branches: the MIG families do not appear on a card with no such
+  concept, exactly as the pressure family is absent on cgroup v1, and the new
+  `prickle_gpu_amd_partition_info` carries AMD's own partitioning (`SPX`,
+  `NPS1`) rather than being folded into a metric named for NVIDIA's.
+
+  `rocm-smi` and `amd-smi` are **not** used and are never spawned: SPEC.md
+  §Hard constraints #2 permits one subprocess and it is `nvidia-smi`. The cost
+  is that AMD sysfs publishes no marketing name, so `prickle_gpu_info` resolves
+  known PCI IDs through a small capture-verified table and reports the raw ID
+  otherwise.
+
+  **Per-process attribution needs to read other users' `fdinfo`.** Running
+  unprivileged, the containerised GPU process was omitted from the scrape with
+  no error — the failure is silent and, on a Kubernetes node, drops precisely
+  the containers worth measuring. This is the same trade
+  `-collector.container.pod-names` makes and is why per-process stays opt-in.
+
+- **`prickle_gpu_info` gained a `vendor` label** (`nvidia` or `amd`). On a
+  mixed host nothing else on the series distinguishes the two, and `name`
+  cannot: AMD sysfs has no marketing name to read.
+
+  Adding a label key to an existing series is a **major** under SPEC.md
+  §Versioning; pre-1.0 a minor may do it. Queries that aggregate this series
+  without `by` will change shape.
+
 - **The first AMD capture, and the first multi-GPU capture of any vendor.**
   `internal/collector/gpu/testdata/mi300x-2gpu-20260804` is 2× AMD Instinct
   MI300X under load, with a GPU process on the host and a second inside a

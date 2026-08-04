@@ -58,6 +58,24 @@ type device struct {
 	UUID  string
 	Name  string
 
+	// Vendor is the driver stack the card was read through: "nvidia" or "amd".
+	// It rides prickle_gpu_info as a descriptive attribute, which is where
+	// SPEC.md §Metrics contract puts anything that is not identity.
+	//
+	// A mixed host is why it is there at all. `name` would otherwise be the
+	// only thing distinguishing the vendors, and AMD sysfs publishes no
+	// marketing name for a card — see amdMarketNames.
+	Vendor string
+
+	// ComputePartition and MemoryPartition are AMD's partitioning mode, "SPX"
+	// and "NPS1" on an unpartitioned MI300X. They are the nearest thing AMD has
+	// to MIG topology, and they are emitted as their own _info gauge rather
+	// than folded into the MIG families: MIG is an NVIDIA feature with an
+	// NVIDIA-specific data model, and a prickle_gpu_mig_enabled on an AMD card
+	// would be a false statement in either direction. Empty on NVIDIA.
+	ComputePartition string
+	MemoryPartition  string
+
 	// Utilization is the SM busy fraction, 0 to 1. Absent rather than zero
 	// when the driver reports [N/A], which it does for the whole card whenever
 	// MIG is enabled (SPEC.md §Collectors, verified on H200 / driver 580).
@@ -172,14 +190,30 @@ type Options struct {
 	// in the host collector).
 	runner commandRunner
 
-	// newSources overrides source construction in tests.
-	newSources func(Options) []nvidiaSource
+	// nvidiaCandidates overrides which NVIDIA implementations selectSource
+	// tries. Nil means the real order in candidates().
+	//
+	// The AMD tests need it to return nothing: their fixture host has no NVIDIA
+	// card, and without this a developer machine with nvidia-smi installed would
+	// have the real binary spawned underneath a sysfs fixture test and produce a
+	// different result from CI.
+	nvidiaCandidates func(Options) []sourceCandidate
 }
 
 // Collector reads the GPUs in the host.
 type Collector struct {
 	opts   Options
 	source nvidiaSource
+
+	// amd reads AMD cards from sysfs. It is always present and always consulted:
+	// unlike the NVIDIA sources there is nothing to select between and nothing
+	// to load, so "does this host have an AMD GPU" is answered by the same
+	// readdir that reads them. A host with none costs one failed directory
+	// listing per scrape.
+	//
+	// The two vendors are read independently and both are rendered, because a
+	// host may have both and because neither can stand in for the other.
+	amd *amdSource
 
 	// selectErr is why no source loaded, kept for `prickle diagnose` to
 	// explain rather than leaving an empty GPU section.
@@ -195,7 +229,7 @@ func New(opts Options) *Collector {
 	if opts.NVIDIASource == "" {
 		opts.NVIDIASource = SourceAuto
 	}
-	c := &Collector{opts: opts}
+	c := &Collector{opts: opts, amd: &amdSource{roots: opts.Roots}}
 	c.source, c.selectErr = selectSource(opts)
 	return c
 }
@@ -218,25 +252,45 @@ func (c *Collector) Close() error {
 // metrics, and it is not a failure — `prickle diagnose` is where the absence is
 // explained.
 func (c *Collector) Collect(ctx context.Context, out *exposition.Set) error {
-	if c.source == nil {
-		return nil
-	}
-
-	out.Gauge(prefix+"nvidia_source_info",
-		"Which NVIDIA implementation is live: constant 1, labelled with the source that loaded.").
-		Add(1, exposition.L("source", c.source.Name()))
-
-	snap, err := c.source.Read(ctx)
 	// A partial read still renders: SPEC.md's partial-collection contract in
-	// internal/collector applies here as much as to a missing /proc file.
+	// internal/collector applies here as much as to a missing /proc file. It
+	// also applies across vendors — an NVIDIA driver that has stopped
+	// answering must not cost an AMD card in the same box its metrics.
 	var errs []error
-	if err != nil {
-		errs = append(errs, err)
+	var devices []device
+	var processes []process
+
+	if c.source != nil {
+		out.Gauge(prefix+"nvidia_source_info",
+			"Which NVIDIA implementation is live: constant 1, labelled with the source that loaded.").
+			Add(1, exposition.L("source", c.source.Name()))
+
+		snap, err := c.source.Read(ctx)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		// The NVIDIA sources predate the vendor label and do not set it, so it
+		// is stamped here rather than in each of them: there is one place that
+		// knows a snapshot came from the NVIDIA path, and this is it.
+		for i := range snap.devices {
+			snap.devices[i].Vendor = vendorNVIDIA
+		}
+		devices = append(devices, snap.devices...)
+		processes = append(processes, snap.processes...)
 	}
 
-	c.emitDevices(out, snap.devices)
+	if c.amd != nil {
+		snap, err := c.amd.read(c.opts.PerProcess)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		devices = append(devices, snap.devices...)
+		processes = append(processes, snap.processes...)
+	}
+
+	c.emitDevices(out, devices)
 	if c.opts.PerProcess {
-		c.emitProcesses(out, snap.processes)
+		c.emitProcesses(out, processes)
 	}
 	return errors.Join(errs...)
 }

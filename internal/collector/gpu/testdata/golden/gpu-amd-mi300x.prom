@@ -1,0 +1,34 @@
+# HELP prickle_gpu_amd_partition_info AMD partitioning mode: constant 1, carrying the compute and memory partition the card is in.
+# TYPE prickle_gpu_amd_partition_info gauge
+prickle_gpu_amd_partition_info{node="fixture",gpu_uuid="594afe08e1ab3ae6",compute_partition="SPX",memory_partition="NPS1"} 1
+prickle_gpu_amd_partition_info{node="fixture",gpu_uuid="25a594c05f2eb594",compute_partition="SPX",memory_partition="NPS1"} 1
+# HELP prickle_gpu_info GPU identity: constant 1, carrying the vendor, the model name and the driver's device index.
+# TYPE prickle_gpu_info gauge
+prickle_gpu_info{node="fixture",gpu_uuid="594afe08e1ab3ae6",vendor="amd",name="AMD Instinct MI300X VF",index="0"} 1
+prickle_gpu_info{node="fixture",gpu_uuid="25a594c05f2eb594",vendor="amd",name="AMD Instinct MI300X VF",index="8"} 1
+# HELP prickle_gpu_memory_total_bytes GPU memory installed.
+# TYPE prickle_gpu_memory_total_bytes gauge
+prickle_gpu_memory_total_bytes{node="fixture",gpu_uuid="594afe08e1ab3ae6"} 205822885888
+prickle_gpu_memory_total_bytes{node="fixture",gpu_uuid="25a594c05f2eb594"} 205822885888
+# HELP prickle_gpu_memory_used_bytes GPU memory in use.
+# TYPE prickle_gpu_memory_used_bytes gauge
+prickle_gpu_memory_used_bytes{node="fixture",gpu_uuid="594afe08e1ab3ae6"} 2956627968
+prickle_gpu_memory_used_bytes{node="fixture",gpu_uuid="25a594c05f2eb594"} 2956627968
+# HELP prickle_gpu_power_watts Power the GPU is drawing.
+# TYPE prickle_gpu_power_watts gauge
+prickle_gpu_power_watts{node="fixture",gpu_uuid="594afe08e1ab3ae6"} 641
+prickle_gpu_power_watts{node="fixture",gpu_uuid="25a594c05f2eb594"} 659
+# HELP prickle_gpu_process_memory_bytes GPU memory held by processes running one command, summed. Opt-in behind -collector.gpu.per-process.
+# TYPE prickle_gpu_process_memory_bytes gauge
+prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="594afe08e1ab3ae6",command="gpu-spin",container=""} 1225003008
+prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="25a594c05f2eb594",command="gpu-spin",container=""} 1224998912
+prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="594afe08e1ab3ae6",command="gpu-spin",container="ea20f94c6cfe0d9b9cc735a683b4a674d8ef7772a8df040eed47c06cf62e54b9"} 688119808
+prickle_gpu_process_memory_bytes{node="fixture",gpu_uuid="25a594c05f2eb594",command="gpu-spin",container="ea20f94c6cfe0d9b9cc735a683b4a674d8ef7772a8df040eed47c06cf62e54b9"} 688123904
+# HELP prickle_gpu_temperature_celsius GPU core temperature.
+# TYPE prickle_gpu_temperature_celsius gauge
+prickle_gpu_temperature_celsius{node="fixture",gpu_uuid="594afe08e1ab3ae6"} 70
+prickle_gpu_temperature_celsius{node="fixture",gpu_uuid="25a594c05f2eb594"} 70
+# HELP prickle_gpu_utilization_ratio Fraction of time the GPU's SMs were busy, 0 to 1. Absent when the driver reports it as unavailable, which it does for the whole card while MIG is enabled.
+# TYPE prickle_gpu_utilization_ratio gauge
+prickle_gpu_utilization_ratio{node="fixture",gpu_uuid="594afe08e1ab3ae6"} 1
+prickle_gpu_utilization_ratio{node="fixture",gpu_uuid="25a594c05f2eb594"} 0.98

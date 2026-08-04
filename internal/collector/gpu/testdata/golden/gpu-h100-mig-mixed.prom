@@ -1,13 +1,13 @@
-# HELP prickle_gpu_info GPU identity: constant 1, carrying the model name and the driver's device index.
+# HELP prickle_gpu_info GPU identity: constant 1, carrying the vendor, the model name and the driver's device index.
 # TYPE prickle_gpu_info gauge
-prickle_gpu_info{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",name="NVIDIA H100 80GB HBM3",index="0"} 1
+prickle_gpu_info{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65",vendor="nvidia",name="NVIDIA H100 80GB HBM3",index="0"} 1
 # HELP prickle_gpu_memory_total_bytes GPU memory installed.
 # TYPE prickle_gpu_memory_total_bytes gauge
 prickle_gpu_memory_total_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 85520809984
 # HELP prickle_gpu_memory_used_bytes GPU memory in use.
 # TYPE prickle_gpu_memory_used_bytes gauge
 prickle_gpu_memory_used_bytes{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 13271826432
-# HELP prickle_gpu_mig_enabled 1 when the GPU is partitioned into MIG instances, 0 when it is in Default mode.
+# HELP prickle_gpu_mig_enabled 1 when the GPU is partitioned into MIG instances, 0 when it is in Default mode. NVIDIA only.
 # TYPE prickle_gpu_mig_enabled gauge
 prickle_gpu_mig_enabled{node="fixture",gpu_uuid="GPU-0d0831da-0c98-2717-6446-8acd91d39b65"} 1
 # HELP prickle_gpu_mig_info MIG instance identity: constant 1, carrying the profile and the driver's MIG device index.
