@@ -50,6 +50,15 @@ different label conventions. `prickle` uses one closed set of identity labels
 across all three layers, so a GPU series joins to a container series joins to a
 node series without relabeling.
 
+<p align="center">
+  <img src="assets/dashboards/gpu-tenancy-nvidia.png" width="900"
+       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 sits at 100% utilisation drawing 503 W at 66 °C, with nvml as the live source. The per-process panel below splits that card's memory between two pods in different namespaces — nbody-training and nbody-inference — each resolved to its pod name and container ID rather than a PID.">
+</p>
+<p align="center">
+  <sub><em>GPU Tenancy, on a Kubernetes cluster — one <code>gpu_uuid</code>, split
+  between two pods, with no relabeling.</em></sub>
+</p>
+
 Three properties are non-negotiable, and they are why the code looks the way it
 does:
 
@@ -246,6 +255,24 @@ contains api` narrow to both.
 
 It is a demonstration, not a deployment — Grafana runs with anonymous admin so
 there is no password step. Do not put it on a network you do not own.
+
+### On Kubernetes
+
+The same four dashboards on a cluster — prickle as a DaemonSet, Prometheus
+finding it by pod discovery, and Grafana with everything provisioned:
+
+```sh
+helm install prickle packaging/helm/prickle-exporter -n prickle-demo --create-namespace \
+  --set collectors.podNames.enabled=true
+kubectl apply -f packaging/kubernetes-demo/
+kubectl -n prickle-demo port-forward svc/grafana 3000:3000
+```
+
+That single release covers a uniform cluster. **A cluster where only some nodes
+have a GPU needs two**, because the stock image carries no GPU support and the
+NVML image cannot start on a node without a driver — the split, and the rest of
+the detail, is in
+[packaging/kubernetes-demo/README.md](packaging/kubernetes-demo/README.md).
 
 ## Pod names, and what they cost
 
