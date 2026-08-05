@@ -235,20 +235,26 @@ the detail, is in
 
 <p align="center">
   <img src="assets/dashboards/gpu-tenancy-amd.png" width="900"
-       alt="The same GPU Tenancy dashboard on an AMD cluster. One MI300X sits at 100% utilisation drawing 746 W at 70 °C, holding 3.49 GiB of its 192 GiB, with sysfs as the live source and no MIG instances. The per-process panel below stacks that one card's memory across three pods in three namespaces — hip-training at 1.14 GiB, hip-inference at 656 MiB and hip-batch at 400 MiB — each resolved to its pod name and container ID rather than a PID.">
+       alt="The same GPU Tenancy dashboard on an AMD cluster. One MI300X drifts between 45% and 80% utilisation across the five-minute window, drawing 586 W at 64 °C, holding 3.30 GiB of its 192 GiB, with sysfs as the live source and no MIG instances. The per-process panel below splits that one card's memory between two pods in different namespaces — trainer-0 at 1.51 GiB and inference-0 at 844 MiB — each resolved to its pod name and container ID rather than a PID.">
 </p>
 <p align="center">
-  <sub><em>The same dashboard, an <strong>MI300X</strong> instead of an H100 —
-  three tenants on one card, read from sysfs and DRM <code>fdinfo</code> with no
-  vendor branch in the query.</em></sub>
+  <sub><em>The same dashboard and the same two tenants, on an
+  <strong>MI300X</strong> instead of an H100 — read from sysfs and DRM
+  <code>fdinfo</code> with no vendor branch in the query.</em></sub>
 </p>
 
-Nothing in that dashboard is vendor-specific: it is the same JSON against the
-same metric names, and the only visible difference is `Live source`, which reads
-`nvml` above and `sysfs` here because the AMD path spawns no subprocess to have
-a source of. Per-process attribution on AMD needs one thing NVIDIA does not —
-see [`collectors.appArmorUnconfined`](packaging/helm/prickle-exporter/values.yaml),
-on by default, without which that bottom panel comes back empty and silent.
+That is the same dashboard JSON as the one at the top of this file, against the
+same metric names, with the same workload on it. What differs is the card and
+one panel: `Live source` reads `nvml` there and `sysfs` here, because the AMD
+path spawns no subprocess and has no driver API to name. Everything a query
+joins on — `node`, `gpu_uuid`, `pod`, `container` — is identical, which is the
+whole claim the metrics contract makes.
+
+Per-process attribution on AMD does need one thing NVIDIA does not:
+[`collectors.appArmorUnconfined`](packaging/helm/prickle-exporter/values.yaml),
+on by default since 0.8.0. Without it that bottom panel comes back **empty with
+nothing logged** — the AMD path reads every process's `fdinfo`, which
+containerd's default profile denies.
 
 ## Pod names
 
@@ -313,7 +319,7 @@ first scrape.
 ## Status
 
 **Phase 5 — all five roadmap phases are implemented.** Host, container and
-NVIDIA GPU collectors, each developed against captured fixture trees;
+GPU collectors — NVIDIA and AMD — each developed against captured fixture trees;
 per-collector timeouts, cardinality caps and self-instrumentation; and the
 distribution artifacts — two binaries with hardened systemd units,
 multi-architecture container images, a Helm chart, a compose quickstart and

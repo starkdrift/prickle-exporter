@@ -1,0 +1,135 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The AMD counterpart of gpu-tenants.yaml: two GPU tenants in two namespaces
+# sharing one card, for dashboard captures. Same tenants, same profiles, same
+# memory figures — so the two vendors' captures are comparable frame for frame.
+# See scripts/README.md - "Dashboard captures".
+#
+#   kubectl label node <node> amd.com/gpu.present=true
+#   kubectl create ns team-alpha; kubectl create ns team-beta
+#   kubectl -n team-alpha create configmap gpu-load-src \
+#     --from-file=gpu-load.hip=scripts/gpu-load/gpu-load.hip
+#   kubectl apply -f scripts/gpu-load/gpu-tenants-amd.yaml
+#
+# Apply the Job FIRST and wait for it, as on NVIDIA - a pod scheduled before
+# the binary exists fails its hostPath mount and needs recreating.
+#
+# Three things differ from the NVIDIA file, and each is a property of the
+# platform rather than a preference:
+#
+#   * The build runs hipcc from the node's own /opt/rocm rather than from a
+#     devel image. ROCm is installed on the host on every AMD box worth
+#     capturing on - the driver requires it - and rocm/dev-ubuntu is tens of
+#     gigabytes to pull for one compile.
+#   * --offload-arch=gfx942 is MI300. `rocminfo | grep gfx` names another card;
+#     this is the analogue of the NVIDIA file's -gencode line.
+#   * The tenants are privileged. AMD has no counterpart to
+#     NVIDIA_VISIBLE_DEVICES, so /dev/kfd and /dev/dri reach a container only
+#     through the device cgroup, and the ROCm device plugin allocates whole
+#     cards - which would stop the second tenant sharing the first's card, and
+#     sharing is the entire point of the capture. This is a throwaway capture
+#     cluster; do not carry the pattern into anything that matters.
+#
+# No such grant is needed by prickle itself, which reads sysfs and fdinfo.
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gpu-load-build
+  namespace: team-alpha
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        amd.com/gpu.present: "true"
+      containers:
+        - name: build
+          image: ubuntu:24.04
+          command:
+            - bash
+            - -c
+            - |
+              set -e
+              # ROCm's clang comes from the host mount; nothing it links
+              # against does. g++ supplies the C++ standard headers, without
+              # which hipcc fails on <cstdlib> from inside its own runtime
+              # wrapper, and libxml2 is what ROCm's lld needs to start at all
+              # (`error while loading shared libraries: libxml2.so.2`). Both
+              # read like broken ROCm and are a missing package in this image.
+              apt-get update -qq && apt-get install -y -qq g++ libxml2
+              export PATH=/opt/rocm/bin:$PATH
+              hipcc -O2 --offload-arch=gfx942 -o /out/gpu-load /src/gpu-load.hip
+              chmod 0755 /out/gpu-load
+              ls -la /out/gpu-load
+          volumeMounts:
+            - {name: src, mountPath: /src}
+            - {name: out, mountPath: /out}
+            - {name: rocm, mountPath: /opt/rocm, readOnly: true}
+      volumes:
+        - name: src
+          configMap: {name: gpu-load-src}
+        - name: out
+          hostPath: {path: /opt/gpu-load, type: DirectoryOrCreate}
+        - name: rocm
+          hostPath: {path: /opt/rocm, type: Directory}
+---
+# Tenant 1: a training-shaped tenant - busy most of the time, drifting.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: trainer-0
+  namespace: team-alpha
+spec:
+  restartPolicy: Always
+  nodeSelector:
+    amd.com/gpu.present: "true"
+  containers:
+    - name: trainer
+      image: ubuntu:24.04
+      command: ["/bin/sh", "-c"]
+      args:
+        - apt-get update -qq && apt-get install -y -qq libelf1 libnuma1 libdrm2
+          libdrm-amdgpu1 libzstd1 >/dev/null && exec /opt/gpu-load/gpu-load 1400 45 92 7
+      securityContext: {privileged: true}
+      env:
+        - {name: LD_LIBRARY_PATH, value: /opt/rocm/lib}
+      volumeMounts:
+        - {name: bin, mountPath: /opt/gpu-load, readOnly: true}
+        - {name: rocm, mountPath: /opt/rocm, readOnly: true}
+  volumes:
+    - name: bin
+      hostPath: {path: /opt/gpu-load, type: Directory}
+    - name: rocm
+      hostPath: {path: /opt/rocm, type: Directory}
+---
+# Tenant 2: an inference-shaped tenant - bursty and mostly light, sharing the
+# same card as the trainer above.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: inference-0
+  namespace: team-beta
+spec:
+  restartPolicy: Always
+  nodeSelector:
+    amd.com/gpu.present: "true"
+  containers:
+    - name: server
+      image: ubuntu:24.04
+      command: ["/bin/sh", "-c"]
+      args:
+        - apt-get update -qq && apt-get install -y -qq libelf1 libnuma1 libdrm2
+          libdrm-amdgpu1 libzstd1 >/dev/null && exec /opt/gpu-load/gpu-load 700 6 48 23
+      securityContext: {privileged: true}
+      env:
+        - {name: LD_LIBRARY_PATH, value: /opt/rocm/lib}
+      volumeMounts:
+        - {name: bin, mountPath: /opt/gpu-load, readOnly: true}
+        - {name: rocm, mountPath: /opt/rocm, readOnly: true}
+  volumes:
+    - name: bin
+      hostPath: {path: /opt/gpu-load, type: Directory}
+    - name: rocm
+      hostPath: {path: /opt/rocm, type: Directory}
