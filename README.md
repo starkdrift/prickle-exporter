@@ -23,7 +23,6 @@
 ## Contents
 
 - [What it is](#what-it-is)
-- [Quick start](#quick-start)
 - [Deploying](#deploying)
   - [systemd](#standalone-with-systemd)
   - Kubernetes
@@ -52,7 +51,7 @@ node series without relabeling.
 
 <p align="center">
   <img src="assets/dashboards/gpu-tenancy-nvidia.png" width="900"
-       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 sits at 100% utilisation for the whole five-minute window, drawing 503 W at 66 °C, holding 1.14 GiB of its 79.6 GiB, with nvml as the live source and no MIG instances. The per-process panel below splits that one card's memory between two pods in different namespaces — nbody-training at 592 MiB and nbody-inference at 556 MiB — each resolved to its pod name and container ID rather than a PID.">
+       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 drifts between 22% and 71% utilisation across the five-minute window, drawing 240 W at 44 °C, holding 3.08 GiB of its 79.6 GiB, with nvml as the live source and no MIG instances. The per-process panel below splits that one card's memory between two pods in different namespaces — trainer-0 at 1.87 GiB and inference-0 at 1.19 GiB — each resolved to its pod name and container ID rather than a PID.">
 </p>
 <p align="center">
   <sub><em>GPU Tenancy, on a Kubernetes cluster — one <code>gpu_uuid</code>, split
@@ -75,37 +74,9 @@ does:
   last completed render.
 
 The full contract is [SPEC.md](SPEC.md). It is frozen: code follows the spec, and
-changing a decision means editing SPEC.md first, in its own commit.
-
-## Quick start
-
-Requires Go 1.26. There is nothing to fetch — the module has no dependencies.
-
-```sh
-git clone https://github.com/starkdrift/prickle-exporter
-cd prickle-exporter
-CGO_ENABLED=0 go build -o prickle ./cmd/prickle
-./prickle
-```
-
-Then scrape it:
-
-```sh
-curl -s localhost:10047/metrics | head
-```
-
-Port **10047** is fixed by [SPEC.md §Identity](SPEC.md#identity). `-web.listen-address`
-exists for when something else on your workstation already holds it — don't
-change it in anything that ships.
-
-Stamp a version into the binary with:
-
-```sh
-go build -ldflags "-X main.version=$(git describe --tags --always)" -o prickle ./cmd/prickle
-```
-
-Working from source — `scripts/dev-run.sh`, fixture trees, the pre-commit gate
-— is in [docs/development.md](docs/development.md).
+changing a decision means editing SPEC.md first, in its own commit. Building it
+yourself, running it against a fixture tree, and the pre-commit gate are in
+[docs/development.md](docs/development.md).
 
 ## Deploying
 
