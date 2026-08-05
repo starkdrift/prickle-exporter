@@ -102,6 +102,31 @@ Verified on a two-node kubeadm 1.34 cluster (H100 80GB worker, driverless
 control plane) on 2026-08-05: every panel populated except the two MIG ones,
 which are empty because the card is not partitioned.
 
+### On AMD, one release covers the cluster
+
+None of the split above applies. The AMD path is sysfs and DRM `fdinfo` — there
+is no second image, no driver library to mount and nothing that can fail to
+start on a driverless node, so the single `helm install` at the top of this file
+reaches every node and reports the cards it finds:
+
+```sh
+helm install prickle packaging/helm/prickle-exporter -n prickle-demo --create-namespace \
+  --set collectors.podNames.enabled=true \
+  --set collectors.perProcess=true
+```
+
+**`collectors.perProcess=true` is where AMD needs something NVIDIA does not.**
+It brings `collectors.appArmorUnconfined` with it, on by default since 0.8.0,
+and without that the per-process panels come back **empty with nothing logged**
+— containerd's default profile denies the ptrace-class access that reading
+another process's `fdinfo` needs, and the AMD path has no driver API to ask
+instead. Measured here twice, once by accident: installing a chart that predates
+the setting emptied those two panels on an otherwise healthy cluster.
+
+Verified on a single-node kubeadm 1.34 cluster with one MI300X on 2026-08-06,
+against the released `0.8.0` image: two tenant pods in two namespaces sharing
+the card, both resolved to pod name and container.
+
 ## Not a deployment
 
 Anonymous admin, no Ingress, six hours of Prometheus retention on an

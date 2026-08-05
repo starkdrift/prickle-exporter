@@ -123,24 +123,35 @@ are fixed by NVIDIA's own ABI contract rather than by hope. Nothing from the
 ## AMD on Kubernetes
 
 The released `ghcr.io/starkdrift/prickle-exporter:0.8.0` image on a single-node
-kubeadm 1.34 cluster, 2026-08-05, on one **MI300X** — an SR-IOV virtual
-function, ROCm 7.2.4, containerd, Ubuntu 24.04 — with the chart from `main` so
-that `collectors.appArmorUnconfined` was in it.
+kubeadm 1.34 cluster, 2026-08-05 and 2026-08-06, on one **MI300X** — an SR-IOV
+virtual function, ROCm 7.2.4, containerd, Ubuntu 24.04 — with the chart from
+`main` so that `collectors.appArmorUnconfined` was in it.
 
-- **Three tenant pods sharing one card.** A HIP kernel in `team-alpha`,
-  `team-beta` and `team-gamma`, holding 1024, 512 and 256 MiB, came back as
-  three `prickle_gpu_process_memory_bytes` series joined through to pod name and
-  container from a plain `helm install --set collectors.perProcess=true` — no
-  manual patch. Without the AppArmor change that family is **silently empty** on
-  containerd; the reasoning is in
+- **Two tenant pods sharing one card**, the same two profiles the NVIDIA capture
+  uses: [gpu-load](../scripts/gpu-load/) built for `gfx942`, holding 1400 and
+  700 MiB in `team-alpha` and `team-beta`. Both came back as
+  `prickle_gpu_process_memory_bytes` joined through to pod name and container —
+  1.51 GiB and 844 MiB — from a plain
+  `helm install --set collectors.perProcess=true` with no manual patch.
+- **The AppArmor dependency was then reproduced by accident, which is the best
+  evidence for it.** Installing a chart that predates
+  `collectors.appArmorUnconfined` onto the same cluster, with the same two
+  tenants running, emptied that family completely: no error, no log line, device
+  and container metrics perfectly healthy. Reinstalling from `main` brought both
+  series straight back. The reasoning is in
   [values.yaml](../packaging/helm/prickle-exporter/values.yaml).
 - **Every panel of all four dashboards run as a `query_range`** over the live
   window: 50 targets, **0 PromQL errors**, nothing unexpectedly empty. The two
-  MIG panels return nothing, which is correct on a card that is not partitioned,
-  and *GPU memory by pod and container* rendered all three tenants. The
-  `Live source` stat reads `sysfs`: AMD has no counterpart to
+  MIG panels return nothing, which is correct on a card that is not partitioned.
+  The `Live source` stat reads `sysfs`: AMD has no counterpart to
   `prickle_gpu_nvidia_source_info` because it spawns no subprocess to have a
   source of.
+- **amdgpu needs a shorter duty window than NVML to be read honestly.** Holding
+  a 45–55% target, eight scrapes apiece, a 120 ms busy/idle alternation read
+  34–63% while a 30 ms one read 46–53% — same mean, four times the spread. The
+  AMD load generator therefore runs a 30 ms window where the CUDA one runs
+  120 ms; a capture taken with the NVIDIA constant would have shown a curve that
+  was mostly sampling artefact.
 - **The chart's NOTES diagnostic was verified end to end**, on a host no sweep
   had touched. The printed command carried
   `-collector.container.pod-names -collector.gpu.per-process`, and running it
