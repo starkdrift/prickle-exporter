@@ -52,7 +52,7 @@ node series without relabeling.
 
 <p align="center">
   <img src="assets/dashboards/gpu-tenancy-nvidia.png" width="900"
-       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 sits at 100% utilisation drawing 503 W at 66 °C, with nvml as the live source. The per-process panel below splits that card's memory between two pods in different namespaces — nbody-training and nbody-inference — each resolved to its pod name and container ID rather than a PID.">
+       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 drifts between 22% and 71% utilisation over five minutes, drawing 240 W at 44 °C, with nvml as the live source. The per-process panel below splits that one card's memory between two pods in different namespaces — trainer-0 and inference-0 — each resolved to its pod name and container ID rather than a PID.">
 </p>
 <p align="center">
   <sub><em>GPU Tenancy, on a Kubernetes cluster — one <code>gpu_uuid</code>, split
