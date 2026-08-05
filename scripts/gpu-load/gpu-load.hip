@@ -10,10 +10,11 @@
 // genuinely idle rather than the process throttled. What differs here is the
 // window that the idling has to be finer than: NVML averages utilisation over
 // roughly a second, while amdgpu's `gpu_busy_percent` — the file prickle's AMD
-// path reads — is a much shorter average maintained by the SMU. A duty window
-// tuned to NVML can therefore land inside a single busy or idle phase on AMD
-// and read 0 or 100, so the window here is shorter. Measured on an MI300X:
-// 120 ms reproduces the square wave, 30 ms tracks the duty.
+// path reads — averages over a much shorter one, so the same alternation shows
+// up as sampling noise instead of a level. Measured on an MI300X against a
+// 45-55% target, eight scrapes apiece: a 120 ms window read 34-63%, a 30 ms
+// window read 46-53%. Same mean either way; the shorter window is what makes a
+// captured curve mean what it says.
 //
 // Build: hipcc -O2 --offload-arch=gfx942 -o gpu-load gpu-load.hip
 // (gfx942 is MI300; `rocminfo | grep gfx` names the one in front of you.)

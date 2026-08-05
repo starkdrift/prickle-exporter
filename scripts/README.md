@@ -364,6 +364,41 @@ Two tenants rather than one is deliberate. The second shares the card through
 does not consume the only allocation — and "one card, two pods, two namespaces"
 is the whole point of the dashboard.
 
+#### On AMD
+
+[gpu-load.hip](gpu-load/gpu-load.hip) and
+[gpu-tenants-amd.yaml](gpu-load/gpu-tenants-amd.yaml) are the same two tenants
+with the same profiles and the same memory figures, so the two vendors' captures
+are comparable frame for frame:
+
+```sh
+kubectl label node <node> amd.com/gpu.present=true
+kubectl create ns team-alpha; kubectl create ns team-beta
+kubectl -n team-alpha create configmap gpu-load-src \
+  --from-file=gpu-load.hip=scripts/gpu-load/gpu-load.hip
+kubectl apply -f scripts/gpu-load/gpu-tenants-amd.yaml
+```
+
+**The duty window is 30 ms there, not 120 ms.** amdgpu's `gpu_busy_percent`
+averages over a shorter window than NVML does, so the coarser alternation
+survives into the reading as noise. Measured on an MI300X against a 45–55%
+target, eight scrapes apiece: 120 ms read **34–63%**, 30 ms read **46–53%**.
+The mean is right either way — it is the spread that decides whether a captured
+curve means anything.
+
+Three smaller differences, each a property of the platform: the build Job runs
+`hipcc` from the node's own `/opt/rocm` rather than pulling tens of gigabytes of
+devel image; `--offload-arch=gfx942` replaces `-gencode` (`rocminfo | grep gfx`
+names another card); and the tenants are **privileged**, because AMD has no
+counterpart to `NVIDIA_VISIBLE_DEVICES` and the ROCm device plugin allocates
+whole cards, which would stop the second tenant sharing the first's. That is a
+throwaway capture cluster, not a pattern to carry anywhere.
+
+prickle itself needs none of it — it reads sysfs and `fdinfo` — but it does need
+`collectors.appArmorUnconfined`, on by default since 0.8.0, or the per-process
+panels come back **empty with nothing logged**. That failure looks exactly like
+a broken exporter and is the first thing to check on AMD.
+
 ### Verify the panels before you capture, not after
 
 Run every panel's `expr` as a **`query_range`**, not an instant query. A
