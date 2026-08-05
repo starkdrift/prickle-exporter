@@ -120,6 +120,44 @@ are fixed by NVIDIA's own ABI contract rather than by hope. Nothing from the
 `nvmlDeviceSet*` or `nvmlDeviceClear*` families is resolved at all.
 
 
+## AMD on Kubernetes
+
+The released `ghcr.io/starkdrift/prickle-exporter:0.8.0` image on a single-node
+kubeadm 1.34 cluster, 2026-08-05, on one **MI300X** — an SR-IOV virtual
+function, ROCm 7.2.4, containerd, Ubuntu 24.04 — with the chart from `main` so
+that `collectors.appArmorUnconfined` was in it.
+
+- **Three tenant pods sharing one card.** A HIP kernel in `team-alpha`,
+  `team-beta` and `team-gamma`, holding 1024, 512 and 256 MiB, came back as
+  three `prickle_gpu_process_memory_bytes` series joined through to pod name and
+  container from a plain `helm install --set collectors.perProcess=true` — no
+  manual patch. Without the AppArmor change that family is **silently empty** on
+  containerd; the reasoning is in
+  [values.yaml](../packaging/helm/prickle-exporter/values.yaml).
+- **Every panel of all four dashboards run as a `query_range`** over the live
+  window: 50 targets, **0 PromQL errors**, nothing unexpectedly empty. The two
+  MIG panels return nothing, which is correct on a card that is not partitioned,
+  and *GPU memory by pod and container* rendered all three tenants. The
+  `Live source` stat reads `sysfs`: AMD has no counterpart to
+  `prickle_gpu_nvidia_source_info` because it spawns no subprocess to have a
+  source of.
+- **The chart's NOTES diagnostic was verified end to end**, on a host no sweep
+  had touched. The printed command carried
+  `-collector.container.pod-names -collector.gpu.per-process`, and running it
+  verbatim reported `pod names: on — 33 of 33` and the AMD card — where before
+  it printed `pod names: off` beside an exporter resolving every one.
+- **`ci/check.sh` and `go test -race ./...` pass on the GPU host itself**, which
+  is the condition that broke six tests before PR #9: a zero `fsroot.Roots`
+  resolves to the live `/sys`, so a non-hermetic GPU test collects the real card
+  alongside its fixture. No CI runner has a GPU, so this check exists nowhere
+  else.
+
+The GPU Tenancy screenshot in the README is that cluster. What this host cannot
+show: the cards are SR-IOV VFs, so `current_compute_partition` is read-only and
+always `SPX` — AMD's CPX/DPX partitioning, the analogue of the MIG fixture pair,
+still needs bare metal.
+
+
 ## Release acceptance, 0.7.1
 
 Every DigitalOcean base image, swept on 2026-08-02 against the **published
