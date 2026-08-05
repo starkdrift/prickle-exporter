@@ -28,7 +28,7 @@
   - [systemd](#standalone-with-systemd)
   - Kubernetes
     - [Generic](#kubernetes-any-node) — starts on every node
-    - [GPU nodes](#kubernetes-gpu-nodes) — a second, node-selected install
+    - [NVIDIA GPU nodes](#kubernetes-nvidia-gpu-nodes) — a second, node-selected install
   - [container](#container-directly)
 - [Try it: Prometheus and Grafana](#try-it-prometheus-and-grafana) — [Docker Compose](#with-docker-compose) · [Kubernetes](#on-kubernetes)
 - [Pod names](#pod-names)
@@ -52,7 +52,7 @@ node series without relabeling.
 
 <p align="center">
   <img src="assets/dashboards/gpu-tenancy-nvidia.png" width="900"
-       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 drifts between 22% and 71% utilisation over five minutes, drawing 240 W at 44 °C, with nvml as the live source. The per-process panel below splits that one card's memory between two pods in different namespaces — trainer-0 and inference-0 — each resolved to its pod name and container ID rather than a PID.">
+       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 sits at 100% utilisation for the whole five-minute window, drawing 503 W at 66 °C, holding 1.14 GiB of its 79.6 GiB, with nvml as the live source and no MIG instances. The per-process panel below splits that one card's memory between two pods in different namespaces — nbody-training at 592 MiB and nbody-inference at 556 MiB — each resolved to its pod name and container ID rather than a PID.">
 </p>
 <p align="center">
   <sub><em>GPU Tenancy, on a Kubernetes cluster — one <code>gpu_uuid</code>, split
@@ -165,7 +165,7 @@ that not every cluster has, and `helm install` fails rather than degrades:
 |---|---|---|
 | `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | runs the pod in group root (`runAsGroup: 0`) to read `/var/log/pods` — [read this first](docs/pod-names.md) |
 | `serviceMonitor.enabled` | Prometheus Operator discovers the DaemonSet on its own | **Requires the Prometheus Operator's CRD.** Without it `helm install` fails outright rather than degrading — deliberately, since a silently-ignored ServiceMonitor is a cluster that looks monitored and is not. Scrape with a static config or pod discovery instead |
-| `nvml.enabled` | NVIDIA GPU metrics | Requires a driver on the node — [see below](#kubernetes-gpu-nodes) |
+| `nvml.enabled` | NVIDIA GPU metrics | Requires a driver on the node — [see below](#kubernetes-nvidia-gpu-nodes) |
 
 Drop `collectors.podNames.enabled` too and the install is still valid — plain
 `helm install prickle packaging/helm/prickle-exporter -n monitoring
@@ -175,7 +175,7 @@ with pods identified by UID.
 Verified on a kubeadm cluster at 0.7.0: 220 series, 24 containers, every pod
 name resolved, all three QoS classes.
 
-### Kubernetes, GPU nodes
+### Kubernetes, NVIDIA GPU nodes
 
 The static image carries **no GPU support at all** — it is `FROM scratch` with
 one binary, so its `nvidia-smi` fallback has nothing to exec and `prickle
@@ -261,6 +261,23 @@ have a GPU needs two**, because the stock image carries no GPU support and the
 NVML image cannot start on a node without a driver — the split, and the rest of
 the detail, is in
 [packaging/kubernetes-demo/README.md](packaging/kubernetes-demo/README.md).
+
+<p align="center">
+  <img src="assets/dashboards/gpu-tenancy-amd.png" width="900"
+       alt="The same GPU Tenancy dashboard on an AMD cluster. One MI300X sits at 100% utilisation drawing 746 W at 70 °C, holding 3.49 GiB of its 192 GiB, with sysfs as the live source and no MIG instances. The per-process panel below stacks that one card's memory across three pods in three namespaces — hip-training at 1.14 GiB, hip-inference at 656 MiB and hip-batch at 400 MiB — each resolved to its pod name and container ID rather than a PID.">
+</p>
+<p align="center">
+  <sub><em>The same dashboard, an <strong>MI300X</strong> instead of an H100 —
+  three tenants on one card, read from sysfs and DRM <code>fdinfo</code> with no
+  vendor branch in the query.</em></sub>
+</p>
+
+Nothing in that dashboard is vendor-specific: it is the same JSON against the
+same metric names, and the only visible difference is `Live source`, which reads
+`nvml` above and `sysfs` here because the AMD path spawns no subprocess to have
+a source of. Per-process attribution on AMD needs one thing NVIDIA does not —
+see [`collectors.appArmorUnconfined`](packaging/helm/prickle-exporter/values.yaml),
+on by default, without which that bottom panel comes back empty and silent.
 
 ## Pod names
 
