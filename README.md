@@ -23,15 +23,14 @@
 ## Contents
 
 - [What it is](#what-it-is)
-- [Quick start](#quick-start)
 - [Deploying](#deploying)
   - [systemd](#standalone-with-systemd)
   - Kubernetes
     - [Generic](#kubernetes-any-node) — starts on every node
-    - [GPU nodes](#kubernetes-gpu-nodes) — a second, node-selected install
+    - [NVIDIA GPU nodes](#kubernetes-nvidia-gpu-nodes) — a second, node-selected install
   - [container](#container-directly)
 - [Try it: Prometheus and Grafana](#try-it-prometheus-and-grafana) — [Docker Compose](#with-docker-compose) · [Kubernetes](#on-kubernetes)
-- [Pod names, and what they cost](#pod-names-and-what-they-cost)
+- [Pod names](#pod-names)
 - [Configuration](#configuration)
 - [Documentation](#documentation)
 - [Status](#status)
@@ -50,6 +49,15 @@ different label conventions. `prickle` uses one closed set of identity labels
 across all three layers, so a GPU series joins to a container series joins to a
 node series without relabeling.
 
+<p align="center">
+  <img src="assets/dashboards/gpu-tenancy-nvidia.png" width="900"
+       alt="The GPU Tenancy dashboard on a Kubernetes cluster. One H100 drifts between 22% and 71% utilisation across the five-minute window, drawing 240 W at 44 °C, holding 3.08 GiB of its 79.6 GiB, with nvml as the live source and no MIG instances. The per-process panel below splits that one card's memory between two pods in different namespaces — trainer-0 at 1.87 GiB and inference-0 at 1.19 GiB — each resolved to its pod name and container ID rather than a PID.">
+</p>
+<p align="center">
+  <sub><em>GPU Tenancy, on a Kubernetes cluster — one <code>gpu_uuid</code>, split
+  between two pods, with no relabeling.</em></sub>
+</p>
+
 Three properties are non-negotiable, and they are why the code looks the way it
 does:
 
@@ -66,49 +74,9 @@ does:
   last completed render.
 
 The full contract is [SPEC.md](SPEC.md). It is frozen: code follows the spec, and
-changing a decision means editing SPEC.md first, in its own commit.
-
-## Quick start
-
-Requires Go 1.26. There is nothing to fetch — the module has no dependencies.
-
-```sh
-git clone https://github.com/starkdrift/prickle-exporter
-cd prickle-exporter
-CGO_ENABLED=0 go build -o prickle ./cmd/prickle
-./prickle
-```
-
-Then scrape it:
-
-```sh
-curl -s localhost:10047/metrics | head
-```
-
-Port **10047** is fixed by [SPEC.md §Identity](SPEC.md#identity). `-web.listen-address`
-exists for when something else on your workstation already holds it — don't
-change it in anything that ships.
-
-Stamp a version into the binary with:
-
-```sh
-go build -ldflags "-X main.version=$(git describe --tags --always)" -o prickle ./cmd/prickle
-```
-
-### Working from source
-
-[scripts/dev-run.sh](scripts/dev-run.sh) wraps the common loops with
-dev-friendly defaults — debug logging, a 2s sample interval, no root needed:
-
-```sh
-./scripts/dev-run.sh              # serve on :10047 until Ctrl-C
-./scripts/dev-run.sh fixture      # same, but read a captured fixture tree
-./scripts/dev-run.sh diagnose     # what this host can and cannot be read from
-./scripts/dev-run.sh scrape       # start, scrape once, print, promtool, stop
-```
-
-See [scripts/README.md](scripts/README.md) for the details, including why
-`fixture` mode still reports *your* filesystems.
+changing a decision means editing SPEC.md first, in its own commit. Building it
+yourself, running it against a fixture tree, and the pre-commit gate are in
+[docs/development.md](docs/development.md).
 
 ## Deploying
 
@@ -166,9 +134,9 @@ that not every cluster has, and `helm install` fails rather than degrades:
 
 | Flag | What it buys | What it costs |
 |---|---|---|
-| `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | runs the pod in group root (`runAsGroup: 0`) to read `/var/log/pods` — [read this first](#pod-names-and-what-they-cost) |
+| `collectors.podNames.enabled` | `pod_name="checkout-7d9f"` instead of only `pod="537209ed-…"`, plus a populated `namespace` | runs the pod in group root (`runAsGroup: 0`) to read `/var/log/pods` — [read this first](docs/pod-names.md) |
 | `serviceMonitor.enabled` | Prometheus Operator discovers the DaemonSet on its own | **Requires the Prometheus Operator's CRD.** Without it `helm install` fails outright rather than degrading — deliberately, since a silently-ignored ServiceMonitor is a cluster that looks monitored and is not. Scrape with a static config or pod discovery instead |
-| `nvml.enabled` | NVIDIA GPU metrics | Requires a driver on the node — [see below](#kubernetes-gpu-nodes) |
+| `nvml.enabled` | NVIDIA GPU metrics | Requires a driver on the node — [see below](#kubernetes-nvidia-gpu-nodes) |
 
 Drop `collectors.podNames.enabled` too and the install is still valid — plain
 `helm install prickle packaging/helm/prickle-exporter -n monitoring
@@ -178,7 +146,7 @@ with pods identified by UID.
 Verified on a kubeadm cluster at 0.7.0: 220 series, 24 containers, every pod
 name resolved, all three QoS classes.
 
-### Kubernetes, GPU nodes
+### Kubernetes, NVIDIA GPU nodes
 
 The static image carries **no GPU support at all** — it is `FROM scratch` with
 one binary, so its `nvidia-smi` fallback has nothing to exec and `prickle
@@ -247,83 +215,55 @@ contains api` narrow to both.
 It is a demonstration, not a deployment — Grafana runs with anonymous admin so
 there is no password step. Do not put it on a network you do not own.
 
-## Pod names, and what they cost
+### On Kubernetes
 
-By default a container in a pod is identified by the pod's **UID**, not its
-name:
-
-```
-prickle_container_info{pod="537209ed-f2d7-423a-8e0a-ec05d6280092", pod_name="", ...}
-```
-
-That is not a limitation of the exporter so much as of where it looks. The
-cgroup tree carries a pod's UID and never its name — the kernel only ever sees
-the UID. Most people want the name, and `-collector.container.pod-names` gets
-it:
-
-```
-prickle_container_info{pod="537209ed-…", pod_name="web-frontend", namespace="default", ...}
-```
-
-It works by listing `/var/log/pods/<namespace>_<pod>_<uid>/`, which the
-**kubelet** creates on every CRI runtime. One directory listing, no API call,
-no second exporter, and nothing inside those directories is read — the names
-*are* the directory names, so workload log content is never opened.
-
-**The cost, stated plainly — and it differs by how you run it.**
-`/var/log/pods` is `root:root 0750`, so something has to satisfy that mode.
-
-On **Kubernetes** the chart runs the pod as uid 65532 with `runAsGroup: 0`, and
-the directory's *group* bits are the entire grant. It costs group-root
-membership: the exporter can read files that are group-readable and owned by
-group root, and nothing else. It adds **no capability**, because a capability
-added to a non-root uid is unusable — Kubernetes puts it in the bounding set
-only, leaving `CapPrm`, `CapEff` and `CapAmb` all zero. The chart asked for
-`CAP_DAC_READ_SEARCH` until 0.8.0 and never once used it.
-
-On **systemd** the drop-in below sets `AmbientCapabilities=CAP_DAC_READ_SEARCH`,
-which does work — systemd sets the ambient set, so the non-root `DynamicUser`
-really holds the capability. That is the more expensive of the two: it bypasses
-file-read and directory-search checks **everywhere on the host**, and in the
-same test that proved it reads `/var/log/pods` it also read `/etc/shadow`.
-
-So the decision is genuinely yours, and it is not obvious:
-
-| | Default | `pod-names` on Kubernetes | `pod-names` under systemd |
-|---|---|---|---|
-| Pod identified by | UID | name and namespace | name and namespace |
-| Capabilities | none | none | `CAP_DAC_READ_SEARCH` |
-| Extra reach | none | files readable by group root | **any file on the host** |
-| Container metrics | all of them | all of them | all of them |
-
-Both routes assume `/var/log/pods` is `0750` with group root, which is what
-these hosts ship. A node that ships it `0700` leaves running as uid 0 as the
-only way, and on such a node the group-root route silently yields no names.
-
-**Nothing else changes.** Every container is reported either way, with every
-metric; only the labels differ. If you leave it off and later want names in
-dashboards, a join against `kube_pod_info` from kube-state-metrics gets you
-there without granting anything.
-
-Enabling it:
+The same four dashboards on a cluster — prickle as a DaemonSet, Prometheus
+finding it by pod discovery, and Grafana with everything provisioned:
 
 ```sh
-# Kubernetes
-helm install prickle packaging/helm/prickle-exporter -n monitoring \
+helm install prickle packaging/helm/prickle-exporter -n prickle-demo --create-namespace \
   --set collectors.podNames.enabled=true
-
-# systemd — a drop-in, so the shipped unit stays unprivileged
-systemctl edit prickle
-#   [Service]
-#   ExecStart=
-#   ExecStart=/usr/local/bin/prickle -collector.container.pod-names
-#   AmbientCapabilities=CAP_DAC_READ_SEARCH
-#   CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+kubectl apply -f packaging/kubernetes-demo/
+kubectl -n prickle-demo port-forward svc/grafana 3000:3000
 ```
 
-If you enable it without granting the privilege, nothing breaks: the exporter
-logs `open /var/log/pods: permission denied` once per pass, reports every
-container as usual, and leaves `pod_name` empty.
+That single release covers a uniform cluster. **A cluster where only some nodes
+have a GPU needs two**, because the stock image carries no GPU support and the
+NVML image cannot start on a node without a driver — the split, and the rest of
+the detail, is in
+[packaging/kubernetes-demo/README.md](packaging/kubernetes-demo/README.md).
+
+<p align="center">
+  <img src="assets/dashboards/gpu-tenancy-amd.png" width="900"
+       alt="The same GPU Tenancy dashboard on an AMD cluster. One MI300X sits at 100% utilisation drawing 746 W at 70 °C, holding 3.49 GiB of its 192 GiB, with sysfs as the live source and no MIG instances. The per-process panel below stacks that one card's memory across three pods in three namespaces — hip-training at 1.14 GiB, hip-inference at 656 MiB and hip-batch at 400 MiB — each resolved to its pod name and container ID rather than a PID.">
+</p>
+<p align="center">
+  <sub><em>The same dashboard, an <strong>MI300X</strong> instead of an H100 —
+  three tenants on one card, read from sysfs and DRM <code>fdinfo</code> with no
+  vendor branch in the query.</em></sub>
+</p>
+
+Nothing in that dashboard is vendor-specific: it is the same JSON against the
+same metric names, and the only visible difference is `Live source`, which reads
+`nvml` above and `sysfs` here because the AMD path spawns no subprocess to have
+a source of. Per-process attribution on AMD needs one thing NVIDIA does not —
+see [`collectors.appArmorUnconfined`](packaging/helm/prickle-exporter/values.yaml),
+on by default, without which that bottom panel comes back empty and silent.
+
+## Pod names
+
+By default a container in a pod is identified by the pod's **UID**, because the
+cgroup tree carries the UID and never the name — the kernel only ever sees the
+UID. `-collector.container.pod-names` gets you `pod_name="web-frontend"` and a
+populated `namespace` by listing `/var/log/pods`, which the kubelet creates on
+every CRI runtime: one directory listing, no API call, and no log content ever
+opened. It costs something, and **what it costs differs by how you run it** —
+group-root membership on Kubernetes, a host-wide `CAP_DAC_READ_SEARCH` under
+systemd. Every container is reported either way with every metric; only the
+labels differ.
+
+[docs/pod-names.md](docs/pod-names.md) has the comparison table, both enabling
+recipes, and what happens if you enable it without granting anything.
 
 ## Configuration
 
@@ -364,6 +304,7 @@ first scrape.
 |---|---|
 | [docs/metrics.md](docs/metrics.md) | Every metric family, and `prickle diagnose` |
 | [packaging/README.md](packaging/README.md) | systemd, images, Helm, dashboards, CI trust model |
+| [docs/pod-names.md](docs/pod-names.md) | Resolving pod UIDs to names, and what that grants |
 | [docs/verification.md](docs/verification.md) | Where this has been run and what it found |
 | [docs/development.md](docs/development.md) | Building, testing, releasing |
 | [SPEC.md](SPEC.md) | The frozen contract — every decision and its reason |

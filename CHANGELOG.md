@@ -46,6 +46,16 @@ what to do about it, which no commit-log generator writes.
   counting the AMD `_info` series directly would have made an eight-GPU box
   report eight where its NVIDIA neighbour reported one.
 
+- **GPU Tenancy's utilization panel made a saturated card look half-idle.** The
+  y-axis autoscaled to the data, so a single GPU pinned at 100% drew a flat line
+  at the middle of a 0–200% axis — the one reading a capacity dashboard has to
+  get right at a glance. Utilization is a ratio with a real ceiling, so that
+  panel is now pinned to 0–100%.
+
+  Only that panel. A rate of CPU-seconds has no such ceiling — it passes 100% on
+  any multi-core host — so the axis stays opt-in in `scripts/make-dashboards.py`
+  rather than applying to everything carrying a `percent` unit.
+
 ## [0.8.0] — 2026-08-04
 
 The AMD release, and the one that makes "which pod is holding this card"

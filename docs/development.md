@@ -84,9 +84,58 @@ internal/exposition/  hand-written Prometheus text format
 internal/fsroot/      the /proc, /sys, cgroup prefixes every path goes through
 internal/sampler/     poll loop, buffer swap, self-metrics, http.Handler
 ci/check.sh           the pre-commit gate
-scripts/              dev-run.sh, capture-fixtures.sh
-assets/               logo and mark, light and dark
+scripts/              dev-run.sh, capture-fixtures.sh, capture-dashboard.sh
+assets/               logo and mark, light and dark; dashboard captures
 ```
+
+
+## Building from source
+
+Requires Go 1.26. There is nothing to fetch — the module has no dependencies.
+
+```sh
+git clone https://github.com/starkdrift/prickle-exporter
+cd prickle-exporter
+CGO_ENABLED=0 go build -o prickle ./cmd/prickle
+./prickle
+```
+
+Then scrape it:
+
+```sh
+curl -s localhost:10047/metrics | head
+```
+
+Port **10047** is fixed by [SPEC.md §Identity](../SPEC.md#identity).
+`-web.listen-address` exists for when something else on your workstation
+already holds it — don't change it in anything that ships.
+
+Stamp a version into the binary with:
+
+```sh
+go build -ldflags "-X main.version=$(git describe --tags --always)" -o prickle ./cmd/prickle
+```
+
+There is a second build, `-tags nvml`, which is cgo and dynamically linked so
+it can `dlopen` the driver's NVML library. [SPEC.md §Distribution](../SPEC.md#distribution)
+has the reasoning; `ci/check.sh` compiles and vets it, so a change that breaks
+it fails the gate rather than the release.
+
+
+## Running from source
+
+[scripts/dev-run.sh](../scripts/dev-run.sh) wraps the common loops with
+dev-friendly defaults — debug logging, a 2s sample interval, no root needed:
+
+```sh
+./scripts/dev-run.sh              # serve on :10047 until Ctrl-C
+./scripts/dev-run.sh fixture      # same, but read a captured fixture tree
+./scripts/dev-run.sh diagnose     # what this host can and cannot be read from
+./scripts/dev-run.sh scrape       # start, scrape once, print, promtool, stop
+```
+
+See [scripts/README.md](../scripts/README.md) for the details, including why
+`fixture` mode still reports *your* filesystems.
 
 
 ## Releases and versioning

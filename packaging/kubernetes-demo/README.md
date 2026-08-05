@@ -51,14 +51,56 @@ burns everything it can, so the throttling panels show real stalls.
 `pod="537209ed-f2d7-…"` into `pod_name="demo-throttled"`. It runs the container
 as uid 65532 in **group root** (`runAsGroup: 0`), which is what reads the
 kubelet's `0750 root:root` `/var/log/pods` — read
-[the README section](../../README.md#pod-names-and-what-they-cost) before
-enabling it outside a demo. It granted `CAP_DAC_READ_SEARCH` until 0.8.0, which
-was measured to do nothing at all on Kubernetes.
+[docs/pod-names.md](../../docs/pod-names.md) before enabling it outside a demo.
+It granted `CAP_DAC_READ_SEARCH` until 0.8.0, which was measured to do nothing
+at all on Kubernetes.
 
 Verified on a single-node kubeadm cluster: 26 containers, 14 pod names, three
 namespaces, and both dashboard dropdowns populating. It needs **0.7.0 or
 later** — the flag does not exist in 0.6.0 and the pod will crash-loop with
 `flag provided but not defined`.
+
+## GPU nodes
+
+The single `helm install` above is written for a **uniform** cluster. On a
+cluster where only some nodes have a GPU it leaves the GPU Tenancy dashboard
+completely empty, and neither obvious fix works on its own:
+
+- The stock image is `FROM scratch` and carries **no GPU support at all**, so a
+  release using it reports nothing about the card even on the GPU node.
+- `nvml.enabled=true` mounts the driver's `libnvidia-ml.so.1` as a hostPath with
+  `type: File`. On a node without a driver that file does not exist and the pod
+  sticks in **`ContainerCreating`** forever.
+
+So install **two releases into the same namespace**, split on the
+`nvidia.com/gpu.present` label — which the standalone NVIDIA device plugin does
+**not** set for you (it comes from the GPU Operator's NFD, so label the node by
+hand):
+
+```sh
+# non-GPU nodes. A nodeSelector cannot express "label absent"; only nodeAffinity can.
+helm install prickle packaging/helm/prickle-exporter -n prickle-demo --create-namespace \
+  --set collectors.podNames.enabled=true \
+  --set-json 'affinity={"nodeAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":{"nodeSelectorTerms":[{"matchExpressions":[{"key":"nvidia.com/gpu.present","operator":"DoesNotExist"}]}]}}}'
+
+# GPU nodes
+helm install prickle-nvml packaging/helm/prickle-exporter -n prickle-demo \
+  --set collectors.podNames.enabled=true \
+  --set collectors.perProcess=true \
+  --set nvml.enabled=true \
+  --set-string nodeSelector."nvidia\.com/gpu\.present"=true
+```
+
+Both carry `app.kubernetes.io/name=prickle-exporter`, which is what the
+Prometheus in here selects on, so both are scraped with no config change.
+
+**`30-workload.yaml` has no GPU workload** — it is two busybox pods, so the GPU
+Tenancy dashboard draws a card at idle until something loads it. The panels that
+attribute GPU memory to a pod also need `collectors.perProcess=true`, above.
+
+Verified on a two-node kubeadm 1.34 cluster (H100 80GB worker, driverless
+control plane) on 2026-08-05: every panel populated except the two MIG ones,
+which are empty because the card is not partitioned.
 
 ## Not a deployment
 

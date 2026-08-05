@@ -147,8 +147,16 @@ def pod_qualified(expr):
     return f'label_replace({joined}, "display", "$1", "display", "^/(.+)$")'
 
 
-def ts(title, exprs, gp, unit=None, desc=None, stack=False):
-    """A timeseries panel. exprs is a list of (promql, legend)."""
+def ts(title, exprs, gp, unit=None, desc=None, stack=False, axis=None):
+    """A timeseries panel. exprs is a list of (promql, legend).
+
+    axis is an optional (min, max) for the y-axis. Only worth setting where the
+    metric has a real ceiling: Grafana otherwise autoscales to the data, so a
+    pinned GPU draws a flat line at half panel height on a 0-200% axis and
+    reads as half-utilised at a glance. A rate of CPU-seconds has no such
+    ceiling — it passes 100% on any multi-core host — so this stays opt-in
+    rather than applying to every percent panel.
+    """
     p = {
         "type": "timeseries", "title": title, "gridPos": gp,
         "datasource": {"type": "prometheus", "uid": "${DS}"},
@@ -166,6 +174,8 @@ def ts(title, exprs, gp, unit=None, desc=None, stack=False):
     }
     if unit:
         p["fieldConfig"]["defaults"]["unit"] = unit
+    if axis:
+        p["fieldConfig"]["defaults"]["min"], p["fieldConfig"]["defaults"]["max"] = axis
     if desc:
         p["description"] = desc
     return p
@@ -339,7 +349,7 @@ def gpu_tenancy():
         row("Utilization", 5),
         ts("GPU utilization",
            [(gpu_qualified(f"prickle_gpu_utilization_ratio{g} * 100"), "{{gpu}}")],
-           {"h": 8, "w": 12, "x": 0, "y": 6}, unit="percent",
+           {"h": 8, "w": 12, "x": 0, "y": 6}, unit="percent", axis=(0, 100),
            desc="ABSENT, not zero, once MIG is enabled — the driver reports "
                 "[N/A] and reporting zero would fire idle-capacity alerts "
                 "across a MIG fleet. A gap here on a MIG card is correct."),

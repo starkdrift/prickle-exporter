@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Two GPU tenants in two namespaces sharing one card, for dashboard captures.
+# See scripts/README.md - "Dashboard captures".
+#
+#   kubectl create ns team-alpha; kubectl create ns team-beta
+#   kubectl -n team-alpha create configmap gpu-load-src \
+#     --from-file=gpu-load.cu=scripts/gpu-load/gpu-load.cu
+#   kubectl apply -f scripts/gpu-load/gpu-tenants.yaml
+#
+# The Job compiles gpu-load.cu onto the node's /opt/gpu-load; the two pods then
+# run it from there. Apply the Job FIRST and wait for it - a pod scheduled
+# before the binary exists fails its hostPath mount and needs recreating.
+#
+# -gencode below is sm_90 (Hopper). Change it for another card.
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gpu-load-build
+  namespace: team-alpha
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      containers:
+        - name: build
+          image: nvidia/cuda:12.6.2-devel-ubuntu24.04
+          command:
+            - bash
+            - -c
+            - |
+              set -e
+              nvcc -O2 -cudart static -gencode arch=compute_90,code=sm_90 \
+                -o /out/gpu-load /src/gpu-load.cu
+              chmod 0755 /out/gpu-load
+              ls -la /out/gpu-load
+          volumeMounts:
+            - {name: src, mountPath: /src}
+            - {name: out, mountPath: /out}
+      volumes:
+        - name: src
+          configMap: {name: gpu-load-src}
+        - name: out
+          hostPath: {path: /opt/gpu-load, type: DirectoryOrCreate}
+---
+# Tenant 1: a training-shaped tenant - busy most of the time, drifting.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: trainer-0
+  namespace: team-alpha
+spec:
+  restartPolicy: Always
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  containers:
+    - name: trainer
+      image: ubuntu:24.04
+      command: ["/opt/gpu-load/gpu-load", "1400", "45", "92", "7"]
+      env:
+        - {name: NVIDIA_VISIBLE_DEVICES, value: "all"}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility"}
+      volumeMounts:
+        - {name: bin, mountPath: /opt/gpu-load, readOnly: true}
+  volumes:
+    - name: bin
+      hostPath: {path: /opt/gpu-load, type: Directory}
+---
+# Tenant 2: an inference-shaped tenant - bursty and mostly light. Shares the
+# card without consuming an allocation, via the runtime's env-var route.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: inference-0
+  namespace: team-beta
+spec:
+  restartPolicy: Always
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  containers:
+    - name: server
+      image: ubuntu:24.04
+      command: ["/opt/gpu-load/gpu-load", "700", "6", "48", "23"]
+      env:
+        - {name: NVIDIA_VISIBLE_DEVICES, value: "all"}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility"}
+      volumeMounts:
+        - {name: bin, mountPath: /opt/gpu-load, readOnly: true}
+  volumes:
+    - name: bin
+      hostPath: {path: /opt/gpu-load, type: Directory}
