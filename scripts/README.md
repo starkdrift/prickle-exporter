@@ -4,6 +4,8 @@
 |---|---|---|
 | [dev-run.sh](dev-run.sh) | no | Start the exporter from source on your own machine. |
 | [capture-fixtures.sh](capture-fixtures.sh) | `prep` does, heavily | Dump a real host's `/proc`, `/sys`, cgroup and GPU output into a fixture tree. |
+| [capture-dashboard.sh](capture-dashboard.sh) | no | Render a running Grafana dashboard to a README-sized PNG. |
+| [gpu-load/](gpu-load/) | runs pods on a cluster | Two GPU tenants at a *target* utilisation, so a capture is not a flat line. |
 
 The pre-commit gate is not here — it is [ci/check.sh](../ci/check.sh).
 
@@ -292,3 +294,93 @@ Two things this rental taught, both now handled by the script:
   command line and kills the session. Use `pkill -x <name>`.
 
 Run `check` before you capture, and read the banner before you destroy the host.
+
+## Dashboard captures — capture-dashboard.sh
+
+The README's hero image is the GPU Tenancy dashboard, because the claim it
+makes — one `gpu_uuid` joins to a pod without relabeling — is otherwise
+something a reader takes on faith. Re-capturing it means standing up a cluster
+that has something worth photographing, and that is most of the work; the
+screenshot itself is one command.
+
+```sh
+kubectl -n prickle-demo port-forward svc/grafana 3000:3000 &
+scripts/capture-dashboard.sh http://localhost:3000 prickle-gpu-tenancy \
+  assets/dashboards/gpu-tenancy-nvidia.png
+```
+
+The script handles `kiosk` (drops Grafana's nav, keeps the `contains`
+textboxes), `theme=dark` on the URL rather than the per-user preference, the
+tall-render-then-crop that a viewport-sized headless screenshot needs, and
+palette-quantising to about 60 KB. Its header documents the options.
+
+### What has to be true before you press the button
+
+**A GPU node, and containers on it.** The compose quickstart on a laptop
+photographs an empty dashboard. What was used for the shipped capture was a
+two-node kubeadm cluster: a driverless control plane and one H100 worker.
+
+**Two prickle releases, not one.** On a mixed cluster the stock image reports no
+GPU at all and the NVML image cannot start on a driverless node, so a single
+release leaves GPU Tenancy empty — see
+[packaging/kubernetes-demo/README.md](../packaging/kubernetes-demo/README.md).
+
+**`collectors.podNames.enabled=true`**, or every pod is a bare UID and the
+image stops making its argument.
+
+**`collectors.perProcess=true`**, or the two per-process panels are empty.
+
+### The GPU workload is the part that surprises people
+
+`nbody -benchmark`, the obvious stand-in, **cannot produce anything but a flat
+line at 100%**. Measured on an H100: 2048 bodies and 524288 bodies both report
+100%, because NVML's utilisation is the fraction of time *any* kernel was
+resident, not how much of the card is busy — and nbody queues kernels
+back-to-back. Gating it from outside does not work either: under `SIGSTOP` the
+already-queued work keeps running and the card stays at 100%.
+
+[gpu-load/](gpu-load/) exists for that reason. It holds a *target* utilisation
+by leaving the card genuinely idle, alternating at ~120 ms — which has to stay
+well under NVML's ~1 s sampling window, or each sample lands inside one busy or
+idle phase and the series becomes a square wave between 0 and 100 instead of a
+curve. Duty follows a bounded random walk so it drifts like a real tenant.
+
+```sh
+kubectl create ns team-alpha; kubectl create ns team-beta
+kubectl -n team-alpha create configmap gpu-load-src \
+  --from-file=gpu-load.cu=scripts/gpu-load/gpu-load.cu
+kubectl apply -f scripts/gpu-load/gpu-tenants.yaml
+```
+
+A Job compiles the source onto the node with a CUDA devel image, and two pods
+run it from there with different profiles — a training-shaped tenant at 45-92%
+and a bursty inference-shaped one at 6-48%. **Apply and wait for the Job before
+the pods**: a pod scheduled before the binary exists fails its hostPath mount
+and has to be recreated. The `-gencode` line is `sm_90`; change it for another
+card.
+
+Two tenants rather than one is deliberate. The second shares the card through
+`NVIDIA_VISIBLE_DEVICES` instead of `resources.limits."nvidia.com/gpu"`, so it
+does not consume the only allocation — and "one card, two pods, two namespaces"
+is the whole point of the dashboard.
+
+### Verify the panels before you capture, not after
+
+Run every panel's `expr` as a **`query_range`**, not an instant query. A
+one-to-many join failure during a DaemonSet rollout breaks a panel for the
+whole dashboard window while an instant query at any quiet moment looks fine,
+and a rollout is exactly what just happened. Substitute the `$*_search`
+variables with the empty string, and assert both no error and a plausible
+series count.
+
+Expect the two MIG panels to be **empty** on an unpartitioned card. That is
+correct, not a failed capture. Everything else should have series.
+
+### Framing
+
+Let the workload run past the window you intend to show — `--from now-5m` with
+four minutes of history captures the ramp, which reads as a broken exporter.
+Leave the `contains` boxes empty: empty means everything, which is the state a
+new reader sees. Keep the result under a few hundred KB, and re-run the capture
+if the dashboard changes shape — the image is a claim about what the dashboard
+looks like today.
