@@ -408,7 +408,12 @@ what would close it.
    sweep passed 14 of 14 base images on 2026-08-04 and that result is not in
    the repository. A frozen contract is a promise, and the record of what was
    actually run on real hardware is what makes it credible to anyone who did
-   not run it.
+   not run it. *(Written and open as PR #19; this item closes when it merges.)*
+
+Items 1 and 2 need hardware and 3 needs a decision, so the honest reading is
+that **the freeze is gated on two captures, not on a burst of work.** Nothing
+on this list is a large change; each is a thing nobody has been able to observe
+yet, and 4 was simply owed.
 
 **Intel is not on this list and is not a blocker** — §Collectors places it out
 of scope for want of a capture host, and a freeze does not become less
