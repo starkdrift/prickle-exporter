@@ -120,5 +120,29 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 # Without it the exporter still reports every container; pods are identified by
 # UID rather than by name.
 
+# --- Per-process GPU attribution (optional) ---------------------------------
+# -collector.gpu.per-process names the process holding a card, which means
+# reading another process's /proc entry: its exe link under NVML, and under the
+# nvidia-smi fallback the same. That is a PTRACE_MODE_READ operation, and Yama
+# ptrace_scope=1 — the default on Debian and Ubuntu — allows it only against
+# this process's own descendants. So the flag needs one capability:
+#
+#   systemctl edit prickle-nvml
+#   [Service]
+#   ExecStart=
+#   ExecStart=/usr/local/bin/prickle-nvml -collector.gpu.per-process
+#   AmbientCapabilities=CAP_SYS_PTRACE
+#   CapabilityBoundingSet=CAP_SYS_PTRACE
+#
+# DynamicUser stays as it is: the kernel checks the capability here, not the
+# uid, so this does not need root. Measured on the AMD path, which reads far
+# more of /proc than NVML does; the NVIDIA side of it is the same ptrace gate
+# the Helm chart has always had to open.
+#
+# CAP_SYS_PTRACE is still worth understanding before granting: it permits
+# reading any process's memory, not merely its name. Without it the per-process
+# family is **absent** rather than wrong, and absent silently — no error, no log
+# line — so check for the capability before suspecting the exporter.
+
 [Install]
 WantedBy=multi-user.target

@@ -186,12 +186,17 @@ Four things worth knowing:
   Joining it to `prickle_container_info` gives the pod, the namespace and the
   image — which is how "who is using this card" gets answered on Kubernetes.
 
-  On Kubernetes this needs **`CAP_SYS_PTRACE`** as well as the flag. Naming a
-  process means reading its `exe` link, a `PTRACE_MODE_READ` operation, and
-  Yama `ptrace_scope=1` — the default on Debian and Ubuntu — permits that only
-  for a process's own descendants. Without it every GPU process resolves to an
-  empty command and is dropped, so the family is absent with nothing logged.
-  The chart adds the capability when `collectors.perProcess` is set.
+  This needs **`CAP_SYS_PTRACE`** as well as the flag, and needs it on every
+  deployment route rather than only on Kubernetes. Naming a process means
+  reading its `exe` link — and on AMD, reading every one of its `fdinfo` files —
+  both `PTRACE_MODE_READ` operations, and Yama `ptrace_scope=1`, the default on
+  Debian and Ubuntu, permits those only for a process's own descendants. Without
+  it every GPU process resolves to an empty command and is dropped, so the
+  family is absent with nothing logged. The chart adds the capability when
+  `collectors.perProcess` is set; under systemd it is a drop-in
+  ([packaging/README.md](../packaging/README.md)), and it does **not** require
+  root — the kernel checks the capability, not the uid, so `DynamicUser` keeps
+  its unprivileged account and adds this one capability.
 
   It also needs the pod to be **AppArmor-unconfined**, and this is a second,
   separate gate that fails the same silent way. containerd applies

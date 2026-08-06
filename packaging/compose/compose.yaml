@@ -23,7 +23,17 @@ services:
     # The exporter reads the host it runs on, so the host is bind-mounted
     # read-only and -path.rootfs points at it. Without this it would faithfully
     # report the metrics of its own container, which is not what anyone wants.
-    command: ["-path.rootfs=/host", "-collector.container.docker-socket=/var/run/docker.sock"]
+    #
+    # -node is set for the same reason the README tells you to set it on
+    # Kubernetes: a container's hostname is not its host's. On this bridge
+    # network it is the container ID, so every `docker compose up
+    # --force-recreate` would relabel every series and break continuity in the
+    # graphs the quickstart exists to show. Set PRICKLE_NODE to the machine's
+    # real name if you keep the data.
+    command:
+      - -path.rootfs=/host
+      - -node=${PRICKLE_NODE:-prickle-quickstart}
+      - -collector.container.docker-socket=/var/run/docker.sock
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
