@@ -360,6 +360,7 @@ Phase 2 containers
 Phase 3 GPU
   this binary: prickle (static) — nvidia-smi only; a static binary cannot dlopen NVML
   live source: smi
+    declined: nvml: source unavailable: this binary was built without the nvml tag; use the prickle-nvml artifact for the NVML path
   GPUs: 1, MIG instances: 2
   per-process attribution: off (-collector.gpu.per-process turns it on).
   AMD: no amdgpu card on this host. The collector is implemented,

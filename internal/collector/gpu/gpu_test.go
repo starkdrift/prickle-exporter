@@ -479,6 +479,74 @@ func TestNoGPUIsNotAnError(t *testing.T) {
 	}
 }
 
+// stubSource is an nvidiaSource that loads and reads nothing. Selection order
+// is the thing under test in what follows, and it needs no card, no driver
+// library and no subprocess to exercise.
+type stubSource struct{ name string }
+
+func (s stubSource) Name() string                         { return s.name }
+func (stubSource) Read(context.Context) (snapshot, error) { return snapshot{}, nil }
+func (stubSource) Close() error                           { return nil }
+
+// TestADeclinedSourceIsRememberedAfterOneLoads is the case `prickle diagnose`
+// gets asked about: a source did load, and it was not the preferred one.
+//
+// SPEC.md §Collectors requires diagnose to say why NVML failed to load, and
+// until 2026-08-06 selectSource discarded that reason the instant any candidate
+// succeeded — so the reason survived only when *nothing* loaded, which is the
+// case where an operator has no metrics and is already looking. The common
+// case is the opposite: a slim container with no driver libraries falls back to
+// nvidia-smi and works, and `live source: smi` alone reads as a choice rather
+// than a fallback. Found on an AMD host running the nvml build, where NVML
+// cannot load and a stub nvidia-smi loads instead.
+func TestADeclinedSourceIsRememberedAfterOneLoads(t *testing.T) {
+	declined := fmt.Errorf("%w: dlopen libnvidia-ml.so.1: no such file", ErrUnavailable)
+
+	opts := Options{Roots: hermeticRoots(t)}
+	opts.nvidiaCandidates = func(Options) []sourceCandidate {
+		return []sourceCandidate{
+			{SourceNVML, func(Options) (nvidiaSource, error) { return nil, declined }},
+			{SourceSMI, func(Options) (nvidiaSource, error) { return stubSource{SourceSMI}, nil }},
+		}
+	}
+	c := New(opts)
+
+	if got := c.SourceName(); got != SourceSMI {
+		t.Fatalf("live source = %q, want %q — the fallback should have loaded", got, SourceSMI)
+	}
+	if c.SelectionError() != nil {
+		t.Errorf("a source loaded, so selection did not fail: %v", c.SelectionError())
+	}
+
+	got := c.DeclinedSources()
+	if len(got) != 1 {
+		t.Fatalf("DeclinedSources() has %d entries, want 1 — diagnose cannot say why NVML declined", len(got))
+	}
+	if !strings.Contains(got[0].Error(), "dlopen") {
+		t.Errorf("the declined reason should carry the underlying failure, got: %v", got[0])
+	}
+	if !strings.Contains(got[0].Error(), SourceNVML) {
+		t.Errorf("the declined reason should name the source that refused, got: %v", got[0])
+	}
+}
+
+// TestTheFirstChoiceLoadingDeclinesNothing is the other half: no noise in the
+// ordinary case, so a `declined:` line in diagnose always means something.
+func TestTheFirstChoiceLoadingDeclinesNothing(t *testing.T) {
+	opts := Options{Roots: hermeticRoots(t)}
+	opts.nvidiaCandidates = func(Options) []sourceCandidate {
+		return []sourceCandidate{
+			{SourceNVML, func(Options) (nvidiaSource, error) { return stubSource{SourceNVML}, nil }},
+			{SourceSMI, func(Options) (nvidiaSource, error) { return stubSource{SourceSMI}, nil }},
+		}
+	}
+	c := New(opts)
+
+	if n := len(c.DeclinedSources()); n != 0 {
+		t.Errorf("the preferred source loaded, so nothing declined; got %d entries", n)
+	}
+}
+
 // TestUnknownSourceIsRejected checks the flag's validation.
 func TestUnknownSourceIsRejected(t *testing.T) {
 	c := New(Options{NVIDIASource: "cuda"})

@@ -69,6 +69,39 @@ what to do about it, which no commit-log generator writes.
   sweep: the diagnostic line is documentation, and documentation is only tested
   by following it.
 
+- **`prickle diagnose` would not say why NVML declined whenever the fallback
+  worked.** SPEC.md §Collectors requires it to state which source is live and,
+  when NVML failed to load, why. It did — but only when *nothing* loaded. The
+  reason was discarded the moment any candidate succeeded, so the answer
+  survived only in the case where the operator has no GPU metrics at all and is
+  already investigating.
+
+  The case where the question actually gets asked is the opposite one, and it is
+  the documented common deployment: a slim container without the driver
+  libraries falls back to `nvidia-smi` and works. `live source: smi` on its own
+  reads as a choice rather than a fallback, so nobody learns that the preferred
+  path was unavailable or that mounting one library file would restore it.
+
+  Diagnose now prints a `declined:` line per refused source, and the two
+  artifacts say different things — which is the point:
+
+  ```
+  live source: smi
+    declined: nvml: source unavailable: dlopen libnvidia-ml.so.1: cannot open shared object file
+  ```
+
+  from `prickle-nvml`, a statement about the **host**; and
+
+  ```
+    declined: nvml: source unavailable: this binary was built without the nvml tag; use the prickle-nvml artifact for the NVML path
+  ```
+
+  from the static `prickle`, a statement about the **artifact**. An operator
+  deciding whether to install the other binary or mount a library needs to tell
+  those apart. Found on an AMD host running the nvml build, where NVML cannot
+  load and `nvidia-smi` loads instead — no NVIDIA hardware required to reproduce
+  it, which is why it survived every NVIDIA test.
+
 ## [0.8.0] — 2026-08-04
 
 The AMD release, and the one that makes "which pod is holding this card"

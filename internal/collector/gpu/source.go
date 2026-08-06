@@ -31,22 +31,32 @@ var ErrUnavailable = errors.New("source unavailable")
 //
 // A returned nil source with a nil error is a host with no NVIDIA GPU at all.
 // That is not a failure; the collector emits nothing.
-func selectSource(opts Options) (nvidiaSource, error) {
+//
+// The second return is the candidates that declined *before* the live one, and
+// it is returned on success as well as on failure. It used to be discarded the
+// moment something loaded, which left `prickle diagnose` unable to answer the
+// question SPEC.md §Collectors requires it to answer — "when NVML failed to
+// load, why" — in the one case where an operator actually asks it. A host where
+// NVML fails and nvidia-smi succeeds is the documented common case, not an edge
+// one: it is every slim container without the driver libraries. Reported as
+// `live source: smi` with no reason given, that is indistinguishable from a
+// deliberate choice.
+func selectSource(opts Options) (nvidiaSource, []error, error) {
 	var attempted []error
 
 	for _, candidate := range candidates(opts) {
 		source, err := candidate.build(opts)
 		if err == nil {
-			return source, nil
+			return source, attempted, nil
 		}
 		attempted = append(attempted, fmt.Errorf("%s: %w", candidate.name, err))
 	}
 
 	if len(attempted) == 0 {
-		return nil, fmt.Errorf("unknown NVIDIA source %q; want %s, %s or %s",
+		return nil, nil, fmt.Errorf("unknown NVIDIA source %q; want %s, %s or %s",
 			opts.NVIDIASource, SourceAuto, SourceNVML, SourceSMI)
 	}
-	return nil, errors.Join(attempted...)
+	return nil, attempted, errors.Join(attempted...)
 }
 
 // sourceCandidate is one implementation and how to construct it.
@@ -86,3 +96,16 @@ func (c *Collector) SourceName() string {
 
 // SelectionError reports why no source loaded. Nil when one did.
 func (c *Collector) SelectionError() error { return c.selectErr }
+
+// DeclinedSources reports the implementations that were tried and refused
+// before the live one, in the order they were tried. Empty when the first
+// choice loaded, and empty on a build or a host where there was nothing else to
+// try.
+//
+// For `prickle diagnose`: a live source says which path is serving metrics, and
+// this says what the preferred path had to say for itself. On a static build
+// that is "nvml: source unavailable: this binary is not built with NVML", which
+// is a statement about the artifact; on the nvml build it is the dlopen error,
+// which is a statement about the host. An operator deciding whether to install
+// the other artifact needs to tell those apart.
+func (c *Collector) DeclinedSources() []error { return c.declined }

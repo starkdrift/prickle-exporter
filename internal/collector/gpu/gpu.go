@@ -218,6 +218,11 @@ type Collector struct {
 	// selectErr is why no source loaded, kept for `prickle diagnose` to
 	// explain rather than leaving an empty GPU section.
 	selectErr error
+
+	// declined is why the sources ahead of the live one refused, kept for the
+	// same reason and for the more common case: something did load, and the
+	// operator wants to know why it was not the preferred one.
+	declined []error
 }
 
 // New returns a GPU collector with a source already selected.
@@ -230,7 +235,7 @@ func New(opts Options) *Collector {
 		opts.NVIDIASource = SourceAuto
 	}
 	c := &Collector{opts: opts, amd: &amdSource{roots: opts.Roots}}
-	c.source, c.selectErr = selectSource(opts)
+	c.source, c.declined, c.selectErr = selectSource(opts)
 	return c
 }
 
