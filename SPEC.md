@@ -14,7 +14,7 @@ one, the change happens in this file first, in its own commit.
 | Binary and CLI command | `prickle` |
 | Diagnostic subcommand | `prickle diagnose` |
 | Metric prefix | `prickle_` — always the full word |
-| Listen address | `:10047` — next free slot on the Prometheus default-port wiki; register it there as soon as the repo is public |
+| Listen address | `:10047` — **registered** on the Prometheus default-port wiki against this repository; the repo is public, so the number is now a public claim and cannot drift |
 | License | Apache-2.0 — `LICENSE` file at repo root, SPDX header `Apache-2.0` in every source file |
 
 The names above are the only ones used anywhere in the tree — code, comments,
@@ -135,7 +135,7 @@ mandatory from Phase 4.
 - **Host (Phase 1):** `/proc/stat`, `meminfo`, `diskstats`, `net/dev`,
   `loadavg`, `pressure/{cpu,memory,io}`, `mounts` + `Statfs` (behind an
   interface — not fixture-able as a file). Aggregate CPU time is always
-  exposed; per-core series are opt-in behind `--collector.cpu.per-core`, as a
+  exposed; per-core series are opt-in behind `-collector.cpu.per-core`, as a
   separate family, so default cardinality does not scale with core count on
   large GPU nodes. `/proc/loadavg`'s fourth and fifth fields are not exposed:
   the fifth is a PID.
@@ -249,7 +249,10 @@ mandatory from Phase 4.
   Selection is automatic: attempt the NVML load once at startup, fall back
   silently, and record the active source on an `_info` gauge.
   `prickle diagnose` states which source is live and, when NVML failed to load,
-  why. A `--nvidia-source={auto,nvml,smi}` flag forces one path for debugging.
+  why. `-collector.gpu.nvidia-source={auto,nvml,smi}` forces one path for
+  debugging — this file called it `--nvidia-source` until 2026-08-06, a flag
+  that has never existed, which is worth a note because §Versioning makes flag
+  names one of the two surfaces SemVer governs here.
   Consumer and MIG-partitioned datacenter cards are both supported; MIG
   instances carry `mig_uuid`.
 
@@ -336,9 +339,22 @@ version** — there is no VERSION file and no version constant to forget to bump
 The build injects it with `-ldflags "-X main.version=..."`, and it is exposed to
 operators on `prickle_build_info`.
 
-Pre-1.0, the minor tracks the roadmap phase, so the version states what is
+Pre-1.0 the minor *tracked* the roadmap phase, so the version stated what was
 implemented: `0.1.0` host, `0.2.0` containers, `0.3.0` GPU, `0.4.0` caps and
-timeouts, `0.5.0` distribution. Until 1.0.0 a minor may break the contract.
+timeouts, `0.5.0` distribution. **All five phases had shipped by 2026-08-01,
+and no minor since has corresponded to a phase** — `0.6.0` added
+`-metrics.preset`, `0.7.0` pod-name resolution and the Kubernetes demo, `0.8.0`
+the AMD collector. The roadmap ran out before the work did. From `0.6.0` on a
+minor means exactly what the table above says and nothing more, which is the
+rule the project has in fact been following; the phase numbers survive as
+labels on the original design order, not as a version scheme. Until 1.0.0 a
+minor may still break the contract.
+
+`0.8.0` is also why a phase number is a poor progress report. AMD has been
+assigned to Phase 3 since this file first listed it, and it shipped three
+minors *after* Phase 5 — it was waiting on a capture host, not on the phases in
+front of it. A phase records the order the work was designed in. It has never
+reliably recorded the order the work lands in.
 
 **`1.0.0` means the metrics contract is frozen, and it is no longer tied to a
 phase.** It previously read "it is Phase 5", which would have made the freeze a
@@ -347,19 +363,57 @@ contract is ready — the opposite of the "deliberate promise rather than
 something to drift into" the same sentence claimed. Decoupled on 2026-08-01,
 with Phase 5 shipping as `0.5.0`.
 
-The freeze happens when the contract has stopped moving, and it has not: this
-session alone brought cgroup v1 into scope, added podman and standalone
-containerd, and left `runtime` empty on layouts that do not encode one.
+The freeze happens when the contract has stopped moving, and it has not: the
+2026-08-01 session alone brought cgroup v1 into scope, added podman and
+standalone containerd, and left `runtime` empty on layouts that do not encode
+one.
 
 **Two of the gaps that argued against freezing closed on 2026-08-04**: AMD is
 captured and implemented, and a multi-GPU host has now been read — the same
 one, 2× MI300X. That is progress toward a freeze rather than an argument for
 it, because closing them moved the contract again: `prickle_gpu_info` gained a
-`vendor` label and `prickle_gpu_amd_partition_info` is a new family. What is
-still unexercised is narrower and worth naming — no *bare-metal* AMD host has
-been read, so AMD's compute partitioning has only ever been observed fixed at
-`SPX` by a hypervisor, and no host with both vendors' cards in it has ever been
-scraped. Continue at `0.5.x`, `0.6.x` and so on until that is no longer true.
+`vendor` label and `prickle_gpu_amd_partition_info` is a new family. AMD was
+then exercised on Kubernetes on 2026-08-06, two tenants sharing one MI300X.
+Continue on `0.x` until the list below is empty; as of `0.8.0` it is not.
+
+### Before 1.0.0
+
+`1.0.0` freezes the metrics contract, so what stands in its way is not
+unfinished features but **parts of the contract nothing has ever tested**. A
+name, unit or label set that no real host has produced is a promise made on
+the strength of a fixture. The list is deliberately short, and each entry says
+what would close it.
+
+1. **A bare-metal AMD host.** Every AMD card read so far has been an SR-IOV VF,
+   which a hypervisor pins to `SPX`. `prickle_gpu_amd_partition_info` therefore
+   has exactly one observed value, and CPX/DPX — the reason the family exists —
+   have never been emitted. This is the AMD analogue of the MIG-on/MIG-off
+   fixture pair the NVIDIA trees already have. Closes on one capture.
+2. **A host with both vendors' cards.** Both collectors render into a single
+   `Set`, and no machine has ever held an NVIDIA and an AMD card at once to
+   prove the merged output is what the contract says. The failure this guards
+   against is a label or family that only collides when both are present.
+3. **NVIDIA source selection consults the PATH, not the bus.** `nvidia-smi`
+   merely *being* on `PATH` selects the `smi` source; `CountNVIDIAGPUs` answers
+   the question that should decide it — is there a card — and is consulted only
+   by `prickle diagnose`. On a host with a leftover or stubbed `nvidia-smi` and
+   no NVIDIA card, the result is a parse error every scrape and
+   `prickle_gpu_nvidia_source_info{source="smi"}` asserting a source that
+   cannot work. **A metric that states something false is a contract defect,
+   not a cosmetic one**, so this closes before the freeze rather than after it.
+   It was left alone deliberately during the AMD work — it is pre-existing, and
+   fixing it touches §Collectors' "attempt the load, fall back silently", which
+   is why it needs its own decision rather than a drive-by.
+4. **`docs/verification.md` stops at the 0.7.1 acceptance sweep.** The 0.8.0
+   sweep passed 14 of 14 base images on 2026-08-04 and that result is not in
+   the repository. A frozen contract is a promise, and the record of what was
+   actually run on real hardware is what makes it credible to anyone who did
+   not run it.
+
+**Intel is not on this list and is not a blocker** — §Collectors places it out
+of scope for want of a capture host, and a freeze does not become less
+defensible for excluding hardware nobody can obtain. Adding Intel later is a
+new family on a new vendor, which the table above already calls a minor.
 
 From 1.0.0 on, a metric that must change is emitted under both the old and new
 names for one full minor, with the old name marked deprecated in its `# HELP`
@@ -371,6 +425,24 @@ needs prose that says what to do about it, which no generator writes.
 ## Session checklist
 
 Before writing code: read this file, read the target package's existing code,
-and confirm the fixture tree for the collector exists. Before committing: `go
-vet`, tests green, `promtool check metrics` on sample output, and the forbidden-
-string grep.
+and confirm the fixture tree for the collector exists.
+
+Before committing: **run `ci/check.sh`.** It is this checklist in one command
+and CI runs the same script, so a green local run and a green CI run mean the
+same thing. It stops at the first failure. The gates, each tied back to the
+section it enforces:
+
+`gofmt -l` · `go vet` · `go test -race` (§Architecture) · the `nvml` build
+compiles and vets (§Distribution) · zero third-party dependencies
+(§Hard constraints #1) · an SPDX header in every `.go` file (§Identity) ·
+`promtool check metrics` on every golden file (§Metrics contract) ·
+documentation links resolve · every fixture accounted for in its README
+(§Testing rules) · the shipped Grafana dashboards match their generator
+(§Distribution) · no PIDs in any fixture (§Metrics contract) · the released
+version stated consistently (§Versioning) · naming discipline (§Identity) ·
+the metric prefix never abbreviated (§Identity).
+
+This list previously read "`go vet`, tests green, `promtool check metrics` on
+sample output, and the forbidden-string grep" — four gates where there are
+fourteen, and no mention that a script existed to run them. It is corrected
+here rather than in `ci/check.sh` because the script was the accurate one.
