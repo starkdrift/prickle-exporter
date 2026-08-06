@@ -120,6 +120,83 @@ are fixed by NVIDIA's own ABI contract rather than by hope. Nothing from the
 `nvmlDeviceSet*` or `nvmlDeviceClear*` families is resolved at all.
 
 
+## Release acceptance, 0.8.0
+
+Every DigitalOcean base image, swept on 2026-08-04 against the **published**
+0.8.0 artifacts — the release tarball and its `SHA256SUMS`, the systemd unit
+from inside that tarball, and a from-source build at the tag. Each host ran the
+README's install instructions verbatim, then started a podman container and
+scraped again.
+
+**14 of 14 passed.** Nothing in this sweep was fixed afterwards; unlike the
+0.7.0 sweep below, it found no defect.
+
+| Image | Kernel | cgroup | PSI | sha256 | unit in tarball | service | `CapEff` | exposure | scrape | families | + container |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `almalinux-8` | 4.18.0-553 | **v1** | absent | ok | yes | active | empty | 1.4 | 53 | 16 | 58 |
+| `almalinux-9` | 5.14.0-687 | v2 | absent | ok | yes | active | empty | 1.5 | 53 | 16 | 58 |
+| `almalinux-10` | 6.12.0-211 | v2 | absent | ok | yes | active | empty | 1.5 | 53 | 16 | 58 |
+| `centos-stream-9` | 5.14.0-710 | v2 | absent | ok | yes | active | empty | 1.5 | 49 | 16 | 54 |
+| `centos-stream-10` | 6.12.0-233 | v2 | absent | ok | yes | active | empty | 1.5 | 49 | 16 | 54 |
+| `debian-13` | 6.12.94 | v2 | present | ok | yes | active | empty | 1.5 | 53 | 17 | 58 |
+| `fedora-43` | 7.0.12-101 | v2 | present | ok | yes | active | empty | 1.5 | 57 | 17 | 62 |
+| `fedora-44` | 7.0.12-201 | v2 | present | ok | yes | active | empty | 1.5 | 55 | 17 | 60 |
+| `rockylinux-8` | 4.18.0-553 | **v1** | absent | ok | yes | active | empty | 1.4 | 55 | 16 | 60 |
+| `rockylinux-9` | 5.14.0-687 | v2 | absent | ok | yes | active | empty | 1.5 | 53 | 16 | 58 |
+| `rockylinux-10` | 6.12.0-211 | v2 | absent | ok | yes | active | empty | 1.5 | 49 | 16 | 54 |
+| `ubuntu-22-04` | 5.15.0-185 | v2 | present | ok | yes | active | empty | 1.5 | 53 | 17 | 58 |
+| `ubuntu-24-04` | 6.8.0-124 | v2 | present | ok | yes | active | empty | 1.5 | 55 | 17 | 60 |
+| `ubuntu-26-04` | 7.0.0-27 | v2 | present | ok | yes | active | empty | 1.5 | 55 | 17 | 60 |
+
+**The series counts are much smaller than the 0.7.1 sweep's, and that is the
+release, not a regression.** 0.8.0 defaults to `-metrics.preset=minimal`, so a
+plain scrape is the families the shipped dashboards query rather than everything
+the collectors can produce. `prickle diagnose` reported `minimal` on all
+fourteen and named the withheld count, which is the check that the default is
+deliberate rather than an empty collector.
+
+Identical on all fourteen, which is the part worth stating plainly: the checksum
+verified, the tarball contained its `.service` file, the service came up
+`active`, the binary was **static**, `CapEff` was **all zero**, `go.sum` was
+**empty** on the host that built it, and a from-source build at the tag ran. The
+zero-dependency rule (SPEC.md §Hard constraints #1) is therefore checked on
+fourteen distributions rather than only in CI.
+
+Every column that varies is explained by the host:
+
+- **AlmaLinux 8 and Rocky 8 boot cgroup v1**, and are the routine way this
+  project exercises the v1 reader on real hardware rather than on a fixture.
+- **PSI is absent across the entire RHEL family** — Alma, Rocky and CentOS
+  Stream at 8, 9 and 10 alike, eight of the fourteen. The kernels have it
+  compiled in; it needs `psi=1` at boot. That is the whole of the `families`
+  column: 17 where PSI exists, 16 where it does not.
+- **`systemd-analyze` scores 1.4 on the two el8 hosts and 1.5 elsewhere.** An
+  older systemd does not recognise some directives, so it scores a slightly
+  *less* hardened unit slightly better — the same inversion the 0.7.1 sweep saw.
+- **`restorecon` ran on the ten SELinux hosts and was skipped on the four
+  without it**, which is the README's `command -v` guard doing its job. On all
+  ten the unit landed as `systemd_unit_file_t`, so the AlmaLinux 8 mislabelling
+  that made this line necessary did not recur.
+- **Debian 13 reports the `DynamicUser` as the numeric uid `63731`** rather than
+  the name `prickle`, because `nss-systemd` is not wired into its
+  `nsswitch.conf`. Cosmetic; the process is equally unprivileged, and its
+  `CapEff` is zero like everyone else's.
+- **The remaining scrape-count spread** (49 to 57) is disks and network
+  interfaces, not behaviour: the droplet images differ in how many of each they
+  present. A container adds a flat **+5** on every host under the minimal preset.
+
+One empty cell in the raw results is worth recording because it looks like a
+gap and is not. The probe's `diag_toplevel_cgroups` key came back empty on
+exactly the two cgroup v1 hosts — because on v1 `prickle diagnose` deliberately
+reports "*N* v1 controller hierarchies" instead of "*N* top-level cgroups".
+`/sys/fs/cgroup` there is a tmpfs holding one directory per controller, and
+calling those top-level cgroups would misname them. The probe grepped for the v2
+wording; the exporter was right and the probe was narrow.
+
+The raw per-host results are `KEY=VALUE` files, 44 keys each, all carrying
+`probe_complete=yes`. This table is generated from them rather than transcribed.
+
+
 ## AMD on Kubernetes
 
 The released `ghcr.io/starkdrift/prickle-exporter:0.8.0` image on a single-node
