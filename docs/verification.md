@@ -264,6 +264,33 @@ as a measurement.
   documents for Kubernetes, in an artifact that had not applied its own advice.
   Now set from `PRICKLE_NODE`, defaulting to `prickle-quickstart`.
 
+### Two more, from running the suite on the card
+
+The Go suite, `-race` and `ci/check.sh` were then run **on the GPU host** —
+the condition that broke six tests before PR #9, and one no CI runner can
+reproduce because none has a GPU. All green. Two defects surfaced around them
+rather than in them:
+
+- **Two `ci/check.sh` gates were passing without searching anything.** The
+  naming-discipline and metric-prefix checks were built on `git grep`, which
+  exits non-zero outside a checkout — and both callers read a non-zero grep as
+  "no matches". Since the documented way to run this suite against hardware is
+  an `rsync --exclude .git`, they were inert on precisely the runs that catch
+  what CI cannot. Demonstrated by planting a `prick_bad_metric` in a non-git
+  copy: the old script reported `All checks passed`. Both gates now enumerate
+  files first and fail on an empty list. CI was never affected — it runs on a
+  real checkout.
+- **`prickle diagnose` would not say why NVML declined whenever the fallback
+  worked.** SPEC.md §Collectors requires the reason; it survived only when
+  *nothing* loaded, and was discarded the moment a candidate succeeded. The
+  case that matters is the opposite one — a driverless container falling back to
+  `nvidia-smi` and working — where `live source: smi` alone reads as a choice.
+  An AMD host running the nvml build reproduces that shape exactly: NVML cannot
+  load, the stub `nvidia-smi` loads instead. Diagnose now prints a `declined:`
+  line, and the two artifacts say usefully different things — the nvml build
+  reports the `dlopen` failure (a fact about the host), the static build the
+  missing build tag (a fact about the artifact).
+
 
 ## Release acceptance, 0.7.1
 
