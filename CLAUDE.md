@@ -12,7 +12,12 @@ index plus the traps that are easy to trip on.
 
 `prickle-exporter` is a Prometheus exporter for host, container, and GPU metrics.
 One Go binary, `prickle`. Read-only. Standard-library only. See
-[SPEC.md](SPEC.md) for the full identity table, architecture, and roadmap.
+[SPEC.md](SPEC.md) for the full identity table and architecture.
+
+All five roadmap phases shipped by `0.5.0`; the tree is past them and the minor
+no longer tracks a phase. What is still open is SPEC.md §Versioning's
+**Before 1.0.0** list — read that rather than the phase numbers to see what the
+project still owes.
 
 - Module: `github.com/starkdrift/prickle-exporter`
 - Binary / CLI: `prickle` (diagnostics: `prickle diagnose`)
@@ -68,14 +73,27 @@ Exposition output is checked against golden files. NVML is the one path that
 can't be fixture-tested (C call, not a file read) — both NVIDIA sources sit
 behind the `nvidiaSource` interface and unit tests use a fake source.
 
-## NVIDIA: two builds (full text in SPEC.md §Collectors, §Distribution)
+## GPU: two vendors, and NVIDIA in two builds (full text in SPEC.md §Collectors, §Distribution)
+
+**AMD** is read through sysfs + DRM fdinfo, shipped in 0.8.0. `rocm-smi` and
+`amd-smi` are **not** sources and are never spawned — §Hard constraints #2
+permits exactly one subprocess and it is `nvidia-smi`. A card is recognised by
+its uevent `DRIVER=amdgpu`, never by PCI class: an MI300X reports a processing
+accelerator, so the display-class test NVIDIA uses finds nothing.
+
+**NVIDIA** has one interface, `nvidiaSource`, and two builds behind it:
 
 - Default build: `CGO_ENABLED=0`, pure-Go, static → `nvidia-smi` CSV subprocess.
 - `//go:build nvml` build: cgo + dynamically linked → `dlopen` of
   `libnvidia-ml.so.1`, the preferred path. A static binary cannot `dlopen`.
 - Neither build links NVIDIA libs at compile time, so the zero-dep rule holds
   for both. `nvidia-smi` is a supported fallback, not deprecated — keep it
-  tested. The two sources must emit identical metric output for the same GPU.
+  tested. The two sources must emit identical metric output for the same GPU;
+  `TestSourcesAgreeOnHardware` asserts it and runs only on real hardware.
+
+The vendors do not fork the contract: same families, same units, same labels.
+MIG is NVIDIA's and is **absent** on an AMD card rather than zero; AMD's own
+partitioning gets `prickle_gpu_amd_partition_info`.
 
 ## Contribution policy
 
@@ -95,10 +113,15 @@ Dependabot branches use a PR purely to get CI.
 ```sh
 git checkout -b <topic> && git commit ...
 git push -u origin <topic>
-gh pr create --fill        # needs a write token; GH_TOKEN is read-only
+GH_TOKEN=$GH_PRICKLE_EXPORTER_PR_TOKEN gh pr create --fill
 gh pr checks --watch       # the four required contexts, plus CodeQL
-gh pr merge --merge        # by hand, once they are green
+GH_TOKEN=$GH_PRICKLE_EXPORTER_PR_TOKEN gh pr merge --merge   # by hand, once green
 ```
+
+**`GH_TOKEN` is read-only, and its refusal is not a dead end.** The write token
+is already in the environment as `GH_PRICKLE_EXPORTER_PR_TOKEN` — a session that
+reads "insufficient scopes" as "PRs are impossible here" has stopped one
+variable short of the route this section documents.
 
 **Auto-merge is deliberately disabled repository-wide** — do not turn it on or
 pass `--auto`. Merging is the moment a conflict or a surprising check result
@@ -123,19 +146,26 @@ split that CLAUDE.md requires for a contract change.
 
 The names in SPEC.md §Identity are the only ones used anywhere — code, comments,
 docs, fixtures, charts, dashboard JSON. Never abbreviate the metric prefix
-(`prickle_`, always the full word). Discarded candidate names live in
-`ci/denied-names.txt` and are grep-enforced in CI.
+(`prickle_`, always the full word). CI enforces this **positively** — see
+§Before you commit; `ci/denied-names.txt` is empty and is not what the gate
+rests on.
 
 ## Before you commit (SPEC.md §Session checklist)
 
-Run [ci/check.sh](ci/check.sh) — it is the whole checklist in one command, and
-CI runs the same script:
+Run [ci/check.sh](ci/check.sh) — it is the whole checklist in one command, CI
+runs the same script, and it stops at the first failure. Fourteen gates:
 
-- `gofmt -l`, `go vet`, `go test ./...`
+- `gofmt -l`, `go vet`, `go test -race`
+- the `nvml` build compiles and vets (invisible to the default build, so an
+  NVML-only break otherwise reaches a release)
 - zero third-party deps (empty `go.sum`, no `require` block)
 - an SPDX header in every `.go` file
 - `promtool check metrics` on every `testdata/golden/*.prom`
-- the denied-names and metric-prefix greps
+- documentation links resolve; every fixture accounted for in its README
+- the shipped Grafana dashboards match their generator
+- no PIDs in any fixture
+- the released version stated consistently across the docs
+- the naming and metric-prefix greps
 
 `ci/denied-names.txt` is **empty and will stay that way**: the names discarded
 during naming were never recorded in the repository. The naming gate no longer
