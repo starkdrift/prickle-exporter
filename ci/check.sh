@@ -190,6 +190,43 @@ check_version packaging/helm/prickle-exporter/Chart.yaml \
 # force a chart release for every exporter release and vice versa.
 
 step "naming discipline (SPEC.md §Identity)"
+# How this searches the tree, before what it searches for.
+#
+# These three greps were `git grep` until 2026-08-06. Outside a git checkout
+# that exits non-zero with "fatal: not a git repository" on stderr, and every
+# caller here reads a non-zero grep as "no matches" — so all three printed `ok`
+# having searched nothing at all. That is the exact failure this step's own
+# comment goes on to describe for ci/denied-names.txt: reassurance standing
+# where a check should be.
+#
+# It was not hypothetical. The documented way to run this suite against real
+# hardware is an rsync that excludes .git (no GPU runner exists in CI), so on
+# every GPU-host run — the runs that catch what CI cannot — the naming gates
+# were inert while reporting green. Found on an MI300X, where the "fatal" lines
+# were visible above three passing checks.
+#
+# So: tracked files inside a checkout, a plain find outside one, and a hard
+# assertion that the list is non-empty. A search that finds no files to search
+# now fails instead of passing.
+#
+# Both modes list regular files only. The GPU fixtures contain deliberately
+# dangling /proc/<pid>/exe symlinks — captured that way because SPEC.md
+# §Metrics contract forbids a PID reaching a metric, so there is no process to
+# point at — and handing those to grep produces "No such file or directory" for
+# each one.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  tree_files() { git ls-files | while IFS= read -r f; do [ -f "$f" ] && [ ! -L "$f" ] && printf '%s\n' "$f"; done; }
+else
+  tree_files() { find . -path ./.git -prune -o -type f -print | sed 's|^\./||'; }
+  printf '  note: not a git checkout — searching with find rather than git ls-files\n'
+fi
+
+file_count=$(tree_files | wc -l)
+[ "$file_count" -gt 0 ] || fail "no files to search; the naming gates below would pass without checking anything"
+
+# tree_files minus the paths named as arguments.
+files_except() { tree_files | grep -vxF -e "$1" ${2:+-e "$2"} ${3:+-e "$3"}; }
+
 # Two checks, because the obvious one cannot be made to work on its own.
 #
 # The deny-list below can only catch a discarded name somebody still remembers,
@@ -206,8 +243,8 @@ step "naming discipline (SPEC.md §Identity)"
 # the third-party exporters the docs legitimately name. Anything else is either
 # a discarded name resurfacing or a new one nobody agreed to.
 allowed_exporters='prickle-exporter|dcgm-exporter|node_exporter'
-foreign=$(git grep -IohE '\b[a-z][a-z0-9]{2,}[-_]exporter\b' -- . \
-            ':(exclude)ci/check.sh' ':(exclude)ci/denied-names.txt' \
+foreign=$(files_except ci/check.sh ci/denied-names.txt \
+          | xargs -r grep -IohE '\b[a-z][a-z0-9]{2,}[-_]exporter\b' \
           | sort -u | grep -vE "^($allowed_exporters)\$" || true)
 if [ -n "$foreign" ]; then
   printf '  unexpected exporter names in the tree:\n%s\n' "$foreign" | sed 's/^/    /'
@@ -223,10 +260,8 @@ if [ ${#denied[@]} -eq 0 ]; then
   printf '  note: ci/denied-names.txt is empty; the check above is what is protecting the tree.\n'
 else
   for name in "${denied[@]}"; do
-    if git grep -In -i -- "$name" -- . \
-        ':(exclude)ci/denied-names.txt' \
-        ':(exclude)ci/check.sh' \
-        ':(exclude)SPEC.md'; then
+    if files_except ci/denied-names.txt ci/check.sh SPEC.md \
+        | xargs -r grep -In -i -e "$name"; then
       fail "denied name '$name' appears in the tree"
     fi
     printf '  ok  %s\n' "$name"
@@ -234,7 +269,7 @@ else
 fi
 
 step "metric prefix is never abbreviated (SPEC.md §Identity)"
-if git grep -InE '"prick_|"prkl_|prickle_exporter_' -- '*.go' '*.prom'; then
+if tree_files | grep -E '\.(go|prom)$' | xargs -r grep -InE '"prick_|"prkl_|prickle_exporter_'; then
   fail "abbreviated or wrong metric prefix; it is always the full word prickle_"
 fi
 

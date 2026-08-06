@@ -69,6 +69,26 @@ what to do about it, which no commit-log generator writes.
   sweep: the diagnostic line is documentation, and documentation is only tested
   by following it.
 
+- **Two `ci/check.sh` gates passed without searching anything outside a git
+  checkout.** The naming-discipline and metric-prefix checks were built on
+  `git grep`, which exits non-zero with `fatal: not a git repository` when there
+  is no `.git` — and every caller read a non-zero grep as "no matches found".
+  Both printed `ok`.
+
+  It hit the runs that matter most. No CI runner has a GPU, so the documented
+  way to exercise the suite against real hardware is an `rsync --exclude .git`
+  to a GPU host; on every one of those runs the two gates were inert while
+  reporting green. Demonstrated on an MI300X: a tree carrying a planted
+  `prick_bad_metric` — exactly what the prefix gate exists to catch — was
+  reported as `All checks passed`.
+
+  They now list tracked files inside a checkout and fall back to `find` outside
+  one, and **fail** if the file list is ever empty rather than passing on it.
+  CI itself was never affected: it runs on a real checkout, so `main` was
+  protected throughout. This is the failure mode SPEC.md §Identity already
+  describes for `ci/denied-names.txt` — reassurance standing where a check
+  should be — found in the two checks written to replace it.
+
 ## [0.8.0] — 2026-08-04
 
 The AMD release, and the one that makes "which pod is holding this card"
