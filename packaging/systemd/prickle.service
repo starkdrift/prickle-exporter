@@ -108,5 +108,29 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 # Without it the exporter still reports every container; pods are identified by
 # UID rather than by name.
 
+# --- Per-process GPU attribution (optional) ---------------------------------
+# -collector.gpu.per-process names the process holding a card. That means
+# reading another process's /proc entry — its exe link on NVIDIA, every one of
+# its fdinfo files on AMD — and both are PTRACE_MODE_READ operations. Yama
+# ptrace_scope=1, the default on Debian and Ubuntu, allows those only against
+# this process's own descendants, so the flag needs one capability:
+#
+#   systemctl edit prickle
+#   [Service]
+#   ExecStart=
+#   ExecStart=/usr/local/bin/prickle -collector.gpu.per-process
+#   AmbientCapabilities=CAP_SYS_PTRACE
+#   CapabilityBoundingSet=CAP_SYS_PTRACE
+#
+# DynamicUser stays as it is: the kernel checks the capability here, not the
+# uid, so this does not need root. Verified on an MI300X — uid 63731 holding
+# CAP_SYS_PTRACE and nothing else read both a host process and a containerised
+# one, each matching that process's own drm-total-vram to the byte.
+#
+# CAP_SYS_PTRACE is still worth understanding before granting: it permits
+# reading any process's memory, not merely its name. Without it the per-process
+# family is **absent** rather than wrong, and absent silently — no error, no log
+# line — so check for the capability before suspecting the exporter.
+
 [Install]
 WantedBy=multi-user.target

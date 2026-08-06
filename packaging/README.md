@@ -39,9 +39,36 @@ set of GPU series, so the assumption was wrong and the directive stays.
 
 Two flags to know:
 
-- `-collector.gpu.per-process` reads `/proc/<pid>/exe` for other users'
-  processes, which `DynamicUser` cannot do. That flag needs `User=root` and
-  `ProtectProc=default`; the shipped units are for the default configuration.
+- `-collector.gpu.per-process` reads another process's `/proc` entry — its
+  `exe` link on NVIDIA, every one of its `fdinfo` files on AMD. Both are
+  `PTRACE_MODE_READ` operations, and Yama `ptrace_scope=1` — the default on
+  Debian and Ubuntu — permits those only against a process's own descendants.
+  So the flag needs **`CAP_SYS_PTRACE`**, added by drop-in:
+
+  ```sh
+  systemctl edit prickle
+  # [Service]
+  # ExecStart=
+  # ExecStart=/usr/local/bin/prickle -collector.gpu.per-process
+  # AmbientCapabilities=CAP_SYS_PTRACE
+  # CapabilityBoundingSet=CAP_SYS_PTRACE
+  ```
+
+  **`DynamicUser` stays.** The capability is what the kernel checks here, not
+  the uid, so the exporter keeps its own unprivileged account and picks up one
+  capability rather than becoming root — measured on an MI300X, where uid 63731
+  with `CapEff` `0x80000` read both a host process and a containerised one, each
+  matching that process's own `drm-total-vram` exactly. Exposure goes 1.5 → 1.8.
+
+  This paragraph said `User=root` and `ProtectProc=default` until 2026-08-06,
+  which was a guess at a DAC problem and wrong twice over: the shipped units
+  already set `ProtectProc=default`, so that half was a no-op, and root without
+  `CAP_SYS_PTRACE` fails the ptrace check like any other uid — verified failing
+  on hardware. The family is simply **absent** when the capability is missing,
+  with no error and no log line, so a wrong recipe here reads as a broken
+  exporter. Kubernetes has needed `CAP_SYS_PTRACE` in the chart all along
+  ([docs/metrics.md](../docs/metrics.md)); only the systemd route was
+  mis-documented.
 - `-collector.container.docker-socket` needs the socket's group, so add
   `SupplementaryGroups=docker`.
 
@@ -74,7 +101,14 @@ cd packaging/compose && docker compose up -d
 
 Verified end to end on a VM: three containers running, 395 series scraped,
 `up{job="prickle"} == 1` in Prometheus, and the datasource present in Grafana's
-API without anyone importing anything.
+API without anyone importing anything. Re-run on an MI300X host on 2026-08-06,
+where it also picked the card up — `prickle_gpu_info{vendor="amd"}` reaching
+Prometheus through the quickstart with nothing added.
+
+The `node` label reads `prickle-quickstart` unless you set `PRICKLE_NODE`.
+A bridged container's hostname is its container ID, which changes every time the
+container is recreated, so leaving it to the default would rename every series
+under the graphs on each `up --force-recreate`.
 
 It is a demonstration, not a deployment — Grafana runs with anonymous admin so
 the quickstart has no password step. Do not put it on a network you do not own.

@@ -169,6 +169,102 @@ always `SPX` — AMD's CPX/DPX partitioning, the analogue of the MIG fixture pai
 still needs bare metal.
 
 
+## Distribution artifacts on an AMD host, 0.8.0
+
+Every SPEC.md §Distribution artifact run against the **published** 0.8.0
+release, 2026-08-06, on a Hot Aisle MI300X box — `enc1-gpuvm010`, one card
+(`unique_id cb0412d4d88cfa69`, an SR-IOV VF), 13 cores, Ubuntu 24.04 /
+kernel 6.8, ROCm 7.2.4, Yama `ptrace_scope=1`. A host that had never run
+prickle. The Kubernetes route is covered by §AMD on Kubernetes above; this is
+everything else.
+
+| Artifact | Result |
+|---|---|
+| Release tarballs, both binaries | `sha256sum -c` ok against the published `SHA256SUMS`; each tarball ships its own `.service` unit |
+| `prickle` (static) | `v0.8.0 (go1.26.5)`, statically linked, 215 host + 8 GPU series |
+| `prickle-nvml` (dynamic) | runs on an AMD host, falls back as designed |
+| systemd unit | active, uid 63731, **`CapEff` `0000000000000000`**, exposure **1.5** |
+| amdgpu under the sandbox | all seven GPU families read through `ProtectSystem=strict` + `PrivateDevices=yes` |
+| Docker one-liner | 61 series, full GPU set, `node` from the host under `--network=host` |
+| Compose quickstart | three containers, `up{job="prickle"} == 1`, four dashboards in the **Prickle** folder, no provisioning errors |
+| `skopeo copy --all` to a mirror | manifest list preserved, **same digest** `sha256:2e3fb1f5…` on both ends |
+| Digest-pinned run from the mirror | `prickle v0.8.0` |
+| `latest` | the same digest as `0.8.0`, the static image, as documented |
+| `gh attestation verify` | verifies to `release.yml` at `refs/tags/v0.8.0`, commit `f16841f` |
+
+**The sandbox is no obstacle to an AMD card.** `PrivateDevices=yes` hides
+`/dev/kfd` and `/dev/dri` from the exporter and the GPU metrics arrive anyway,
+because the AMD device path reads sysfs rather than the driver — the same reason
+the unit can afford to hide devices for the `nvidia-smi` fallback. Temperature,
+power, utilisation, both memory gauges, `prickle_gpu_info` and
+`prickle_gpu_amd_partition_info` all present, with `CapEff` zero.
+
+### What it found: per-process attribution never worked under systemd
+
+`packaging/README.md` said `-collector.gpu.per-process` needs `User=root` and
+`ProtectProc=default`. Run on hardware, that recipe produces **nothing** — and
+nothing is exactly what it looks like, because the family is absent rather than
+wrong, with no error, no log line and a healthy `prickle diagnose`. It is the
+same silent shape as the AppArmor defect above, in the other deployment route.
+
+Five configurations, one card, two live GPU processes throughout:
+
+| Configuration | `CapEff` | Per-process family |
+|---|---|---|
+| Shipped unit (`DynamicUser`) + the flag | `0` | **absent** |
+| The documented recipe: `User=root`, `ProtectProc=default` | `0` | **absent** |
+| Bare binary under `sudo` | full | 1 series |
+| `DynamicUser` + `CAP_SYS_PTRACE` | `0x80000` | **1 series** |
+| `DynamicUser` + `CAP_SYS_PTRACE` + `CAP_DAC_READ_SEARCH` | `0x80004` | 1 series, no better |
+
+The requirement is `CAP_SYS_PTRACE`, and it is **not** root. Reading another
+process's `fdinfo` is a `PTRACE_MODE_READ` operation; Yama `ptrace_scope=1`
+grants that to a process's own descendants or to `CAP_SYS_PTRACE`, and uid 0
+without the capability fails it like any other uid. The old advice was wrong in
+both halves: root is neither sufficient (measured) nor necessary (measured), and
+the shipped units already set `ProtectProc=default`, so that clause changed
+nothing at all. `docs/metrics.md` has had the ptrace explanation since the chart
+needed it — it was scoped to Kubernetes, so the systemd route kept a different
+and untested theory.
+
+The corrected recipe keeps the unprivileged account and adds one capability,
+taking exposure from 1.5 to 1.8 rather than to root's 2.2. Under it, both
+processes resolve:
+
+```
+prickle_gpu_process_memory_bytes{command="gpu-load",container=""}                  1224998912
+prickle_gpu_process_memory_bytes{command="gpu-load",container="283ab79fbbe3…"}      688115712
+```
+
+Both match the kernel's own `drm-total-vram` for those processes exactly
+(1196288 KiB and 671988 KiB), and the containerised one carries its container
+ID — so an unprivileged exporter with one capability sees containers it does not
+own, which the old note that this needed `sudo` had understood as a uid problem.
+
+**The NVIDIA side is not proven here.** Reading `exe` is the same ptrace-gated
+operation, so the same capability should be what NVML and `nvidia-smi` need, but
+this host has no NVIDIA card and that claim is written as reasoning rather than
+as a measurement.
+
+### Two things that behaved as documented, and one that did not
+
+- **`nvidia-smi` selection on an AMD host.** This box ships a joke
+  `/usr/bin/nvidia-smi` that prints a message and exits 0, so `prickle` selects
+  the `smi` source, logs a parse error every scrape and reports
+  `prickle_gpu_nvidia_source_info{source="smi"}` on a machine with no NVIDIA
+  card. Known, pre-existing, and unchanged here: `CountNVIDIAGPUs` already
+  answers "is there a card on the bus" and is not consulted during selection.
+  The published container image does **not** have this problem — it carries no
+  `nvidia-smi` to find.
+- **The `_info` gauge names the card from a lookup**, `AMD Instinct MI300X VF`,
+  with no `amd-smi` spawned.
+- **The compose quickstart labelled every series with a container ID.** The
+  quickstart's prickle runs on a bridge network, where the container's hostname
+  is its ID, so `node` changed on every recreate — the trap the README already
+  documents for Kubernetes, in an artifact that had not applied its own advice.
+  Now set from `PRICKLE_NODE`, defaulting to `prickle-quickstart`.
+
+
 ## Release acceptance, 0.7.1
 
 Every DigitalOcean base image, swept on 2026-08-02 against the **published

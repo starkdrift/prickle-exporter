@@ -15,6 +15,42 @@ what to do about it, which no commit-log generator writes.
 
 ### Fixed
 
+- **Per-process GPU attribution never worked under the systemd units, and the
+  documented fix for it was wrong.** `packaging/README.md` said
+  `-collector.gpu.per-process` needs `User=root` and `ProtectProc=default`. On
+  hardware that produces no per-process series at all: reading another process's
+  `fdinfo` or `exe` link is a `PTRACE_MODE_READ` operation, and under Yama
+  `ptrace_scope=1` — the default on Debian and Ubuntu — uid 0 without
+  `CAP_SYS_PTRACE` fails it exactly like any other uid. The `ProtectProc=default`
+  half was a no-op; the shipped units already set it.
+
+  **What to do:** grant the capability by drop-in and leave `DynamicUser` alone —
+  the kernel checks the capability here, not the uid, so this does not need root:
+
+  ```
+  systemctl edit prickle
+  [Service]
+  ExecStart=
+  ExecStart=/usr/local/bin/prickle -collector.gpu.per-process
+  AmbientCapabilities=CAP_SYS_PTRACE
+  CapabilityBoundingSet=CAP_SYS_PTRACE
+  ```
+
+  Exposure goes 1.5 → 1.8, against 2.2 for the root recipe that did not work.
+  Both unit files now carry this alongside the pod-names drop-in. Measured on an
+  MI300X, where uid 63731 with `CapEff` `0x80000` read a host process and a
+  containerised one, each matching that process's own `drm-total-vram` to the
+  byte. Nothing in the exporter changed — this is a documentation and packaging
+  fix for a capability the Helm chart has granted all along.
+
+- **The compose quickstart relabelled every series whenever it was recreated.**
+  Its prickle runs on a bridge network, where the container's hostname is its
+  container ID, so `node` was a fresh hex string after every
+  `docker compose up --force-recreate` and the graphs lost continuity across
+  restarts — the trap the README documents for Kubernetes, in the one artifact
+  that had not taken its own advice. `node` now comes from `PRICKLE_NODE` and
+  defaults to `prickle-quickstart`.
+
 - **Per-process GPU attribution was silently empty on any AppArmor node.** The
   chart granted `hostPID`, uid 0 and `SYS_PTRACE` — everything documented as
   necessary — and `prickle_gpu_process_memory_bytes` still never appeared.
