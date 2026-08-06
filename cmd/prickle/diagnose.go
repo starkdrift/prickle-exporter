@@ -375,6 +375,17 @@ func describeGPUs(w io.Writer, cfg config) {
 func describeNVIDIASource(w io.Writer, cfg config, c *gpu.Collector) {
 	if name := c.SourceName(); name != "" {
 		fmt.Fprintf(w, "  live source: %s\n", name)
+		// SPEC.md §Collectors asks for the reason NVML failed to load, and the
+		// case where that question gets asked is this one: something loaded, so
+		// there are metrics, and it was not the preferred path. Printing only
+		// `live source: smi` here reads as a choice rather than a fallback —
+		// which is how an operator ends up believing a slim container lacking
+		// the driver libraries is working as intended.
+		for _, err := range c.DeclinedSources() {
+			for _, line := range strings.Split(err.Error(), "\n") {
+				fmt.Fprintf(w, "    declined: %s\n", line)
+			}
+		}
 		return
 	}
 
